@@ -30,6 +30,15 @@ export function openDb() {
     );
     CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(content);
     CREATE VIRTUAL TABLE IF NOT EXISTS memory_vec USING vec0(embedding float[${DIM}]);
+    -- 관계(사용자 수동 연결) — 결정의 번복/근거/영향/충돌을 사람이 직접 잇는다(자동추론 X)
+    CREATE TABLE IF NOT EXISTS relation(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_id INTEGER NOT NULL,
+      to_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(from_id, to_id, type)
+    );
   `);
   // 마이그레이션(비파괴) — 기존 DB에 project 컬럼 없으면 추가(기존 행은 NULL=전역)
   const cols = db.prepare('PRAGMA table_info(memory)').all().map(c => c.name);

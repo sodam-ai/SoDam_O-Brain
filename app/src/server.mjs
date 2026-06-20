@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { listMemories } from './store.mjs';
+import { listMemories, deleteMemory, addRelation, listRelations, deleteRelation } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -28,6 +28,7 @@ app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
   next();
 });
+app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
 
 app.get('/api/health', (req, res) => res.json({ ok: true, embed: embedMode(), port: PORT }));
 app.get('/api/memories', (req, res) => res.json(listMemories(db, 100)));
@@ -39,6 +40,32 @@ app.get('/api/search', async (req, res) => {
 });
 app.get('/api/graph', (req, res) => {
   try { res.json(buildGraph(db)); } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
+});
+// 기억 삭제(사용자 요청) — id 검증 후 1건만 제거. 로컬 전용·파라미터 바인딩.
+app.delete('/api/memory/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  try {
+    const deleted = deleteMemory(db, id);
+    if (!deleted) return res.status(404).json({ error: '없는 기억' });
+    res.json({ ok: true, deleted });
+  } catch (e) { res.status(500).json({ error: '삭제 실패' }); }
+});
+
+// ── 관계(사용자 수동 연결) ──
+app.get('/api/relations', (req, res) => {
+  try { res.json(listRelations(db)); } catch (e) { res.status(500).json({ error: '관계 조회 실패' }); }
+});
+app.post('/api/relation', (req, res) => {
+  const { from_id, to_id, type } = req.body || {};
+  try { res.json({ ok: true, ...addRelation(db, { from_id, to_id, type }) }); }
+  catch (e) { res.status(400).json({ error: e.message || '관계 추가 실패' }); }
+});
+app.delete('/api/relation/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  try { const n = deleteRelation(db, id); if (!n) return res.status(404).json({ error: '없는 관계' }); res.json({ ok: true, deleted: n }); }
+  catch (e) { res.status(500).json({ error: '관계 삭제 실패' }); }
 });
 // 그래프 라이브러리는 로컬에서 제공(100% 로컬 — CDN 미사용)
 app.use('/vendor/force-graph', express.static(join(HERE, '..', 'node_modules', 'force-graph', 'dist')));

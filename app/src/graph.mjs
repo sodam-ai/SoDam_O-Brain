@@ -36,10 +36,25 @@ export function buildGraph(db, { neighbors = 2 } = {}) {
     edgeMode = 'type';
   }
 
+  // 사용자가 만든 '진짜 관계'를 유형선으로 추가 — 같은 쌍이면 유사도선을 대체(자동추론 X)
+  let relations = [];
+  try { relations = db.prepare('SELECT from_id, to_id, type FROM relation').all(); } catch {}
+  const pairKey = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+  const relPairs = new Set(relations.map(r => pairKey(r.from_id, r.to_id)));
+  const nodeIds = new Set(nodes.map(n => n.id));
+  // 유사도선: 관계가 이미 있는 쌍은 빼고, 나머지는 rel:null(흐린 배경선)로 태그
+  const merged = links
+    .filter(l => !relPairs.has(pairKey(l.source, l.target)))
+    .map(l => ({ ...l, rel: null }));
+  for (const r of relations) {
+    if (!nodeIds.has(r.from_id) || !nodeIds.has(r.to_id)) continue; // 고아 관계 무시
+    merged.push({ source: r.from_id, target: r.to_id, rel: r.type, directed: true });
+  }
+
   // 노드 크기 = 중요도 + 연결수(허브일수록 큼) — PRD §8
   const deg = {};
-  for (const l of links) { deg[l.source] = (deg[l.source] || 0) + 1; deg[l.target] = (deg[l.target] || 0) + 1; }
+  for (const l of merged) { deg[l.source] = (deg[l.source] || 0) + 1; deg[l.target] = (deg[l.target] || 0) + 1; }
   for (const n of nodes) n.val = (n.val || 1) + (deg[n.id] || 0) * 0.6;
 
-  return { nodes, links, edgeMode };
+  return { nodes, links: merged, edgeMode, relCount: relations.length };
 }

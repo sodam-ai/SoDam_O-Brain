@@ -3,91 +3,109 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <title>O-Brain · 기억 그래프</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234D7CFE'/><text x='16' y='23' font-size='19' fill='white' text-anchor='middle' font-family='sans-serif' font-weight='bold'>O</text></svg>" />
 <style>
-  html, body { margin: 0; height: 100%; background: #0E1116; color: #E6EAF2; font: 13px system-ui, sans-serif; overflow: hidden; }
-  header { position: fixed; top: 0; left: 0; right: 0; height: 46px; display: flex; align-items: center; gap: 10px;
-    padding: 0 16px; border-bottom: 1px solid #232a33; background: #0E1116; z-index: 10; }
-  header b { font-weight: 600; }
-  button { background: #161A21; border: 1px solid #232a33; color: #E6EAF2; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
-  button.on { background: #2563EB; border-color: #2563EB; }
-  #counts { color: #99A2B0; font-size: 12px; }
-  .legend { margin-left: auto; display: flex; gap: 12px; font-size: 11px; color: #99A2B0; }
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-  #graph { position: absolute; inset: 46px 0 0 0; }
-  #empty { position: absolute; inset: 46px 0 0 0; display: none; align-items: center; justify-content: center; color: #99A2B0; }
+  :root { --bg:#0B0D11; --surface:#14171D; --border:#222834; --border2:#2C3340; --text:#E7EBF2; --muted:#8B93A3; --accent:#4D7CFE; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden;
+    font:13px -apple-system,'Segoe UI',system-ui,'Malgun Gothic',sans-serif; -webkit-font-smoothing:antialiased; }
+  header { position:fixed; top:0; left:0; right:0; height:50px; display:flex; align-items:center; gap:10px;
+    padding:0 18px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#0E1116,#0B0D11); z-index:10; }
+  .logo { width:24px; height:24px; border-radius:7px; background:linear-gradient(135deg,#4D7CFE,#7B5BFF 60%,#2DBE9E);
+    display:grid; place-items:center; color:#fff; font-weight:800; font-size:13px; box-shadow:0 0 0 1px rgba(255,255,255,.08); }
+  b { font-weight:700; }
+  .seg { display:flex; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:3px; }
+  .seg button { background:none; border:none; color:var(--muted); border-radius:6px; padding:5px 12px; cursor:pointer; font-size:12.5px; font-weight:500; transition:all .16s; }
+  .seg button:hover { color:var(--text); }
+  .seg button.on { background:var(--accent); color:#fff; }
+  #counts { color:var(--muted); font-size:12px; }
+  .legend { margin-left:auto; display:flex; flex-wrap:wrap; gap:6px 13px; justify-content:flex-end; font-size:11px; color:var(--muted); }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  #graph { position:absolute; inset:50px 0 0 0; }
+  #empty { position:absolute; inset:50px 0 0 0; display:none; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:var(--muted); text-align:center; padding:20px; }
+  @media (max-width:640px){ .legend{display:none;} #b3d{display:none;} }
 </style>
 </head>
 <body>
   <header>
-    <b>O-Brain</b> 기억 그래프
-    <button id="b2d" class="on" onclick="setMode('2d')">2D</button>
-    <button id="b3d" onclick="setMode('3d')">3D</button>
+    <div class="logo">O</div><b>O-Brain</b><span style="color:var(--muted)">기억 그래프</span>
+    <div class="seg"><button id="b2d" class="on" data-mode="2d">2D</button><button id="b3d" data-mode="3d">3D</button></div>
     <span id="counts">불러오는 중…</span>
     <span class="legend">
-      <span><i class="dot" style="background:#4D8DFF"></i>결정</span>
-      <span><i class="dot" style="background:#EF4444"></i>제약</span>
-      <span><i class="dot" style="background:#A855F7"></i>선호</span>
-      <span><i class="dot" style="background:#F59E0B"></i>패턴</span>
-      <span><i class="dot" style="background:#14B8A6"></i>지식</span>
+      <span><i class="dot" style="background:#5B8DEF"></i>결정</span>
+      <span><i class="dot" style="background:#F2555A"></i>제약</span>
+      <span><i class="dot" style="background:#B57BEE"></i>선호</span>
+      <span><i class="dot" style="background:#E8A33D"></i>패턴</span>
+      <span><i class="dot" style="background:#2DBE9E"></i>지식</span>
     </span>
   </header>
   <div id="graph"></div>
-  <div id="empty">아직 기억이 없어요. 대화하고 세션을 끝내면 여기에 점으로 쌓입니다.</div>
+  <div id="empty"><b>아직 기억이 없어요</b><span>대화하고 세션을 끝내면 여기에 점으로 쌓입니다.</span></div>
 
   <script src="/vendor/force-graph/force-graph.min.js"></script>
   <script src="/vendor/3d-force-graph/3d-force-graph.min.js"></script>
   <script>
-    const COLORS = { '결정':'#4D8DFF', '제약':'#EF4444', '선호':'#A855F7', '패턴':'#F59E0B', '지식':'#14B8A6' };
-    const color = t => COLORS[t] || '#99A2B0';
-    const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-    let data = { nodes: [], links: [], edgeMode: '' };
-    let mode = '2d';
+    "use strict";
+    const COLORS={'결정':'#5B8DEF','제약':'#F2555A','선호':'#B57BEE','패턴':'#E8A33D','지식':'#2DBE9E'};
+    const color=t=>COLORS[t]||'#8B93A3';
+    const REL={SUPERSEDES:'#5B8DEF',SUPPORTS:'#2DBE9E',INFLUENCES:'#8B93A3',CONTRADICTS:'#F2555A'};
+    const relColor=r=>REL[r]||'rgba(120,135,160,.20)';
+    const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const hexA=(hex,a)=>{const h=hex.replace('#','');const n=parseInt(h,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+    const lighten=(hex,amt)=>{const h=hex.replace('#','');const n=parseInt(h,16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;r=Math.round(r+(255-r)*amt);g=Math.round(g+(255-g)*amt);b=Math.round(b+(255-b)*amt);return `rgb(${r},${g},${b})`;};
+    const lid=e=>(typeof e==='object'&&e)?e.id:e;
+    let data={nodes:[],links:[],edgeMode:''}, mode='2d', G=null;
+    let hN=new Set(), hL=new Set();
+    const nodeR=n=>3.5*Math.sqrt(Math.max(1,n.val||1));
 
-    function render() {
-      const el = document.getElementById('graph');
-      el.innerHTML = '';
-      document.getElementById('empty').style.display = data.nodes.length ? 'none' : 'flex';
-      document.getElementById('counts').textContent =
-        `노드 ${data.nodes.length} · 연결 ${data.links.length}` +
-        (data.edgeMode === 'similarity' ? ' (의미 유사도 기반)' : data.edgeMode === 'type' ? ' (유형 기반)' : '');
-      if (!data.nodes.length) return;
-
-      let G;
-      const base = (fg) => fg
-        .graphData(data)
-        .backgroundColor('#0E1116')
-        .nodeColor(n => color(n.type))
-        .nodeVal(n => 1 + n.val * 0.4)
-        .nodeLabel(n => `[${esc(n.type)}] ${esc(n.name)}`);
-      if (mode === '3d') {
-        G = base(ForceGraph3D()(el)).linkColor(() => '#3b4654').linkOpacity(0.6).linkWidth(1);
+    function render(){
+      const el=document.getElementById('graph'); el.innerHTML=''; hN.clear(); hL.clear();
+      document.getElementById('empty').style.display=data.nodes.length?'none':'flex';
+      document.getElementById('counts').textContent=`노드 ${data.nodes.length} · 연결 ${data.links.length}`+(data.relCount?` · 관계 ${data.relCount}`:'');
+      if(!data.nodes.length) return;
+      const dim=n=>hN.size&&!hN.has(lid(n));
+      const base=fg=>fg.graphData(JSON.parse(JSON.stringify(data))).backgroundColor('#0B0D11')
+        .nodeRelSize(3.5).nodeVal(n=>Math.max(1,n.val||1)).linkCurvature(0.14)
+        .nodeLabel(n=>`<div style="background:#11151c;border:1px solid #2C3340;padding:6px 9px;border-radius:8px;color:#E7EBF2;font:12px system-ui;max-width:260px">${esc(n.type)} · ${esc(n.name)}</div>`);
+      if(mode==='3d'){
+        G=base(ForceGraph3D()(el)).nodeColor(n=>color(n.type)).nodeOpacity(.92)
+          .linkColor(l=>l.rel?relColor(l.rel):'rgba(120,135,160,.3)').linkWidth(l=>l.rel?1:.5).linkOpacity(.62)
+          .linkDirectionalArrowLength(l=>l.rel?3:0).linkDirectionalArrowRelPos(1)
+          .linkDirectionalParticles(2).linkDirectionalParticleWidth(1.4).linkDirectionalParticleSpeed(.006);
       } else {
-        G = base(ForceGraph()(el))
-          .nodeRelSize(4)
-          .linkColor(() => '#3a4656')
-          .linkWidth(1.2)
-          .nodeCanvasObjectMode(() => 'after')
-          .nodeCanvasObject((n, ctx, scale) => {
-            const r = 4 * Math.sqrt(1 + n.val * 0.4);
-            ctx.fillStyle = '#C7CEDA';
-            ctx.font = `${Math.max(2.5, Math.min(4.5, 11 / scale))}px system-ui`;
-            ctx.textAlign = 'center';
-            ctx.fillText(String(n.name).slice(0, 14), n.x, n.y + r + 5);
-          });
+        G=base(ForceGraph()(el)).autoPauseRedraw(false)
+          .linkColor(l=>hL.has(l)?'rgba(150,180,255,.95)':(hN.size&&!hL.has(l)?'rgba(110,122,145,.08)':relColor(l.rel)))
+          .linkWidth(l=>hL.has(l)?2.6:(l.rel?1.8:.7))
+          .linkDirectionalArrowLength(l=>l.rel?3.4:0).linkDirectionalArrowRelPos(1)
+          .linkDirectionalParticles(l=>hL.has(l)?3:0).linkDirectionalParticleWidth(2).linkDirectionalParticleColor(()=>'#9db4ff')
+          .nodeCanvasObjectMode(()=>'replace')
+          .nodeCanvasObject((n,ctx,scale)=>{
+            if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) return; // 초기 프레임 좌표 미정 가드
+            const r=nodeR(n), c=color(n.type), faded=dim(n), hot=hN.has(n.id);
+            if(!faded){ ctx.beginPath(); ctx.arc(n.x,n.y,r+(hot?6:3),0,2*Math.PI); ctx.fillStyle=hexA(c,hot?.26:.10); ctx.fill(); }
+            const g=ctx.createRadialGradient(n.x-r*.35,n.y-r*.35,r*.1,n.x,n.y,r);
+            g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
+            ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI); ctx.fillStyle=g; ctx.fill();
+            ctx.lineWidth=.8; ctx.strokeStyle=faded?'rgba(255,255,255,.05)':'rgba(255,255,255,.28)'; ctx.stroke();
+            if(scale>1.05||hot){ ctx.fillStyle=faded?'rgba(231,235,242,.32)':'#D7DEEA';
+              ctx.font=`${Math.max(3.2,11/scale)}px -apple-system,system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
+              ctx.fillText(String(n.name).slice(0,18), n.x, n.y+r+3/scale+1.5); }
+          })
+          .onNodeHover(node=>{ hN.clear(); hL.clear();
+            if(node){ hN.add(node.id); for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
+              if(s===node.id||t===node.id){ hL.add(l); hN.add(s); hN.add(t); } } }
+            el.style.cursor=node?'pointer':''; })
+          .onBackgroundClick(()=>{ hN.clear(); hL.clear(); });
       }
-      // 노드를 서로 펼치고(겹침 방지) 화면에 알맞게 맞춤
-      try { G.d3Force('charge').strength(-280); G.d3Force('link').distance(85); } catch (e) {}
-      setTimeout(() => { try { G.zoomToFit(700, 130); } catch (e) {} }, 1000);
+      if(mode==='2d' && typeof G.linkLineDash==='function'){ G.linkLineDash(l=>l.rel==='CONTRADICTS'?[4,3]:null); }
+      try{ G.d3Force('charge').strength(-320); G.d3Force('link').distance(70); }catch(e){}
+      setTimeout(()=>{ try{ G.zoomToFit(800,120); }catch(e){} }, 600);
     }
-    function setMode(m) {
-      mode = m;
-      document.getElementById('b2d').classList.toggle('on', m === '2d');
-      document.getElementById('b3d').classList.toggle('on', m === '3d');
-      render();
-    }
-    fetch('/api/graph').then(r => r.json()).then(d => { data = d; render(); })
-      .catch(() => { document.getElementById('counts').textContent = '그래프를 불러오지 못했어요(서버 확인).'; });
+    function setMode(m){ mode=m; document.getElementById('b2d').classList.toggle('on',m==='2d'); document.getElementById('b3d').classList.toggle('on',m==='3d'); render(); }
+    document.querySelectorAll('.seg [data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+    fetch('/api/graph').then(r=>r.json()).then(d=>{ data=d; render(); })
+      .catch(()=>{ document.getElementById('counts').textContent='그래프를 불러오지 못했어요(서버 확인).'; });
   </script>
 </body>
 </html>
