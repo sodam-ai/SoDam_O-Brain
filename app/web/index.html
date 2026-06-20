@@ -102,11 +102,11 @@
     const fmt = s => (s || '').slice(0, 10);
     function renderList(mems) {
       document.getElementById('rows').innerHTML = mems.length ? mems.map(m =>
-        `<tr onclick='openDetail(${JSON.stringify(m).replace(/'/g, "&#39;")})'>
-          <td><span class="badge" style="background:${color(m.type)}">${m.type || ''}</span></td>
+        `<tr data-id="${m.id}">
+          <td><span class="badge" style="background:${color(m.type)}">${esc(m.type)}</span></td>
           <td>${esc(m.content)}</td>
-          <td class="num">${'★'.repeat(m.importance || 0)}</td>
-          <td class="num">${fmt(m.created_at)}</td></tr>`).join('')
+          <td class="num">${'★'.repeat(Math.max(0, Math.min(5, m.importance | 0)))}</td>
+          <td class="num">${esc(fmt(m.created_at))}</td></tr>`).join('')
         : `<tr><td colspan="4" class="empty">기억이 없어요. 대화하고 세션을 끝내면 자동으로 쌓입니다.</td></tr>`;
     }
     function renderTimeline(mems) {
@@ -114,9 +114,9 @@
       let html = '', lastDay = '';
       for (const m of sorted) {
         const day = fmt(m.created_at);
-        if (day !== lastDay) { html += `<div class="day">${day || '날짜 미상'}</div>`; lastDay = day; }
-        html += `<div class="item" onclick='openDetail(${JSON.stringify(m).replace(/'/g, "&#39;")})'>
-          <span class="badge" style="background:${color(m.type)}">${m.type || ''}</span>
+        if (day !== lastDay) { html += `<div class="day">${esc(day) || '날짜 미상'}</div>`; lastDay = day; }
+        html += `<div class="item" data-id="${m.id}">
+          <span class="badge" style="background:${color(m.type)}">${esc(m.type)}</span>
           <span>${esc(m.content)}</span></div>`;
       }
       document.getElementById('tl').innerHTML = sorted.length ? html : '<div class="empty">아직 기억이 없어요.</div>';
@@ -151,6 +151,14 @@
       }, 250);
     });
 
+    // 행/타임라인 클릭 → 상세 (이벤트 위임 — 신뢰불가 내용을 HTML/속성에 주입하지 않음)
+    document.querySelector('main').addEventListener('click', e => {
+      const el = e.target.closest('[data-id]');
+      if (!el) return;
+      const m = all.find(x => String(x.id) === el.dataset.id);
+      if (m) openDetail(m);
+    });
+
     // 그래프(지연 초기화 — 탭 열릴 때 1회)
     let gInited = false, gMode = '2d', gData = null;
     async function initGraph() {
@@ -164,7 +172,7 @@
       const el = document.getElementById('graphHost'); el.innerHTML = '';
       if (!gData || !gData.nodes.length) { el.innerHTML = '<div class="empty">기억이 없어요.</div>'; return; }
       const base = fg => fg.graphData(gData).backgroundColor('#0E1116')
-        .nodeColor(n => color(n.type)).nodeVal(n => 1 + n.val * 0.4).nodeLabel(n => `[${n.type}] ${n.name}`);
+        .nodeColor(n => color(n.type)).nodeVal(n => 1 + n.val * 0.4).nodeLabel(n => `[${esc(n.type)}] ${esc(n.name)}`);
       let G;
       if (gMode === '3d') {
         G = base(ForceGraph3D()(el)).linkColor(() => '#3b4654').linkOpacity(0.6);

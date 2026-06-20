@@ -40,6 +40,7 @@
   <script>
     const COLORS = { '결정':'#4D8DFF', '제약':'#EF4444', '선호':'#A855F7', '패턴':'#F59E0B', '지식':'#14B8A6' };
     const color = t => COLORS[t] || '#99A2B0';
+    const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     let data = { nodes: [], links: [], edgeMode: '' };
     let mode = '2d';
 
@@ -58,7 +59,7 @@
         .backgroundColor('#0E1116')
         .nodeColor(n => color(n.type))
         .nodeVal(n => 1 + n.val * 0.4)
-        .nodeLabel(n => `[${n.type}] ${n.name}`);
+        .nodeLabel(n => `[${esc(n.type)}] ${esc(n.name)}`);
       if (mode === '3d') {
         G = base(ForceGraph3D()(el)).linkColor(() => '#3b4654').linkOpacity(0.6).linkWidth(1);
       } else {
