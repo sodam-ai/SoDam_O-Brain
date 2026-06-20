@@ -12,6 +12,8 @@
 - **Auto-save**: when a Claude Code session ends, it automatically records **decisions, promises, constraints** (e.g., "use port 7740 for this project") — no manual work.
 - **Auto-redaction (security)**: passwords / API keys are **automatically masked** before saving (`[REDACTED]`).
 - **See it as a graph**: browse memories as **dots & lines** (2D/3D graph), a **list**, and a **timeline**.
+- **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph.
+- **Comfortable browsing**: search, type filters, sort, **light/dark theme**, export (JSON/Markdown), delete.
 - **100% local**: everything stays on your PC. Nothing leaves over the internet.
 
 ---
@@ -53,13 +55,18 @@ In the Claude Code input box:
 3. Verify: `/o-brain:status` → the **memory count grows** and your sentence appears.
 
 ## 5. See the dashboard
-1. In the input box: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app; npm start`
-   *(or just tell Claude "open the screen")*
-2. In your browser address bar:
-   ```
-   http://127.0.0.1:7740/
-   ```
-3. Switch tabs: **List · Graph · Timeline**, search at the top, click an item for details.
+**Easiest way** — in the Claude Code input box:
+```
+/o-brain:open
+```
+→ Starts the server if it's off and opens the dashboard in your browser.
+*(Or tell Claude "open the screen"; manually: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app; npm start` then open `http://127.0.0.1:7740/`.)*
+
+What you can do on screen:
+- Switch **List · Graph · Timeline**, search at the top (press `/` to jump there), click an item for details.
+- In the detail panel: **copy · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict).
+- Top-right **light/dark theme**, **export** (JSON/Markdown), type **filter · sort**.
+- Hover a graph node to highlight its connections; search highlights matching nodes.
 
 ## 6. Backup & restore (protect your memories)
 - **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
@@ -76,7 +83,8 @@ In the Claude Code input box:
 | Status | Claude Code | `/o-brain:status` |
 | Self-test | Claude Code | `/o-brain:selftest` |
 | Backup | Claude Code | `/o-brain:backup` |
-| Open screen | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
+| Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
+| Open screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
 | Screen URL | Browser | `http://127.0.0.1:7740/` |
 
 ## 8. File & data locations (absolute paths)
@@ -112,7 +120,7 @@ In the Claude Code input box:
 ## 12. Honest limitations (current v0.1)
 - **Read-back conflict**: other memory tools on the same PC (memory-bank plugin · persona MEMORY.md) may mix in old/conflicting facts, so O-Brain's latest memory can get buried. (improvement planned)
 - **Rule-based extraction**: catches clear decision sentences well, but may miss subtle context. (AI/Haiku mode is next)
-- **Graph polish**: node size / spacing can be refined.
+- **Manual memory relations**: you link them by hand for now. Automatic AI suggestions are next (kept manual on purpose, to avoid misleading auto-relations).
 
 ---
 
