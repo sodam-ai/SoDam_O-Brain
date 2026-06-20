@@ -2,6 +2,7 @@
 // 스파이크에서 검증된 패턴을 본체로 승격(rowid=BigInt, 임베딩=float32 blob).
 import Database from 'better-sqlite3';
 import * as sqliteVec from 'sqlite-vec';
+import { classify } from './classify.mjs';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -40,8 +41,17 @@ export function openDb() {
       UNIQUE(from_id, to_id, type)
     );
   `);
-  // 마이그레이션(비파괴) — 기존 DB에 project 컬럼 없으면 추가(기존 행은 NULL=전역)
+  // 마이그레이션(비파괴) — 기존 DB에 컬럼 없으면 추가(기존 행은 NULL)
   const cols = db.prepare('PRAGMA table_info(memory)').all().map(c => c.name);
   if (!cols.includes('project')) db.exec('ALTER TABLE memory ADD COLUMN project TEXT');
+  if (!cols.includes('category')) db.exec('ALTER TABLE memory ADD COLUMN category TEXT'); // 분류(온톨로지 v1)
+  // 분류 백필 — 비어있는 것만(멱등). 기존 기억에도 규칙 기반 주제 부여.
+  try {
+    const need = db.prepare(`SELECT id, content FROM memory WHERE category IS NULL OR category = ''`).all();
+    if (need.length) {
+      const upd = db.prepare('UPDATE memory SET category = ? WHERE id = ?');
+      db.transaction(() => { for (const m of need) upd.run(classify(m.content), m.id); })();
+    }
+  } catch {}
   return db;
 }

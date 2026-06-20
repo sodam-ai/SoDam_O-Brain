@@ -267,14 +267,11 @@
       <div class="gpanel gbar">
         <button class="gbtn on" id="g2d" data-mode="2d">2D</button>
         <button class="gbtn" id="g3d" data-mode="3d">3D</button>
+        <button class="gbtn" id="gColor" title="노드 색: 유형 ↔ 분류 전환">분류색</button>
         <span class="gcount" id="gcount"></span>
       </div>
       <div class="gpanel legend">
-        <span><i class="dot" style="background:#5B8DEF"></i>결정</span>
-        <span><i class="dot" style="background:#F2555A"></i>제약</span>
-        <span><i class="dot" style="background:#B57BEE"></i>선호</span>
-        <span><i class="dot" style="background:#E8A33D"></i>패턴</span>
-        <span><i class="dot" style="background:#2DBE9E"></i>지식</span>
+        <span id="nodeLegend"></span>
         <span class="eleg">
           <span><i style="border-color:#5B8DEF"></i>번복</span>
           <span><i style="border-color:#2DBE9E"></i>뒷받침</span>
@@ -312,6 +309,18 @@
   <script>
     "use strict";
     const COLORS = { '결정':'#5B8DEF', '제약':'#F2555A', '선호':'#B57BEE', '패턴':'#E8A33D', '지식':'#2DBE9E' };
+    const CATCOLORS = { '보안':'#F2555A','데이터/DB':'#2DBE9E','배포/인프라':'#5B8DEF','AI/모델':'#B57BEE','UI/UX':'#E8A33D','설정/환경':'#48C7E0','규칙/문서':'#9AA4B2','기타':'#6B7280' };
+    let colorBy = 'type'; // 그래프 노드 색: 'type'(유형) ↔ 'category'(분류)
+    const nodeColorOf = n => colorBy==='category' ? (CATCOLORS[n.category] || '#6B7280') : color(n.type);
+    function renderNodeLegend(){
+      const host=document.getElementById('nodeLegend'); if(!host) return;
+      if(colorBy==='category'){
+        const present=[...new Set(((gData&&gData.nodes)?gData.nodes:[]).map(n=>n.category||'기타'))];
+        host.innerHTML=present.map(c=>`<span><i class="dot" style="background:${CATCOLORS[c]||'#6B7280'}"></i>${esc(c)}</span>`).join('');
+      } else {
+        host.innerHTML=TYPES.map(t=>`<span><i class="dot" style="background:${color(t)}"></i>${esc(t)}</span>`).join('');
+      }
+    }
     const TYPES = ['결정','제약','선호','패턴','지식'];
     const TYPE_DESC = { '결정':'하기로 정한 것', '제약':'하지 말 것·지켜야 할 규칙', '선호':'더 좋아하는 방식', '패턴':'반복되는 방식·습관', '지식':'알아둔 사실·정보' };
     const color = t => COLORS[t] || '#8B93A3';
@@ -425,7 +434,9 @@
     function openDetail(m){ curDetail=m; lastFocused=document.activeElement;
       document.getElementById('d-title').textContent = `${m.type} 기억`;
       const meta=document.getElementById('d-meta');
-      meta.innerHTML=[pill(m.type), `<span class="tag">중요도 <b style="color:var(--star)">${'★'.repeat(Math.max(0,Math.min(5,m.importance|0)))||'-'}</b></span>`,
+      meta.innerHTML=[pill(m.type),
+        m.category?`<span class="tag"><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${CATCOLORS[m.category]||'#6B7280'};margin-right:5px"></i>${esc(m.category)}</span>`:'',
+        `<span class="tag">중요도 <b style="color:var(--star)">${'★'.repeat(Math.max(0,Math.min(5,m.importance|0)))||'-'}</b></span>`,
         `<span class="tag">출처 ${esc(m.source||'-')}</span>`,
         m.confidence!=null?`<span class="tag">신뢰도 ${Math.round(m.confidence*100)}%</span>`:'',
         `<span class="dtime">${esc(absTime(m.created_at))}</span>`].filter(Boolean).join('');
@@ -517,6 +528,9 @@
     document.querySelectorAll('.segmented [data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
     document.getElementById('g2d').addEventListener('click',()=>setGraphMode('2d'));
     document.getElementById('g3d').addEventListener('click',()=>setGraphMode('3d'));
+    document.getElementById('gColor').addEventListener('click',()=>{ colorBy = colorBy==='type'?'category':'type';
+      const b=document.getElementById('gColor'); b.classList.toggle('on', colorBy==='category'); b.textContent = colorBy==='category'?'유형색':'분류색';
+      drawGraph(); });
     document.getElementById('d-close').addEventListener('click',closeDetail);
     document.getElementById('scrim').addEventListener('click',closeDetail);
     document.getElementById('d-copy').addEventListener('click',copyDetail);
@@ -580,6 +594,7 @@
 
     function drawGraph(){
       const el=document.getElementById('graphHost'); el.innerHTML=''; highlightNodes.clear(); highlightLinks.clear();
+      renderNodeLegend();
       const th=gTheme(); el.style.background=th.host;          // 그래프 배경도 테마 따라감
       const data=graphSet();
       document.getElementById('gcount').textContent = data.nodes.length ? `노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}` : '';
@@ -596,7 +611,7 @@
         .onNodeClick(n=>openDetail(all.find(m=>m.id===n.id)||{type:n.type,importance:Math.round(n.val||1),content:n.name,source:'-',created_at:null}));
 
       if(gMode==='3d'){
-        const nc3=n=>dim(n)?th.dim3d:color(n.type);
+        const nc3=n=>dim(n)?th.dim3d:nodeColorOf(n);
         const lw3=l=>highlightLinks.has(l)?2.4:(l.rel?1:.5);
         const lp3=l=>highlightLinks.has(l)?3:0;
         G=base(ForceGraph3D()(el)).nodeColor(nc3).nodeOpacity(.95).nodeResolution(18)
@@ -617,7 +632,7 @@
           .nodeCanvasObjectMode(()=>'replace')
           .nodeCanvasObject((n,ctx,scale)=>{
             if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) return; // 초기 프레임 좌표 미정 가드
-            const r=nodeR(n), c=color(n.type), faded=dim(n), hot=highlightNodes.has(n.id);
+            const r=nodeR(n), c=nodeColorOf(n), faded=dim(n), hot=highlightNodes.has(n.id);
             if(!faded){ ctx.beginPath(); ctx.arc(n.x,n.y,r+(hot?6:3),0,2*Math.PI); ctx.fillStyle=hexA(c,hot?.26:.10); ctx.fill(); }
             const g=ctx.createRadialGradient(n.x-r*.35,n.y-r*.35,r*.1,n.x,n.y,r);
             g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
