@@ -13,6 +13,7 @@
 - **Auto-redaction (security)**: passwords / API keys are **automatically masked** before saving (`[REDACTED]`).
 - **See it as a graph**: browse memories as **dots & lines** (2D/3D graph), a **list**, and a **timeline**.
 - **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph.
+- **Auto-categorize by topic**: memories are auto-grouped into topics (security, UI, deploy, …); toggle **"분류색"(category colors)** in the graph to color nodes by topic.
 - **Comfortable browsing**: search, type filters, sort, **light/dark theme**, export (JSON/Markdown), delete.
 - **100% local**: everything stays on your PC. Nothing leaves over the internet.
 
@@ -66,7 +67,7 @@ What you can do on screen:
 - Switch **List · Graph · Timeline**, search at the top (press `/` to jump there), click an item for details.
 - In the detail panel: **copy · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict).
 - Top-right **light/dark theme**, **export** (JSON/Markdown), type **filter · sort**.
-- Hover a graph node to highlight its connections; search highlights matching nodes.
+- Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
 
 ## 6. Backup & restore (protect your memories)
 - **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
