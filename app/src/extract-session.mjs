@@ -40,7 +40,7 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
   const db = openDb();
   const saved = [];
   for (const m of memories) {
-    const r = await addMemory(db, m);
+    const r = await addMemory(db, { ...m, project: projectPath || null });
     saved.push({ id: r.id, type: m.type, content: m.content });
   }
   db.close();

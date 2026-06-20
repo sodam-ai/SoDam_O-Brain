@@ -25,10 +25,14 @@ export function openDb() {
       importance INTEGER DEFAULT 3,
       confidence REAL DEFAULT 0.6,
       source TEXT DEFAULT 'ai',
+      project TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(content);
     CREATE VIRTUAL TABLE IF NOT EXISTS memory_vec USING vec0(embedding float[${DIM}]);
   `);
+  // 마이그레이션(비파괴) — 기존 DB에 project 컬럼 없으면 추가(기존 행은 NULL=전역)
+  const cols = db.prepare('PRAGMA table_info(memory)').all().map(c => c.name);
+  if (!cols.includes('project')) db.exec('ALTER TABLE memory ADD COLUMN project TEXT');
   return db;
 }

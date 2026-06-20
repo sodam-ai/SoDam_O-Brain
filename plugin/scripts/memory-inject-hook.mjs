@@ -7,8 +7,10 @@ process.stdin.on('data', (d) => (input += d));
 process.stdin.on('end', async () => {
   const out = { continue: true };
   try {
+    let project = '';
+    try { project = JSON.parse(input || '{}').cwd || ''; } catch {}
     const { buildInjection } = await import(appUrl('inject.mjs'));
-    const ctx = await buildInjection({ max: 8 });
+    const ctx = await buildInjection({ project, max: 8 });
     if (ctx) out.hookSpecificOutput = { hookEventName: 'SessionStart', additionalContext: ctx };
   } catch (e) {
     // 조용히 폴백(주입 실패가 세션을 막으면 안 됨). 로그는 stderr.

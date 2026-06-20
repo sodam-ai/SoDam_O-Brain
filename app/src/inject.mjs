@@ -3,12 +3,19 @@ import { openDb } from './db.mjs';
 import { listMemories } from './store.mjs';
 import { search } from './search.mjs';
 
-export async function buildInjection({ query = '', max = 8 } = {}) {
+export async function buildInjection({ query = '', project = '', max = 8 } = {}) {
   const db = openDb();
   let mems;
   try {
-    // query 없으면 listMemories(임베딩 불필요·빠름) — 세션 시작 지연 최소화.
-    mems = query ? await search(db, query, max) : listMemories(db, max);
+    if (query) mems = await search(db, query, max);
+    else if (project) {
+      // 현재 프로젝트 기억 + 전역(project NULL)만 — 다른 프로젝트 기억 섞임 방지
+      mems = db.prepare(
+        `SELECT id, content, type, importance FROM memory
+         WHERE project = ? OR project IS NULL
+         ORDER BY importance DESC, id DESC LIMIT ?`
+      ).all(project, max);
+    } else mems = listMemories(db, max);
   } finally {
     db.close();
   }
