@@ -20,9 +20,16 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
 
 export function listMemories(db, limit = 50) {
   return db.prepare(
-    `SELECT id, content, type, importance, confidence, source, category, created_at
+    `SELECT id, content, type, importance, confidence, source, category, access_count, created_at
      FROM memory ORDER BY id DESC LIMIT ?`
   ).all(limit);
+}
+
+// 조회 1회 기록 — 자주 본 기억(글로우) 신호. PRD 02 access_count·§8.1.
+export function touchMemory(db, id) {
+  return db.prepare(
+    `UPDATE memory SET access_count = COALESCE(access_count,0)+1, last_accessed_at = datetime('now') WHERE id = ?`
+  ).run(Number(id)).changes;
 }
 
 // 기억 1건 삭제 — 본체+FTS+벡터+관계를 원자적으로 제거(사용자 요청 삭제. 서버시작 백업이 안전망).

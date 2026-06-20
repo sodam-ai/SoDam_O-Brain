@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { listMemories, deleteMemory, addRelation, listRelations, deleteRelation } from './store.mjs';
+import { listMemories, deleteMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -50,6 +50,14 @@ app.delete('/api/memory/:id', (req, res) => {
     if (!deleted) return res.status(404).json({ error: '없는 기억' });
     res.json({ ok: true, deleted });
   } catch (e) { res.status(500).json({ error: '삭제 실패' }); }
+});
+
+// 조회 기록(자주 본 기억 글로우) — 상세 열람 시 1회 증가.
+app.post('/api/memory/:id/touch', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  try { res.json({ ok: true, touched: touchMemory(db, id) }); }
+  catch (e) { res.status(500).json({ error: '기록 실패' }); }
 });
 
 // ── 관계(사용자 수동 연결) ──

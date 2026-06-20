@@ -83,7 +83,7 @@
           .nodeCanvasObject((n,ctx,scale)=>{
             if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) return; // 초기 프레임 좌표 미정 가드
             const r=nodeR(n), c=color(n.type), faded=dim(n), hot=hN.has(n.id);
-            if(!faded){ ctx.beginPath(); ctx.arc(n.x,n.y,r+(hot?6:3),0,2*Math.PI); ctx.fillStyle=hexA(c,hot?.26:.10); ctx.fill(); }
+            if(!faded){ const a=n.access||0; const gr=r+(hot?6:(3+Math.min(a,5)*0.8)); const gl=hot?.26:Math.min(.10+a*0.04,.30); ctx.beginPath(); ctx.arc(n.x,n.y,gr,0,2*Math.PI); ctx.fillStyle=hexA(c,gl); ctx.fill(); } // 글로우=조회수
             const g=ctx.createRadialGradient(n.x-r*.35,n.y-r*.35,r*.1,n.x,n.y,r);
             g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
             ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI); ctx.fillStyle=g; ctx.fill();

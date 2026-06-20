@@ -268,6 +268,7 @@
         <button class="gbtn on" id="g2d" data-mode="2d">2D</button>
         <button class="gbtn" id="g3d" data-mode="3d">3D</button>
         <button class="gbtn" id="gColor" title="노드 색: 유형 ↔ 분류 전환">분류색</button>
+        <button class="gbtn" id="gAll" style="display:none" title="전체 기억 그래프로 돌아가기">전체 보기</button>
         <span class="gcount" id="gcount"></span>
       </div>
       <div class="gpanel legend">
@@ -295,6 +296,7 @@
       <div class="dhead">
         <h3 id="d-title"></h3>
         <button class="iconbtn" id="d-copy" aria-label="내용 복사" title="내용 복사"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+        <button class="iconbtn" id="d-focus" aria-label="이 기억 중심으로 그래프 보기" title="이 기억 중심으로 그래프 보기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/></svg></button>
         <button class="iconbtn danger" id="d-del" aria-label="이 기억 삭제" title="이 기억 삭제"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
         <button class="iconbtn" id="d-close" aria-label="닫기" title="닫기 (Esc)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
@@ -335,6 +337,7 @@
       r=Math.round(r+(255-r)*amt); g=Math.round(g+(255-g)*amt); b=Math.round(b+(255-b)*amt); return `rgb(${r},${g},${b})`; }
 
     let all = [], searchResults = null, activeType = '', tab = 'graph', curQuery = '', sortMode = 'new';
+    let minImp = 0, period = 'all', localFocus = null; // 중요도/기간 필터 + 로컬(이웃) 포커스
 
     /* 날짜 */
     const pad = n => String(n).padStart(2,'0');
@@ -359,8 +362,13 @@
       if(sortMode==='imp') return (b.importance||0)-(a.importance||0) || (b.id-a.id);
       return (b.created_at||'').localeCompare(a.created_at||'') || (b.id-a.id);
     }
-    function currentSet(){ const s = searchResults !== null ? searchResults : all;
-      const f = activeType ? s.filter(m => m.type === activeType) : s.slice(); return f.sort(sortFn); }
+    function passesFilter(m){
+      if(activeType && m.type!==activeType) return false;
+      if(minImp && (m.importance||0) < minImp) return false;
+      if(period!=='all'){ const d=parseDate(m.created_at); if(!d) return false; if((Date.now()-d.getTime())/86400000 > Number(period)) return false; }
+      return true;
+    }
+    function currentSet(){ const s = searchResults !== null ? searchResults : all; return s.filter(passesFilter).sort(sortFn); }
     function renderLists(){ const s=currentSet(); renderList(s); renderTimeline(s); renderSubbar(); } // 목록/타임라인/서브바만
     function renderAll(){ renderLists(); if(tab==='graph') drawGraph(); }
 
@@ -399,10 +407,21 @@
         <option value="new"${sortMode==='new'?' selected':''}>최신순</option>
         <option value="old"${sortMode==='old'?' selected':''}>오래된순</option>
         <option value="imp"${sortMode==='imp'?' selected':''}>중요도순</option></select>`;
+      html+=`<select class="sortsel" id="impSel" aria-label="중요도 필터">
+        <option value="0"${minImp===0?' selected':''}>중요도 전체</option>
+        <option value="3"${minImp===3?' selected':''}>★3 이상</option>
+        <option value="4"${minImp===4?' selected':''}>★4 이상</option>
+        <option value="5"${minImp===5?' selected':''}>★5</option></select>`;
+      html+=`<select class="sortsel" id="perSel" aria-label="기간 필터">
+        <option value="all"${period==='all'?' selected':''}>기간 전체</option>
+        <option value="7"${period==='7'?' selected':''}>최근 7일</option>
+        <option value="30"${period==='30'?' selected':''}>최근 30일</option></select>`;
       const shown=currentSet().length;
       const info = searchResults!==null ? `검색 “${esc(curQuery)}” · ${shown}개` : `총 ${all.length}개의 기억`;
       const sb=document.getElementById('subbar'); sb.innerHTML = html + `<span class="countinfo">${info}</span>`;
       sb.querySelector('#sortSel').addEventListener('change', e=>{ sortMode=e.target.value; renderAll(); });
+      sb.querySelector('#impSel').addEventListener('change', e=>{ minImp=Number(e.target.value); renderAll(); });
+      sb.querySelector('#perSel').addEventListener('change', e=>{ period=e.target.value; renderAll(); });
     }
 
     /* 관계(사용자 수동 연결) */
@@ -439,9 +458,11 @@
         `<span class="tag">중요도 <b style="color:var(--star)">${'★'.repeat(Math.max(0,Math.min(5,m.importance|0)))||'-'}</b></span>`,
         `<span class="tag">출처 ${esc(m.source||'-')}</span>`,
         m.confidence!=null?`<span class="tag">신뢰도 ${Math.round(m.confidence*100)}%</span>`:'',
+        (m.access_count? `<span class="tag">조회 ${m.access_count}회</span>`:''),
         `<span class="dtime">${esc(absTime(m.created_at))}</span>`].filter(Boolean).join('');
       document.getElementById('d-content').textContent=m.content;
       renderRelations(m);
+      if(m.id) fetch('/api/memory/'+m.id+'/touch',{method:'POST'}).then(()=>{ m.access_count=(m.access_count||0)+1; gData=null; }).catch(()=>{}); // 조회 기록(글로우)
       document.getElementById('detail').classList.add('open');
       document.getElementById('scrim').classList.add('open');
       document.getElementById('d-close').focus();
@@ -531,6 +552,8 @@
     document.getElementById('gColor').addEventListener('click',()=>{ colorBy = colorBy==='type'?'category':'type';
       const b=document.getElementById('gColor'); b.classList.toggle('on', colorBy==='category'); b.textContent = colorBy==='category'?'유형색':'분류색';
       drawGraph(); });
+    document.getElementById('d-focus').addEventListener('click',()=>{ if(!curDetail) return; localFocus=curDetail.id; closeDetail(); showTab('graph'); }); // 이 기억 중심(로컬) 보기
+    document.getElementById('gAll').addEventListener('click',()=>{ localFocus=null; drawGraph(); }); // 전체 보기 복귀
     document.getElementById('d-close').addEventListener('click',closeDetail);
     document.getElementById('scrim').addEventListener('click',closeDetail);
     document.getElementById('d-copy').addEventListener('click',copyDetail);
@@ -584,10 +607,22 @@
             linkBase:'rgba(120,135,160,.3)', linkDim:'rgba(110,122,145,.08)', dim3d:'#39414f',
             tip:'background:#11151c;border:1px solid #2C3340;color:#E7EBF2' };
     }
-    function graphSet(){ if(!gData) return {nodes:[],links:[],edgeMode:''};
-      if(!activeType) return gData;
-      const keep=new Set(gData.nodes.filter(n=>n.type===activeType).map(n=>n.id));
-      return { nodes:gData.nodes.filter(n=>keep.has(n.id)), links:gData.links.filter(l=>keep.has(lid(l.source))&&keep.has(lid(l.target))), edgeMode:gData.edgeMode }; }
+    function graphSet(){
+      if(!gData) return {nodes:[],links:[],edgeMode:''};
+      let nodes, links;
+      if(localFocus!=null && gData.nodes.some(n=>n.id===localFocus)){          // 로컬: 그 기억 + 직접 연결만
+        const keep=new Set([localFocus]);
+        for(const l of gData.links){ const s=lid(l.source),t=lid(l.target); if(s===localFocus) keep.add(t); if(t===localFocus) keep.add(s); }
+        nodes=gData.nodes.filter(n=>keep.has(n.id));
+        links=gData.links.filter(l=>keep.has(lid(l.source))&&keep.has(lid(l.target)));
+      } else if(activeType || minImp || period!=='all'){                       // 필터: 허용된 기억만
+        const allowed=new Set(all.filter(passesFilter).map(m=>m.id));
+        nodes=gData.nodes.filter(n=>allowed.has(n.id));
+        const keep=new Set(nodes.map(n=>n.id));
+        links=gData.links.filter(l=>keep.has(lid(l.source))&&keep.has(lid(l.target)));
+      } else { return gData; }                                                // 필터/포커스 없음 → 기존 그대로
+      return { nodes, links, edgeMode:gData.edgeMode };
+    }
     async function initGraph(){ if(!gData) gData=await get('/api/graph'); drawGraph(); }
     function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph(); }
     const nodeR = n => 3.5*Math.sqrt(Math.max(1, n.val||1));
@@ -595,6 +630,7 @@
     function drawGraph(){
       const el=document.getElementById('graphHost'); el.innerHTML=''; highlightNodes.clear(); highlightLinks.clear();
       renderNodeLegend();
+      { const _ga=document.getElementById('gAll'); if(_ga) _ga.style.display = (localFocus!=null) ? '' : 'none'; }
       const th=gTheme(); el.style.background=th.host;          // 그래프 배경도 테마 따라감
       const data=graphSet();
       document.getElementById('gcount').textContent = data.nodes.length ? `노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}` : '';
@@ -633,7 +669,7 @@
           .nodeCanvasObject((n,ctx,scale)=>{
             if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) return; // 초기 프레임 좌표 미정 가드
             const r=nodeR(n), c=nodeColorOf(n), faded=dim(n), hot=highlightNodes.has(n.id);
-            if(!faded){ ctx.beginPath(); ctx.arc(n.x,n.y,r+(hot?6:3),0,2*Math.PI); ctx.fillStyle=hexA(c,hot?.26:.10); ctx.fill(); }
+            if(!faded){ const a=n.access||0; const gr=r+(hot?6:(3+Math.min(a,5)*0.8)); const gl=hot?.26:Math.min(.10+a*0.04,.30); ctx.beginPath(); ctx.arc(n.x,n.y,gr,0,2*Math.PI); ctx.fillStyle=hexA(c,gl); ctx.fill(); } // 글로우=조회수
             const g=ctx.createRadialGradient(n.x-r*.35,n.y-r*.35,r*.1,n.x,n.y,r);
             g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
             ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI); ctx.fillStyle=g; ctx.fill();

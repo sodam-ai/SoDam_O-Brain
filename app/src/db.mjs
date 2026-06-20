@@ -45,6 +45,8 @@ export function openDb() {
   const cols = db.prepare('PRAGMA table_info(memory)').all().map(c => c.name);
   if (!cols.includes('project')) db.exec('ALTER TABLE memory ADD COLUMN project TEXT');
   if (!cols.includes('category')) db.exec('ALTER TABLE memory ADD COLUMN category TEXT'); // 분류(온톨로지 v1)
+  if (!cols.includes('access_count')) db.exec('ALTER TABLE memory ADD COLUMN access_count INTEGER DEFAULT 0'); // 조회수(글로우)
+  if (!cols.includes('last_accessed_at')) db.exec('ALTER TABLE memory ADD COLUMN last_accessed_at TEXT');
   // 분류 백필 — 비어있는 것만(멱등). 기존 기억에도 규칙 기반 주제 부여.
   try {
     const need = db.prepare(`SELECT id, content FROM memory WHERE category IS NULL OR category = ''`).all();

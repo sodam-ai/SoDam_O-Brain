@@ -2,8 +2,8 @@
 // 관계(relation) 표는 Phase 2에 채워지므로, 그 전엔 의미 유사도로 그래프를 만든다(실데이터).
 
 export function buildGraph(db, { neighbors = 2 } = {}) {
-  const mems = db.prepare('SELECT id, content, type, importance, category FROM memory').all();
-  const nodes = mems.map(m => ({ id: m.id, name: m.content, type: m.type, category: m.category || '기타', val: m.importance || 1 }));
+  const mems = db.prepare('SELECT id, content, type, importance, category, access_count FROM memory').all();
+  const nodes = mems.map(m => ({ id: m.id, name: m.content, type: m.type, category: m.category || '기타', access: m.access_count || 0, val: m.importance || 1 }));
 
   const linkSet = new Set();
   const links = [];
