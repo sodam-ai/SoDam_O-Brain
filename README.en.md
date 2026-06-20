@@ -68,6 +68,7 @@ What you can do on screen:
 - In the detail panel: **copy · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict).
 - Top-right **light/dark theme**, **export** (JSON/Markdown), type **filter · sort**.
 - Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
+- Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count).
 
 ## 6. Backup & restore (protect your memories)
 - **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
