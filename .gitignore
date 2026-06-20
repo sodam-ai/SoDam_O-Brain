@@ -1,0 +1,30 @@
+# 의존성 / 런타임 로그
+node_modules/
+*.log
+
+# 데이터·DB (절대 커밋 금지 — 개인 기억/백업)
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# 비밀정보 (절대 커밋 금지)
+.env
+.env.local
+.env.*.local
+
+# 빌드 / 캐시
+dist/
+build/
+.vite/
+
+# 플러그인 자동생성 캐시 / 임시
+.omc/
+*.todos-report.md
+.complexity-log.md
+
+# OS / 에디터
+.DS_Store
+Thumbs.db

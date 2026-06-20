@@ -1,0 +1,28 @@
+# 의존성
+node_modules/
+
+# 데이터·DB (절대 커밋 금지 — 08 보안)
+data/
+spike/data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# 비밀정보 (절대 커밋 금지)
+.env
+.env.local
+.env.*.local
+
+# 빌드 산출물
+dist/
+build/
+.vite/
+
+# 플러그인 자동생성 캐시(프로젝트 내용 아님)
+.omc/
+
+# OS/에디터
+.DS_Store
+Thumbs.db
