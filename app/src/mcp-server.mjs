@@ -26,7 +26,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args = {} } = req.params;
   if (name === 'search_memory') {
-    const res = await search(db, String(args.query || ''), Number(args.limit) || 8);
+    const res = await search(db, String(args.query || '').slice(0, 200), Math.min(50, Math.max(1, Number(args.limit) || 8)));
     const slim = res.map(m => ({ id: m.id, type: m.type, importance: m.importance, content: m.content }));
     return { content: [{ type: 'text', text: JSON.stringify(slim) }] };
   }

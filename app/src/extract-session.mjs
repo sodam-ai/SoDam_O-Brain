@@ -1,5 +1,5 @@
 // 세션 캡처 — transcript .jsonl → user/assistant text → 시크릿제거 → 추출 → 저장.
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { ruleExtract } from './extract.mjs';
 import { redact } from './redact.mjs';
 import { openDb } from './db.mjs';
@@ -29,6 +29,10 @@ export function parseTranscript(path, { tailLines = 600 } = {}) {
 }
 
 export async function captureSession({ transcriptPath, projectPath } = {}) {
+  // 입력 검증(방어) — 실제 .jsonl 파일만 읽음(임의 파일 읽기 차단)
+  if (!transcriptPath || !String(transcriptPath).endsWith('.jsonl') || !existsSync(transcriptPath)) {
+    return { exchanges: 0, candidates: 0, saved: [] };
+  }
   const exchanges = parseTranscript(transcriptPath);
   // 시크릿은 '추출(=AI 전송 가능) 전'에 제거 — 보안 발견사항 반영.
   for (const ex of exchanges) ex.text = redact(ex.text).clean;

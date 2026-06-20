@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => res.json({ ok: true, embed: embedMode(), port: PORT }));
 app.get('/api/memories', (req, res) => res.json(listMemories(db, 100)));
 app.get('/api/search', async (req, res) => {
-  const q = String(req.query.q || '');
+  const q = String(req.query.q || '').slice(0, 200); // 입력 길이 제한(ASVS V5)
   if (!q.trim()) return res.json([]);
   try { res.json(await search(db, q, 10)); }
   catch (e) { res.status(500).json({ error: '검색 실패' }); }
