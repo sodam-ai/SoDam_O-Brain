@@ -1,0 +1,15 @@
+{
+  "name": "o-brain",
+  "version": "0.1.0",
+  "description": "O-Brain — 클로드코드 대화에서 기억을 자동 저장하고 다음 세션에 되읽는 100% 로컬 메모리 (SessionEnd 캡처 + SessionStart 주입 + MCP 검색)",
+  "author": { "name": "SoDam AI Studio" },
+  "license": "UNLICENSED",
+  "keywords": ["memory", "local", "knowledge-graph", "claude-code"],
+  "commands": "./commands/",
+  "mcpServers": {
+    "o-brain": {
+      "command": "node",
+      "args": ["D:\\AI_Dev_Work\\2026y\\26y_06m_21d_O-Brain\\app\\src\\mcp-server.mjs"]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "o-brain-local",
+  "owner": { "name": "SoDam AI Studio" },
+  "plugins": [
+    {
+      "name": "o-brain",
+      "source": "./",
+      "version": "0.1.0",
+      "description": "O-Brain local memory (hooks + MCP)"
+    }
+  ]
+}

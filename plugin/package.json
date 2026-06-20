@@ -1,0 +1,7 @@
+{
+  "name": "o-brain-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "O-Brain Claude Code 플러그인 (훅 + MCP). 무거운 코드/의존성은 ../app 에 있음."
+}
