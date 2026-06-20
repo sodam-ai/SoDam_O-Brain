@@ -1,0 +1,18 @@
+// 시크릿 필터 — 저장 전 필수.
+// ★ AI 추출을 붙일 때(Phase 1a)는 'AI에 전송하기 전'에도 동일 호출해야 함(보안 발견사항).
+export function redact(text) {
+  if (text == null) return { clean: text, hits: 0 };
+  let clean = String(text);
+  let hits = 0;
+  const sub = (re, rep) => {
+    clean = clean.replace(re, (...a) => { hits++; return typeof rep === 'function' ? rep(...a) : rep; });
+  };
+  sub(/sk-[A-Za-z0-9_\-]{16,}/g, '[REDACTED:api-key]');
+  sub(/AKIA[0-9A-Z]{16}/g, '[REDACTED:aws-key]');
+  sub(/ghp_[A-Za-z0-9]{20,}/g, '[REDACTED:github-token]');
+  sub(/AIza[0-9A-Za-z_\-]{20,}/g, '[REDACTED:google-key]');
+  sub(/\bBearer\s+[A-Za-z0-9._\-]{8,}/gi, '[REDACTED:bearer]');
+  sub(/-----BEGIN[\s\S]*?-----END[\s\S]*?-----/g, '[REDACTED:private-key]');
+  sub(/\b(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*\S+/gi, (m, k) => `${k}=[REDACTED]`);
+  return { clean, hits };
+}

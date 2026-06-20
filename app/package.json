@@ -1,0 +1,25 @@
+{
+  "name": "obrain-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "O-Brain local app — DB/검색/서버/웹 (수직 슬라이스)",
+  "license": "UNLICENSED",
+  "scripts": {
+    "seed": "node src/seed.mjs",
+    "search": "node src/search-demo.mjs",
+    "status": "node src/status.mjs",
+    "selftest": "node src/selftest.mjs",
+    "backup": "node src/backup-cli.mjs",
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "3d-force-graph": "^1.80.0",
+    "better-sqlite3": "^12.11.1",
+    "express": "^5.2.1",
+    "force-graph": "^1.51.4",
+    "sqlite-vec": "^0.1.9"
+  }
+}

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>O-Brain · 내 기억 대시보드</title>
+<style>
+  :root { --bg:#0E1116; --surface:#161A21; --surface2:#1b212a; --border:#232a33; --text:#E6EAF2; --muted:#99A2B0; --accent:#2563EB; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); flex: none; }
+  header .brand { font-weight: 700; font-size: 16px; }
+  header input { flex: 1; max-width: 420px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  header input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tabs { display: flex; gap: 6px; margin-left: auto; }
+  .tabs button, .gbtn { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; }
+  .tabs button.on, .gbtn.on { background: var(--accent); border-color: var(--accent); }
+  main { flex: 1; position: relative; overflow: hidden; }
+  section.view { position: absolute; inset: 0; overflow: auto; padding: 16px; }
+  section.view[hidden] { display: none; }
+  /* 목록 */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--bg); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--surface); }
+  td.num { text-align: right; color: var(--muted); white-space: nowrap; }
+  .badge { display: inline-block; font-size: 11px; border-radius: 6px; padding: 1px 7px; color: #fff; }
+  /* 그래프 */
+  #graphHost { position: absolute; inset: 0; }
+  .gbar { position: absolute; top: 12px; left: 12px; z-index: 5; display: flex; gap: 6px; align-items: center; }
+  .gbar .count { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .legend { position: absolute; top: 12px; right: 16px; z-index: 5; display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  /* 타임라인 */
+  .tl { max-width: 760px; }
+  .tl .day { color: var(--muted); font-size: 12px; margin: 14px 0 6px; }
+  .tl .item { display: flex; gap: 10px; padding: 8px 10px; border-left: 2px solid var(--border); margin-left: 8px; cursor: pointer; }
+  .tl .item:hover { background: var(--surface); }
+  /* 상세 패널 */
+  aside { position: absolute; top: 0; right: 0; bottom: 0; width: 360px; max-width: 86vw; background: var(--surface); border-left: 1px solid var(--border); padding: 18px; overflow: auto; transform: translateX(100%); transition: transform .18s; z-index: 20; }
+  aside.open { transform: translateX(0); }
+  aside .close { float: right; background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+  aside h3 { margin: 4px 0 12px; font-size: 15px; }
+  aside .meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  aside .content { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; white-space: pre-wrap; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="brand">O-Brain</span>
+    <input id="q" placeholder="기억 검색 (예: 포트)" />
+    <div class="tabs">
+      <button id="t-list" class="on" onclick="showTab('list')">목록</button>
+      <button id="t-graph" onclick="showTab('graph')">그래프</button>
+      <button id="t-timeline" onclick="showTab('timeline')">타임라인</button>
+    </div>
+  </header>
+  <main>
+    <section id="view-list" class="view">
+      <table><thead><tr><th>유형</th><th>내용</th><th class="num">중요도</th><th class="num">날짜</th></tr></thead>
+      <tbody id="rows"></tbody></table>
+    </section>
+
+    <section id="view-graph" class="view" hidden>
+      <div class="gbar">
+        <button class="gbtn on" id="g2d" onclick="setGraphMode('2d')">2D</button>
+        <button class="gbtn" id="g3d" onclick="setGraphMode('3d')">3D</button>
+        <span class="count" id="gcount"></span>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:#4D8DFF"></i>결정</span>
+        <span><i class="dot" style="background:#EF4444"></i>제약</span>
+        <span><i class="dot" style="background:#A855F7"></i>선호</span>
+        <span><i class="dot" style="background:#F59E0B"></i>패턴</span>
+        <span><i class="dot" style="background:#14B8A6"></i>지식</span>
+      </div>
+      <div id="graphHost"></div>
+    </section>
+
+    <section id="view-timeline" class="view" hidden><div class="tl" id="tl"></div></section>
+  </main>
+
+  <aside id="detail">
+    <button class="close" onclick="closeDetail()">✕</button>
+    <h3 id="d-title"></h3>
+    <div class="meta" id="d-meta"></div>
+    <div class="content" id="d-content"></div>
+  </aside>
+
+  <script src="/vendor/force-graph/force-graph.min.js"></script>
+  <script src="/vendor/3d-force-graph/3d-force-graph.min.js"></script>
+  <script>
+    const COLORS = { '결정':'#4D8DFF', '제약':'#EF4444', '선호':'#A855F7', '패턴':'#F59E0B', '지식':'#14B8A6' };
+    const color = t => COLORS[t] || '#99A2B0';
+    const get = u => fetch(u).then(r => r.json());
+    let all = [];
+    let tab = 'list';
+
+    const fmt = s => (s || '').slice(0, 10);
+    function renderList(mems) {
+      document.getElementById('rows').innerHTML = mems.length ? mems.map(m =>
+        `<tr onclick='openDetail(${JSON.stringify(m).replace(/'/g, "&#39;")})'>
+          <td><span class="badge" style="background:${color(m.type)}">${m.type || ''}</span></td>
+          <td>${esc(m.content)}</td>
+          <td class="num">${'★'.repeat(m.importance || 0)}</td>
+          <td class="num">${fmt(m.created_at)}</td></tr>`).join('')
+        : `<tr><td colspan="4" class="empty">기억이 없어요. 대화하고 세션을 끝내면 자동으로 쌓입니다.</td></tr>`;
+    }
+    function renderTimeline(mems) {
+      const sorted = [...mems].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      let html = '', lastDay = '';
+      for (const m of sorted) {
+        const day = fmt(m.created_at);
+        if (day !== lastDay) { html += `<div class="day">${day || '날짜 미상'}</div>`; lastDay = day; }
+        html += `<div class="item" onclick='openDetail(${JSON.stringify(m).replace(/'/g, "&#39;")})'>
+          <span class="badge" style="background:${color(m.type)}">${m.type || ''}</span>
+          <span>${esc(m.content)}</span></div>`;
+      }
+      document.getElementById('tl').innerHTML = sorted.length ? html : '<div class="empty">아직 기억이 없어요.</div>';
+    }
+    const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
+
+    function openDetail(m) {
+      document.getElementById('d-title').textContent = `[${m.type}] ★${m.importance}`;
+      document.getElementById('d-meta').textContent = `만든 날짜 ${m.created_at || '-'} · 출처 ${m.source || '-'} · 신뢰도 ${m.confidence ?? '-'}`;
+      document.getElementById('d-content').textContent = m.content;
+      document.getElementById('detail').classList.add('open');
+    }
+    function closeDetail() { document.getElementById('detail').classList.remove('open'); }
+
+    function showTab(t) {
+      tab = t;
+      for (const x of ['list', 'graph', 'timeline']) {
+        document.getElementById('view-' + x).hidden = (x !== t);
+        document.getElementById('t-' + x).classList.toggle('on', x === t);
+      }
+      if (t === 'graph') initGraph();
+    }
+
+    // 검색
+    let timer;
+    document.getElementById('q').addEventListener('input', e => {
+      clearTimeout(timer);
+      const q = e.target.value.trim();
+      timer = setTimeout(async () => {
+        const mems = q ? await get('/api/search?q=' + encodeURIComponent(q)) : all;
+        renderList(mems); renderTimeline(mems);
+      }, 250);
+    });
+
+    // 그래프(지연 초기화 — 탭 열릴 때 1회)
+    let gInited = false, gMode = '2d', gData = null;
+    async function initGraph() {
+      if (!gData) gData = await get('/api/graph');
+      document.getElementById('gcount').textContent =
+        `노드 ${gData.nodes.length} · 연결 ${gData.links.length}` + (gData.edgeMode === 'similarity' ? ' (의미 유사도)' : '');
+      drawGraph();
+    }
+    function setGraphMode(m) { gMode = m; document.getElementById('g2d').classList.toggle('on', m==='2d'); document.getElementById('g3d').classList.toggle('on', m==='3d'); drawGraph(); }
+    function drawGraph() {
+      const el = document.getElementById('graphHost'); el.innerHTML = '';
+      if (!gData || !gData.nodes.length) { el.innerHTML = '<div class="empty">기억이 없어요.</div>'; return; }
+      const base = fg => fg.graphData(gData).backgroundColor('#0E1116')
+        .nodeColor(n => color(n.type)).nodeVal(n => 1 + n.val * 0.4).nodeLabel(n => `[${n.type}] ${n.name}`);
+      let G;
+      if (gMode === '3d') {
+        G = base(ForceGraph3D()(el)).linkColor(() => '#3b4654').linkOpacity(0.6);
+      } else {
+        G = base(ForceGraph()(el)).nodeRelSize(4).linkColor(() => '#3a4656').linkWidth(1.2)
+          .nodeCanvasObjectMode(() => 'after')
+          .nodeCanvasObject((n, ctx, scale) => {
+            const r = 4 * Math.sqrt(1 + n.val * 0.4);
+            ctx.fillStyle = '#C7CEDA'; ctx.textAlign = 'center';
+            ctx.font = `${Math.max(2.5, Math.min(4.5, 11 / scale))}px system-ui`;
+            ctx.fillText(String(n.name).slice(0, 14), n.x, n.y + r + 5);
+          })
+          .onNodeClick(n => openDetail(all.find(m => m.id === n.id) || { type: n.type, importance: 0, content: n.name }));
+      }
+      try { G.d3Force('charge').strength(-280); G.d3Force('link').distance(85); } catch (e) {}
+      setTimeout(() => { try { G.zoomToFit(700, 130); } catch (e) {} }, 900);
+    }
+
+    // 초기 로드
+    get('/api/memories').then(m => { all = m; renderList(m); renderTimeline(m); });
+  </script>
+</body>
+</html>

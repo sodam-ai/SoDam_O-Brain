@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>O-Brain · 기억 그래프</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0E1116; color: #E6EAF2; font: 13px system-ui, sans-serif; overflow: hidden; }
+  header { position: fixed; top: 0; left: 0; right: 0; height: 46px; display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; border-bottom: 1px solid #232a33; background: #0E1116; z-index: 10; }
+  header b { font-weight: 600; }
+  button { background: #161A21; border: 1px solid #232a33; color: #E6EAF2; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+  button.on { background: #2563EB; border-color: #2563EB; }
+  #counts { color: #99A2B0; font-size: 12px; }
+  .legend { margin-left: auto; display: flex; gap: 12px; font-size: 11px; color: #99A2B0; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  #graph { position: absolute; inset: 46px 0 0 0; }
+  #empty { position: absolute; inset: 46px 0 0 0; display: none; align-items: center; justify-content: center; color: #99A2B0; }
+</style>
+</head>
+<body>
+  <header>
+    <b>O-Brain</b> 기억 그래프
+    <button id="b2d" class="on" onclick="setMode('2d')">2D</button>
+    <button id="b3d" onclick="setMode('3d')">3D</button>
+    <span id="counts">불러오는 중…</span>
+    <span class="legend">
+      <span><i class="dot" style="background:#4D8DFF"></i>결정</span>
+      <span><i class="dot" style="background:#EF4444"></i>제약</span>
+      <span><i class="dot" style="background:#A855F7"></i>선호</span>
+      <span><i class="dot" style="background:#F59E0B"></i>패턴</span>
+      <span><i class="dot" style="background:#14B8A6"></i>지식</span>
+    </span>
+  </header>
+  <div id="graph"></div>
+  <div id="empty">아직 기억이 없어요. 대화하고 세션을 끝내면 여기에 점으로 쌓입니다.</div>
+
+  <script src="/vendor/force-graph/force-graph.min.js"></script>
+  <script src="/vendor/3d-force-graph/3d-force-graph.min.js"></script>
+  <script>
+    const COLORS = { '결정':'#4D8DFF', '제약':'#EF4444', '선호':'#A855F7', '패턴':'#F59E0B', '지식':'#14B8A6' };
+    const color = t => COLORS[t] || '#99A2B0';
+    let data = { nodes: [], links: [], edgeMode: '' };
+    let mode = '2d';
+
+    function render() {
+      const el = document.getElementById('graph');
+      el.innerHTML = '';
+      document.getElementById('empty').style.display = data.nodes.length ? 'none' : 'flex';
+      document.getElementById('counts').textContent =
+        `노드 ${data.nodes.length} · 연결 ${data.links.length}` +
+        (data.edgeMode === 'similarity' ? ' (의미 유사도 기반)' : data.edgeMode === 'type' ? ' (유형 기반)' : '');
+      if (!data.nodes.length) return;
+
+      let G;
+      const base = (fg) => fg
+        .graphData(data)
+        .backgroundColor('#0E1116')
+        .nodeColor(n => color(n.type))
+        .nodeVal(n => 1 + n.val * 0.4)
+        .nodeLabel(n => `[${n.type}] ${n.name}`);
+      if (mode === '3d') {
+        G = base(ForceGraph3D()(el)).linkColor(() => '#3b4654').linkOpacity(0.6).linkWidth(1);
+      } else {
+        G = base(ForceGraph()(el))
+          .nodeRelSize(4)
+          .linkColor(() => '#3a4656')
+          .linkWidth(1.2)
+          .nodeCanvasObjectMode(() => 'after')
+          .nodeCanvasObject((n, ctx, scale) => {
+            const r = 4 * Math.sqrt(1 + n.val * 0.4);
+            ctx.fillStyle = '#C7CEDA';
+            ctx.font = `${Math.max(2.5, Math.min(4.5, 11 / scale))}px system-ui`;
+            ctx.textAlign = 'center';
+            ctx.fillText(String(n.name).slice(0, 14), n.x, n.y + r + 5);
+          });
+      }
+      // 노드를 서로 펼치고(겹침 방지) 화면에 알맞게 맞춤
+      try { G.d3Force('charge').strength(-280); G.d3Force('link').distance(85); } catch (e) {}
+      setTimeout(() => { try { G.zoomToFit(700, 130); } catch (e) {} }, 1000);
+    }
+    function setMode(m) {
+      mode = m;
+      document.getElementById('b2d').classList.toggle('on', m === '2d');
+      document.getElementById('b3d').classList.toggle('on', m === '3d');
+      render();
+    }
+    fetch('/api/graph').then(r => r.json()).then(d => { data = d; render(); })
+      .catch(() => { document.getElementById('counts').textContent = '그래프를 불러오지 못했어요(서버 확인).'; });
+  </script>
+</body>
+</html>
