@@ -1,6 +1,10 @@
 // 하이브리드 검색 — FTS5 키워드(한국어 접두 보정) + sqlite-vec 의미 + RRF 융합.
 import { embed, toBlob } from './embed.mjs';
 
+// 의미(벡터) 관련도 문턱 — 이보다 먼 결과는 버린다. 기억이 적을 때 KNN이 '전부'를
+// 반환해 검색이 안 먹히던 버그 차단(실측: 진짜 일치≤0.83, 무관≥0.99, 오타≥1.23).
+const VEC_GATE = Number(process.env.OBRAIN_VEC_GATE || 0.92);
+
 // 한국어 보정(스파이크 검증): 각 토큰에 접두 * 부착 → '포트'가 '포트는'을 잡음.
 function ftsQuery(q) {
   return String(q).trim().split(/\s+/).filter(Boolean)
@@ -25,7 +29,7 @@ export async function search(db, query, k = 10) {
     const qv = toBlob(await embed(query));
     vec = db.prepare(
       `SELECT rowid AS id, distance FROM memory_vec WHERE embedding MATCH ? ORDER BY distance LIMIT ${Number(k)}`
-    ).all(qv);
+    ).all(qv).filter(r => r.distance <= VEC_GATE); // 관련도 문턱 적용(먼 결과 제외)
   } catch { vec = []; }
 
   // RRF (Reciprocal Rank Fusion, agentmemory 방식)
