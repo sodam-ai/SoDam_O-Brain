@@ -11,10 +11,12 @@
 ## What does it do?
 - **Auto-save**: when a Claude Code session ends, it automatically records **decisions, promises, constraints** (e.g., "use port 7740 for this project") — no manual work.
 - **Auto-redaction (security)**: passwords / API keys are **automatically masked** before saving (`[REDACTED]`).
-- **See it as a graph**: browse memories as **dots & lines** (2D/3D graph), a **list**, and a **timeline**.
+- **See it as a graph**: browse memories as **dots & lines** (2D/3D graph) — **the graph is the start screen**. Also a **list** and a **timeline**.
+- **Overview at a glance**: total count, distribution by type/topic/**project**, most-connected memories, and most-viewed — all on one screen (**Overview** tab).
 - **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph.
 - **Auto-categorize by topic**: memories are auto-grouped into topics (security, UI, deploy, …); toggle **"분류색"(category colors)** in the graph to color nodes by topic.
-- **Comfortable browsing**: search, type filters, sort, **light/dark theme**, export (JSON/Markdown), delete.
+- **Comfortable browsing**: search, type/**project** filters, sort, **light/dark theme**, **edit a memory**, export (JSON/Markdown), delete. **⌘K (Ctrl+K)** for quick search/navigation anywhere.
+- **The AI actually uses it**: new sessions auto-load relevant memories, and during a chat the AI can **search, trace relations, and view how decisions evolved**.
 - **100% local**: everything stays on your PC. Nothing leaves over the internet.
 
 ---
@@ -64,11 +66,12 @@ In the Claude Code input box:
 *(Or tell Claude "open the screen"; manually: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app; npm start` then open `http://127.0.0.1:7740/`.)*
 
 What you can do on screen:
-- Switch **List · Graph · Timeline**, search at the top (press `/` to jump there), click an item for details.
-- In the detail panel: **copy · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict).
-- Top-right **light/dark theme**, **export** (JSON/Markdown), type **filter · sort**.
+- Switch **Graph (start screen) · Overview · List · Timeline**. Search at the top (press `/` to jump), **⌘K (Ctrl+K)** for quick command/memory search, click an item for details.
+- **Overview** tab: total count, distribution by type/topic/**project**, most-connected and most-viewed memories. Click **"connected-less memories"** to see only the orphans in the graph.
+- In the detail panel: **copy · edit (content/type/importance) · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict). *(Secrets are auto-redacted again on edit.)*
+- Top-right **light/dark theme**, **export** (JSON/Markdown), type/**project** **filter · sort**.
 - Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
-- Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count).
+- Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count). As memories grow, the graph shows the **most important ones first** and tells you *"top M of N"*.
 
 ## 6. Backup & restore (protect your memories)
 - **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
