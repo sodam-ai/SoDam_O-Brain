@@ -14,6 +14,8 @@ AI (Claude Code) is smart, but **the moment you close the chat it forgets everyt
 - It automatically writes down important **decisions, promises, and rules** from your chats,
 - reminds the AI next time (the AI can even **trace relations & evolution** mid-chat),
 - and shows your memories as a **graph (map), an overview (at-a-glance summary), a list, and a timeline**.
+- **auto-tags which project** each memory belongs to (based on the files you actually worked on that session),
+- and shows new memories **on its own** (auto-refresh).
 - It runs **100% on your own PC** (nothing leaves over the internet).
 
 > Terms: **Claude Code** = an AI tool you use in a terminal. **Plugin** = an add-on you install into Claude Code. **Local** = inside your own PC.
@@ -126,7 +128,11 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
   - *Even on edit, secrets like passwords/keys are auto-redacted again when saved.*
 - **"This memory's relations"** — link to other memories as **supersedes / supports / influences / contradicts** (mis-click → "undo" to restore).
 
-**Top tools:** search · type/category chips · **importance, period & project filters** · sort (newest/oldest/importance) · **light/dark theme** · **export (JSON/Markdown)**.
+**Top tools:** search · type/category chips · **importance, period & project filters** (by recent activity) · sort (newest/oldest/importance) · **refresh (↻)** · **light/dark theme** · **export (JSON/Markdown)**.
+
+> **Auto-refresh:** new memories appear **on their own** (when you return to the tab or after a short wait). In a hurry? Click the top-right **refresh (↻) button** to update instantly.
+>
+> **Automatic project tagging:** each memory is tagged with **the project whose files you actually edited that session** — no matter where you launched Claude Code, it uses the project you touched most. (Applies from the next `/clear`; old memories keep their previous tag.)
 
 ---
 
@@ -197,6 +203,8 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 | Screen (URL) won't open | Server not running / port conflict | `/o-brain:open` again, or change `OBRAIN_PORT` in `.env.local` |
 | `'node' is not recognized` | Node.js not installed | Install LTS from nodejs.org → **new window** |
 | 3D graph won't show | No WebGL / low-spec | Switch to **2D** |
+| New memory/project not visible | Screen is stale | Click the **refresh (↻) button** (or wait — it auto-refreshes) |
+| Projects collapsed into one | Old memories used the old rule (launch folder) | From the **next `/clear`**, memories auto-tag the project you actually worked in (old ones stay) |
 | Search wrong / empty | 1 character or too vague | Use 2+ characters, clearer words |
 | Install refused (not a git repo) | Local folder | In `plugin` folder: `git init && git add -A && git commit -m init` |
 | Moved to a new PC, doesn't work | Paths are tuned to this PC | Keep the same path, or ask the developer to adjust (currently single-user / this-PC) |

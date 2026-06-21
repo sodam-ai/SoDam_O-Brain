@@ -16,7 +16,9 @@
 - **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph.
 - **Auto-categorize by topic**: memories are auto-grouped into topics (security, UI, deploy, …); toggle **"분류색"(category colors)** in the graph to color nodes by topic.
 - **Comfortable browsing**: search, type/**project** filters, sort, **light/dark theme**, **edit a memory**, export (JSON/Markdown), delete. **⌘K (Ctrl+K)** for quick search/navigation anywhere.
-- **The AI actually uses it**: new sessions auto-load relevant memories, and during a chat the AI can **search, trace relations, and view how decisions evolved**.
+- **The AI actually uses it**: new sessions auto-load relevant memories (recent & high-confidence first), and during a chat the AI can **search, trace relations, and view how decisions evolved**.
+- **Automatic project tagging**: each memory is auto-tagged with **the project whose files you actually edited in that session** (no matter where you launched Claude Code — it uses the project you touched most).
+- **Auto-refresh**: new memories show up **on their own** (when you return to the tab or after a short wait); the top-right **refresh (↻) button** updates instantly too.
 - **100% local**: everything stays on your PC. Nothing leaves over the internet.
 
 ---
@@ -69,7 +71,7 @@ What you can do on screen:
 - Switch **Graph (start screen) · Overview · List · Timeline**. Search at the top (press `/` to jump), **⌘K (Ctrl+K)** for quick command/memory search, click an item for details.
 - **Overview** tab: total count, distribution by type/topic/**project**, most-connected and most-viewed memories. Click **"connected-less memories"** to see only the orphans in the graph.
 - In the detail panel: **copy · edit (content/type/importance) · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict). *(Secrets are auto-redacted again on edit.)*
-- Top-right **light/dark theme**, **export** (JSON/Markdown), type/**project** **filter · sort**.
+- Top-right **refresh (↻)** · **light/dark theme** · **export** (JSON/Markdown), type/**project** **filter · sort**. *(New memories auto-appear after a short wait / on tab return; projects are listed by most-recent activity.)*
 - Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
 - Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count). As memories grow, the graph shows the **most important ones first** and tells you *"top M of N"*.
 
@@ -135,6 +137,8 @@ O-Brain/
 | Wrong port answer in a new chat | **Conflict with other memory tools** (see limits) | Known limit — use `search_memory` directly |
 | `'node' is not recognized` | Node.js not installed | Install LTS from nodejs.org → **new window** |
 | 3D graph won't show | No WebGL / low-spec | Switch to **2D** |
+| New memory/project not visible | Screen is stale | Click the **refresh (↻) button** (or wait — it auto-refreshes) |
+| Projects collapsed into one | Old memories used the old rule (launch folder) | From the **next `/clear`**, memories auto-tag the project you actually worked in (old ones stay as-is) |
 | Install refused (not a git repo) | Local folder | In `plugin` folder: `git init && git add -A && git commit -m init` |
 
 ---
