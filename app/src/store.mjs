@@ -29,6 +29,35 @@ export function getMemory(db, id) {
   return db.prepare(`SELECT ${MEM_COLS} FROM memory WHERE id = ?`).get(Number(id));
 }
 
+// 관계 연결용 '추천 대상' — 기존 임베딩(sqlite-vec) 유사도로 가장 비슷한 기억 K개.
+// 자기 자신·이미 연결된 기억은 제외. 관계 '종류'는 추정하지 않음(사람이 선택 — 오관계 방지).
+export function getSimilar(db, id, k = 6) {
+  const mid = Number(id);
+  if (!Number.isInteger(mid) || mid <= 0) return [];
+  let knn = [];
+  try {
+    knn = db.prepare(
+      `SELECT rowid AS id, distance FROM memory_vec
+       WHERE embedding MATCH (SELECT embedding FROM memory_vec WHERE rowid = ?)
+       ORDER BY distance LIMIT ?`
+    ).all(mid, (k | 0) + 8);
+  } catch { return []; } // 임베딩 없거나 vec 미가용 — 빈 추천(폼은 정상 동작)
+  const skip = new Set([mid]);
+  try {
+    for (const r of db.prepare('SELECT from_id, to_id FROM relation WHERE from_id = ? OR to_id = ?').all(mid, mid))
+      skip.add(r.from_id === mid ? r.to_id : r.from_id);
+  } catch {}
+  const get = db.prepare('SELECT id, content, type, category FROM memory WHERE id = ?');
+  const out = [];
+  for (const r of knn) {
+    if (skip.has(r.id)) continue;
+    const m = get.get(r.id); if (!m) continue;
+    out.push({ id: m.id, content: m.content, type: m.type, category: m.category, distance: r.distance });
+    if (out.length >= k) break;
+  }
+  return out;
+}
+
 // 대시보드 개요용 집계 — DB 전체 기준(SQL COUNT/GROUP BY)이라 기억 수가 수천이어도 정확·빠름.
 export function getStats(db) {
   const get = (sql, ...a) => db.prepare(sql).get(...a);

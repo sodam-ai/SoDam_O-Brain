@@ -668,9 +668,32 @@
           <select id="relTarget" aria-label="대상 기억">${opts}</select>
           <button id="relAdd">연결</button>
           <span class="hint" id="relHint">${esc(REL[firstType].desc)}</span>
+        </div>
+        <div class="relsug" style="margin-top:10px">
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:6px">🔗 관련 있을 만한 기억 — 눌러서 대상 선택 → 종류 고르고 '연결'</div>
+          <div id="relSugList" style="display:flex;flex-direction:column;gap:5px"><span style="color:var(--muted);font-size:.82rem">불러오는 중…</span></div>
         </div>`;
       const sel=host.querySelector('#relType');
       if(sel) sel.addEventListener('change',()=>{ const h=host.querySelector('#relHint'); if(h) h.textContent=(REL[sel.value]||{}).desc||''; });
+      loadRelSuggest(m.id);
+    }
+
+    // 관계 '대상' 추천 — 기존 임베딩 유사도 상위 기억. 클릭하면 대상 드롭다운에 채워줌(종류는 사용자가 선택).
+    async function loadRelSuggest(id){
+      const box=document.getElementById('relSugList'); if(!box) return;
+      let sug=[]; try{ sug=await get('/api/memory/'+id+'/similar'); }catch{ sug=[]; }
+      if(!Array.isArray(sug)||!sug.length){ box.innerHTML='<span style="color:var(--muted);font-size:.82rem">추천할 비슷한 기억이 아직 없어요.</span>'; return; }
+      box.innerHTML = sug.map(s=>`<button type="button" class="sugchip" data-sid="${s.id}" style="text-align:left;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:.84rem;line-height:1.35"><b style="color:var(--accent)">[${esc(s.type)}]</b> ${esc(String(s.content).slice(0,46))}</button>`).join('');
+      box.querySelectorAll('.sugchip').forEach(btn=>btn.addEventListener('click',()=>{
+        const sid=btn.getAttribute('data-sid');
+        const tg=document.getElementById('relTarget'); if(!tg) return;
+        if(!tg.querySelector('option[value="'+sid+'"]')){ const o=document.createElement('option'); o.value=sid; o.textContent=btn.textContent.trim(); tg.appendChild(o); }
+        tg.value=sid;
+        box.querySelectorAll('.sugchip').forEach(b=>b.style.outline='');
+        btn.style.outline='2px solid var(--accent)';
+        const h=document.getElementById('relHint'); if(h) h.textContent='대상 선택됨 → 종류 고르고 "연결"을 누르세요.';
+        const rt=document.getElementById('relType'); if(rt) rt.focus();
+      }));
     }
 
     /* 상세 패널 + 포커스 관리 */

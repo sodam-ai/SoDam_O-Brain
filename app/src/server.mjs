@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { listMemories, countMemories, getMemory, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
+import { listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -53,6 +53,12 @@ app.get('/api/memory/:id', (req, res) => {
   const m = getMemory(db, id);
   if (!m) return res.status(404).json({ error: '없는 기억' });
   res.json(m);
+});
+// 관계 연결 추천 — 이 기억과 비슷한(유사도) 기억 목록(연결 대상 후보). 종류는 추정 안 함.
+app.get('/api/memory/:id/similar', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  try { res.json(getSimilar(db, id, 6)); } catch (e) { res.status(500).json({ error: '추천 실패' }); }
 });
 app.get('/api/search', async (req, res) => {
   const q = String(req.query.q || '').slice(0, 200); // 입력 길이 제한(ASVS V5)
