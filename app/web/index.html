@@ -626,11 +626,15 @@
         <option value="all"${period==='all'?' selected':''}>기간 전체</option>
         <option value="7"${period==='7'?' selected':''}>최근 7일</option>
         <option value="30"${period==='30'?' selected':''}>최근 30일</option></select>`;
-      const projects=[...new Set((all||[]).map(m=>m.project||'').filter(Boolean))].sort();
+      // 프로젝트별 마지막 활동 시점 → 최근 활동순 정렬(활성=맨 위, 파기한 옛것은 시점으로 구분)
+      const projInfo={};
+      for(const m of (all||[])){ const p=m.project||''; if(!p) continue; const d=parseDate(m.created_at); const t=d?d.getTime():0;
+        if(!projInfo[p] || t>projInfo[p].t) projInfo[p]={ t, s:m.created_at }; }
+      const projects=Object.keys(projInfo).sort((a,b)=>projInfo[b].t-projInfo[a].t);
       if(projects.length>1 || projectFilter){
-        html+=`<select class="sortsel" id="projSel" aria-label="프로젝트 필터" title="프로젝트로 거르기">`
+        html+=`<select class="sortsel" id="projSel" aria-label="프로젝트 필터" title="프로젝트로 거르기(최근 활동순)">`
           +`<option value=""${projectFilter===''?' selected':''}>프로젝트 전체</option>`
-          + projects.map(p=>`<option value="${esc(p)}"${projectFilter===p?' selected':''}>${esc(baseName(p))}</option>`).join('')
+          + projects.map(p=>`<option value="${esc(p)}"${projectFilter===p?' selected':''}>${esc(baseName(p))} · ${esc(relTime(projInfo[p].s))}</option>`).join('')
           + `</select>`;
       }
       const shown=currentSet().length;
