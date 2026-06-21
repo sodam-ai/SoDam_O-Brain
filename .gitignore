@@ -22,6 +22,7 @@ build/
 
 # 플러그인 자동생성 캐시 / 임시
 .omc/
+.plugin-config/
 *.todos-report.md
 .complexity-log.md
 
