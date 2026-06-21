@@ -41,7 +41,7 @@ export async function search(db, query, k = 10) {
   const ids = [...score.keys()];
   if (!ids.length) return [];
   const rows = db.prepare(
-    `SELECT id, content, type, importance, confidence, source, created_at
+    `SELECT id, content, type, importance, confidence, source, project, category, created_at
      FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
   ).all(...ids);
   const byId = new Map(rows.map(r => [r.id, r]));
