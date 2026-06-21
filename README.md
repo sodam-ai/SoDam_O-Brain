@@ -99,6 +99,33 @@
 - 백업: `...\app\data\backup\`
 - 설정: `...\app\.env.local` (예시는 `.env.local.example`)
 
+### 8-1. 환경 변수 (선택 · `app\.env.local`)
+대부분 **기본값으로 충분**해요. 바꾸려면 `.env.local.example`을 `.env.local`로 복사 후 수정하세요. *(`.env.local`은 절대 커밋 금지 — 이미 차단돼 있어요.)*
+
+| 변수 | 기본 | 설명 |
+|------|------|------|
+| `OBRAIN_PORT` | `7740` | 대시보드 포트 (`http://127.0.0.1:<포트>`) |
+| `OBRAIN_DATA_DIR` | `./data` | 기억 DB·백업 저장 폴더 |
+| `OBRAIN_EXTRACT_MODE` | `rule` | 추출 방식. 현재는 **규칙 기반(무료·로컬)** 으로 동작. `ai`(Haiku) 모드는 다음 단계 — 켜질 때 `ANTHROPIC_API_KEY` 필요 |
+| `OBRAIN_VEC_GATE` | `0.92` | 검색 관련도 문턱 (낮출수록 더 엄격) |
+
+### 8-2. 폴더 구조 (한눈에)
+```
+O-Brain/
+├─ app/        로컬 앱 (서버·DB·검색·웹 대시보드)
+│  ├─ src/     코드 (.mjs)
+│  ├─ web/     대시보드 화면 (index.html)
+│  └─ data/    기억 DB·백업 (개인 데이터 — 커밋 안 함)
+├─ plugin/     클로드코드 플러그인 (훅·MCP·슬래시 명령)
+├─ README.md · README.en.md · GUIDE.* (문서)
+└─ LICENSE
+```
+
+### 8-3. 빌드 · 테스트 · 배포(설치)
+- **빌드**: 따로 없음(바닐라 — 웹은 빌드 단계 없이 바로 실행). 최초 1회만 `cd app && npm install`로 의존성 설치.
+- **테스트**: `/o-brain:selftest` (또는 `cd app && npm run selftest`) → ✅✅✅면 정상.
+- **배포(설치)**: 위 **2. 설치**처럼 클로드코드에 `/plugin marketplace add` → `/plugin install`. 클라우드 배포 없음(100% 로컬).
+
 ---
 
 ## 9. 문제해결 (실제 겪은 것 위주)
@@ -120,8 +147,9 @@
 - 데이터는 위 폴더에만 있어요 — **사용자 책임**으로 보관·백업하세요(클라우드 동기화 폴더 저장은 피하세요).
 
 ## 11. 라이선스 · 보증
-- 라이선스: **[결정 필요]** (추천: Apache-2.0 © SoDam AI Studio). 개인 로컬 사용엔 지장 없고, **공개·배포 시 확정** 필요.
+- 라이선스: **Apache License 2.0** © 2026 SoDam AI Studio (전문은 [LICENSE](./LICENSE)).
 - **보증 없음(AS-IS)**: 이 도구는 있는 그대로 제공되며, 사용 결과의 책임은 사용자에게 있습니다.
+- 내장 오픈소스(better-sqlite3·sqlite-vec·transformers.js·force-graph·express 등)는 **각자의 라이선스**(MIT/Apache 등)를 따릅니다.
 - O-Brain이 기억 추출에 Claude를 쓸 경우, **Anthropic의 약관은 별개**로 적용됩니다.
 
 ## 12. 솔직한 한계 (현재 v0.1)

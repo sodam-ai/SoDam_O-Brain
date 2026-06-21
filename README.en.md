@@ -97,6 +97,33 @@ What you can do on screen:
 - Backups: `...\app\data\backup\`
 - Settings: `...\app\.env.local` (sample: `.env.local.example`)
 
+### 8-1. Environment variables (optional · `app\.env.local`)
+Defaults are fine for most users. To change, copy `.env.local.example` to `.env.local` and edit. *(`.env.local` must never be committed — already blocked.)*
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OBRAIN_PORT` | `7740` | Dashboard port (`http://127.0.0.1:<port>`) |
+| `OBRAIN_DATA_DIR` | `./data` | Folder for the memory DB & backups |
+| `OBRAIN_EXTRACT_MODE` | `rule` | Extraction mode. Currently runs **rule-based (free, local)**. `ai` (Haiku) mode is next — needs `ANTHROPIC_API_KEY` when enabled |
+| `OBRAIN_VEC_GATE` | `0.92` | Search relevance threshold (lower = stricter) |
+
+### 8-2. Folder structure (at a glance)
+```
+O-Brain/
+├─ app/        Local app (server·DB·search·web dashboard)
+│  ├─ src/     Code (.mjs)
+│  ├─ web/     Dashboard UI (index.html)
+│  └─ data/    Memory DB & backups (personal data — not committed)
+├─ plugin/     Claude Code plugin (hooks·MCP·slash commands)
+├─ README.md · README.en.md · GUIDE.* (docs)
+└─ LICENSE
+```
+
+### 8-3. Build · test · deploy (install)
+- **Build**: none (vanilla — the web UI runs with no build step). Just `cd app && npm install` once for dependencies.
+- **Test**: `/o-brain:selftest` (or `cd app && npm run selftest`) → ✅✅✅ means OK.
+- **Deploy (install)**: like **2. Install** — `/plugin marketplace add` → `/plugin install` in Claude Code. No cloud deploy (100% local).
+
 ---
 
 ## 9. Troubleshooting (things we actually hit)
@@ -118,8 +145,9 @@ What you can do on screen:
 - Data lives only in the folder above — **back it up yourself** (avoid cloud-synced folders).
 
 ## 11. License & warranty
-- License: **[to be decided]** (recommended: Apache-2.0 © SoDam AI Studio). Fine for personal local use; **decide before publishing/distributing**.
+- License: **Apache License 2.0** © 2026 SoDam AI Studio (full text in [LICENSE](./LICENSE)).
 - **No warranty (AS-IS)**: provided as is; you are responsible for outcomes.
+- Bundled open source (better-sqlite3, sqlite-vec, transformers.js, force-graph, express, …) is under **their own licenses** (MIT/Apache, etc.).
 - If O-Brain uses Claude for extraction, **Anthropic's terms apply separately**.
 
 ## 12. Honest limitations (current v0.1)
