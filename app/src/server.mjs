@@ -30,7 +30,12 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
 
-app.get('/api/health', (req, res) => res.json({ ok: true, embed: embedMode(), port: PORT }));
+// health + 가벼운 변경 신호(total·lastId) — 대시보드 자동 새로고침 폴링용(추가/삭제·신규 캡처 감지)
+app.get('/api/health', (req, res) => {
+  let total = 0, lastId = 0;
+  try { const s = db.prepare('SELECT COUNT(*) c, COALESCE(MAX(id),0) m FROM memory').get(); total = s.c; lastId = s.m; } catch {}
+  res.json({ ok: true, embed: embedMode(), port: PORT, total, lastId });
+});
 // 목록 — 페이지네이션(대량 대비). limit 1~500, offset≥0. 총계는 /api/stats 또는 헤더.
 app.get('/api/memories', (req, res) => {
   const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));

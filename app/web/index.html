@@ -349,6 +349,7 @@
       <button class="clear" id="qClear" aria-label="검색 지우기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="htools">
+      <button class="icontop" id="refreshBtn" aria-label="새로고침 (새 기억 반영)" title="새로고침 — 새 기억·프로젝트 반영"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6"/><path d="M21 13a9 9 0 0 1-15 6.7L3 16M3 11a9 9 0 0 1 15-6.7L21 8"/></svg></button>
       <button class="icontop" id="themeBtn" aria-label="밝게/어둡게 전환" title="밝게/어둡게 전환"></button>
       <div style="position:relative">
         <button class="icontop" id="exportBtn" aria-label="내보내기" title="내보내기" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></button>
@@ -1025,6 +1026,43 @@
     Promise.all([ get('/api/memories?limit=100&offset=0'), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ])
       .then(([m,r,s])=>{ all=Array.isArray(m)?m:[]; rels=Array.isArray(r)?r:[]; if(s&&s.total) statTotal=s.total; renderAll(); if(tab==='graph') initGraph(); })
       .catch(()=>{ document.getElementById('rows').innerHTML='<div class="empty"><h4>불러오지 못했어요</h4><p>서버가 켜져 있는지 확인해 주세요.</p></div>'; });
+
+    /* ── 자동 새로고침 — 새 기억/프로젝트를 하드새로고침 없이 반영(가벼운 폴링) ── */
+    let _healthSig = null, _refreshing = false;
+    async function softRefresh(){
+      if(_refreshing) return; _refreshing = true;
+      try{
+        const [m,r,s] = await Promise.all([ get('/api/memories?limit=100&offset=0'), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ]);
+        all = Array.isArray(m)?m:[]; rels = Array.isArray(r)?r:[]; if(s && s.total!=null) statTotal = s.total;
+        gData = null;                                   // 그래프 재조회 유도(drawGraph 자가치유)
+        if(tab==='overview') renderOverview(); else renderAll();
+      } catch(e){} finally { _refreshing = false; }
+    }
+    function _busy(){ // 사용자 작업 중이면 자동 새로고침 보류(방해 방지)
+      return document.getElementById('detail').classList.contains('open')
+          || document.getElementById('cmdk').classList.contains('open')
+          || ((document.getElementById('q').value||'').trim() !== '');
+    }
+    async function pollHealth(){
+      if(document.visibilityState !== 'visible') return;
+      let h; try{ h = await get('/api/health'); } catch { return; }
+      const sig = (h.total ?? '') + ':' + (h.lastId ?? '');
+      if(_healthSig === null){ _healthSig = sig; return; }    // 최초엔 기준값만 기록
+      if(sig !== _healthSig){
+        if(_busy()) return;                                  // 작업 중이면 다음 기회에(기준값 유지 → 유휴 시 반영)
+        _healthSig = sig; await softRefresh();
+        toast('새 기억을 반영했어요','ok');
+      }
+    }
+    setInterval(pollHealth, 45000);                           // 45초마다 가벼운 변경 확인(탭 보일 때만)
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') pollHealth(); });
+    window.addEventListener('focus', pollHealth);             // 탭 복귀 시 즉시 확인(빠른 인식)
+    document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+      await softRefresh();
+      try{ const h=await get('/api/health'); _healthSig=(h.total??'')+':'+(h.lastId??''); }catch{}
+      toast('새로고침했어요','ok');
+    });
+    get('/api/health').then(h=>{ _healthSig=(h.total??'')+':'+(h.lastId??''); }).catch(()=>{}); // 로드 시 기준값
   </script>
 </body>
 </html>
