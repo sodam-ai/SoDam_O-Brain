@@ -13,7 +13,7 @@
 - **Auto-redaction (security)**: passwords / API keys are **automatically masked** before saving (`[REDACTED]`).
 - **See it as a graph**: browse memories as **dots & lines** (2D/3D graph) — **the graph is the start screen**. Also a **list** and a **timeline**.
 - **Overview at a glance**: total count, distribution by type/topic/**project**, most-connected memories, and most-viewed — all on one screen (**Overview** tab).
-- **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph.
+- **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph. The **target is auto-suggested** (by similarity), so you just click.
 - **Auto-categorize by topic**: memories are auto-grouped into topics (security, UI, deploy, …); toggle **"분류색"(category colors)** in the graph to color nodes by topic.
 - **Comfortable browsing**: search, type/**project** filters, sort, **light/dark theme**, **edit a memory**, export (JSON/Markdown), delete. **⌘K (Ctrl+K)** for quick search/navigation anywhere.
 - **The AI actually uses it**: new sessions auto-load relevant memories (recent & high-confidence first), and during a chat the AI can **search, trace relations, and view how decisions evolved**.
@@ -70,7 +70,7 @@ In the Claude Code input box:
 What you can do on screen:
 - Switch **Graph (start screen) · Overview · List · Timeline**. Search at the top (press `/` to jump), **⌘K (Ctrl+K)** for quick command/memory search, click an item for details.
 - **Overview** tab: total count, distribution by type/topic/**project**, most-connected and most-viewed memories. Click **"connected-less memories"** to see only the orphans in the graph.
-- In the detail panel: **copy · edit (content/type/importance) · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict). *(Secrets are auto-redacted again on edit.)*
+- In the detail panel: **copy · edit (content/type/importance) · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict). It **suggests likely related memories** — click one to fill the target, then **just pick the relation type**. *(Secrets are auto-redacted again on edit.)*
 - Top-right **refresh (↻)** · **light/dark theme** · **export** (JSON/Markdown), type/**project** **filter · sort**. *(New memories auto-appear after a short wait / on tab return; projects are listed by most-recent activity.)*
 - Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
 - Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count). As memories grow, the graph shows the **most important ones first** and tells you *"top M of N"*.
@@ -157,7 +157,7 @@ O-Brain/
 ## 12. Honest limitations (current v0.1)
 - **Read-back conflict**: other memory tools on the same PC (memory-bank plugin · persona MEMORY.md) may mix in old/conflicting facts, so O-Brain's latest memory can get buried. (improvement planned)
 - **Rule-based extraction**: catches clear decision sentences well, but may miss subtle context. (AI/Haiku mode is next)
-- **Manual memory relations**: you link them by hand for now. Automatic AI suggestions are next (kept manual on purpose, to avoid misleading auto-relations).
+- **Memory relations**: the *target* to link is **auto-suggested** (by similarity), but the *relation type* (supersede/support/influence/contradict) is **chosen by you** — auto-classifying the type can be wrong, so it's kept human on purpose (to avoid misleading auto-relations).
 
 ---
 

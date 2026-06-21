@@ -126,7 +126,7 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 - Content, type, category, importance, source, confidence, date, view count.
 - **Copy** / **Edit (✏️ content · type · importance)** / **Delete** (irreversible, but a startup backup exists) / **◎ Focus**.
   - *Even on edit, secrets like passwords/keys are auto-redacted again when saved.*
-- **"This memory's relations"** — link to other memories as **supersedes / supports / influences / contradicts** (mis-click → "undo" to restore).
+- **"This memory's relations"** — link to other memories as **supersedes / supports / influences / contradicts** (mis-click → "undo" to restore). It **suggests likely related memories** — click one to fill the target, then **just pick the type** (no need to hunt through the list).
 
 **Top tools:** search · type/category chips · **importance, period & project filters** (by recent activity) · sort (newest/oldest/importance) · **refresh (↻)** · **light/dark theme** · **export (JSON/Markdown)**.
 
@@ -237,7 +237,7 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 ## 14. Honest Limitations (current v0.1)
 
 - It remembers **clear decision sentences** well; vague phrasing may be missed.
-- **Topic classification is automatic but sometimes wrong** (rule-based). **Linking memories (relations) is still manual.**
+- **Topic classification is automatic but sometimes wrong** (rule-based). For relations, the *target* is **auto-suggested** (by similarity) but the *type* (supersede/support/influence/contradict) is **chosen by you** (type auto-classification can be wrong, so it's kept human on purpose).
 - Smarter **AI auto-extraction** is not built yet (enabling it would require a separate API key / cost — currently not applied).
 - It is a **single-user / this-PC** stage (moving/sharing to another PC needs extra work).
 - This is not a finished, warranted product — it's being refined through real use.
