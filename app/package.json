@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "description": "O-Brain local app — DB/검색/서버/웹 (수직 슬라이스)",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "seed": "node src/seed.mjs",
     "search": "node src/search-demo.mjs",
