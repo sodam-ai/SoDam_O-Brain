@@ -12,8 +12,8 @@ AI (Claude Code) is smart, but **the moment you close the chat it forgets everyt
 
 **O-Brain is the "auto-notepad" you keep next to that friend.**
 - It automatically writes down important **decisions, promises, and rules** from your chats,
-- reminds the AI next time,
-- and shows your memories as a **list, a map (graph), and a timeline**.
+- reminds the AI next time (the AI can even **trace relations & evolution** mid-chat),
+- and shows your memories as a **graph (map), an overview (at-a-glance summary), a list, and a timeline**.
 - It runs **100% on your own PC** (nothing leaves over the internet).
 
 > Terms: **Claude Code** = an AI tool you use in a terminal. **Plugin** = an add-on you install into Claude Code. **Local** = inside your own PC.
@@ -102,10 +102,13 @@ In the Claude Code input box:
 **To open:** type `/o-brain:open` in Claude Code (starts the server if it's off, then opens the browser).
 Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 
-**Three views (top tabs):**
-- **List** — memories as cards: type badge, importance (★), date, view count.
-- **Graph** — a map of dots and lines (toggle 2D / 3D).
+**Four views (top tabs — Graph is the start screen):**
+- **Graph** — a map of dots and lines (toggle 2D / 3D). **This is the screen you land on.**
+- **Overview** — an at-a-glance summary: total count, last 7 days, **distribution by type/topic/project**, most-connected memories, most-viewed. Click **"connected-less memories"** to see only the orphans in the graph.
+- **List** — memories as cards: type badge, importance (★), date, view count. (As it grows, use **"Load more"** at the bottom.)
 - **Timeline** — chronological.
+
+> **Quick search/navigation:** press **⌘K (Mac) / Ctrl+K (Windows)** anywhere to open a small palette that finds *commands (switch views, theme, export) and memories* at once and jumps right there.
 
 **In the graph you can:**
 - **Hover** a dot → connected memories highlight.
@@ -115,13 +118,15 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 - **"전체 보기" (show all) / focus** — the **◎ (target) button** in the detail panel shows *only that memory and its direct links*; "전체 보기" returns to the full map.
 - **Frequently-opened memories glow brighter** (view count).
 - **Zoom** — ＋ / − / fit buttons at bottom-right.
+- **As memories grow**, the graph shows the *most important ones first* and tells you "**top M of N**" (so it stays fast).
 
 **Detail panel (right side, when a memory is clicked):**
 - Content, type, category, importance, source, confidence, date, view count.
-- **Copy** / **Delete** (irreversible, but a startup backup exists) / **◎ Focus**.
+- **Copy** / **Edit (✏️ content · type · importance)** / **Delete** (irreversible, but a startup backup exists) / **◎ Focus**.
+  - *Even on edit, secrets like passwords/keys are auto-redacted again when saved.*
 - **"This memory's relations"** — link to other memories as **supersedes / supports / influences / contradicts** (mis-click → "undo" to restore).
 
-**Top tools:** search · type/category chips · **importance & period filters** · sort (newest/oldest/importance) · **light/dark theme** · **export (JSON/Markdown)**.
+**Top tools:** search · type/category chips · **importance, period & project filters** · sort (newest/oldest/importance) · **light/dark theme** · **export (JSON/Markdown)**.
 
 ---
 
@@ -166,9 +171,10 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 | Design docs (for devs) | `...\.PRD\` (hidden folder, 13 docs) |
 | Implementation brief | `...\AGENTS.md` |
 
-**Key settings (.env.local):**
+**Key settings (.env.local):** *(defaults are fine for most — only when changing, copy `.env.local.example` to `.env.local`)*
 - `OBRAIN_PORT` — the screen's port (default 7740). Change it on conflict.
 - `OBRAIN_DATA_DIR` — folder to store memories (default `app\data`).
+- `OBRAIN_EXTRACT_MODE` — extraction mode (default `rule` = rule-based, free, local). `ai` (Haiku) mode is next — needs `ANTHROPIC_API_KEY` only when enabled.
 - `OBRAIN_VEC_GATE` — search sensitivity (default 0.92; lower = stricter).
 
 ---
@@ -210,9 +216,9 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 
 ## 13. License · Copyright · Commercial Use (⚠️ Strict — please read)
 
-- **Current license: undecided ([to be decided]).** The recommendation is *Apache-2.0 © SoDam AI Studio*, but it is **not yet formally applied.**
+- **Current license: Apache License 2.0 © 2026 SoDam AI Studio** (full text in the `LICENSE` file at the project root).
 - **Personal / local use**: using it on your own PC for personal purposes is fine.
-- **No redistribution / publishing / sale / commercial use (before the license is set):** until a license is formally chosen, **do not distribute this software, publish it to public repositories, or use it commercially.**
+- **Redistribution / modification / commercial use**: permitted under Apache-2.0 terms (keep copyright & license notices, state changes, etc.). *That said, this repository is currently kept **private**, and whether to make it public is the author's decision.*
 - **No warranty (AS-IS):** provided "as is". **All responsibility for outcomes, data loss, or malfunction lies with the user**; the author makes no warranty whatsoever.
 - **Third-party terms are separate:** if you later enable AI features (e.g., Anthropic Claude), **that provider's terms, fees, and policies apply separately** and are unrelated to O-Brain's license.
 - **Trademarks / names:** "Claude", "Anthropic", etc. are trademarks of their owners; O-Brain is not affiliated with or endorsed by them.
