@@ -1,9 +1,18 @@
 // 그래프 데이터 — 노드(기억) + 엣지(이미 있는 임베딩으로 "비슷한 기억끼리" 자동 연결).
 // 관계(relation) 표는 Phase 2에 채워지므로, 그 전엔 의미 유사도로 그래프를 만든다(실데이터).
 
-export function buildGraph(db, { neighbors = 2 } = {}) {
-  const mems = db.prepare('SELECT id, content, type, importance, category, access_count FROM memory').all();
-  const nodes = mems.map(m => ({ id: m.id, name: m.content, type: m.type, category: m.category || '기타', access: m.access_count || 0, val: m.importance || 1 }));
+export function buildGraph(db, { neighbors = 2, limit = 600 } = {}) {
+  const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
+  const cap = Math.max(1, Number(limit) || 600);
+  // 대량 대비: 중요도+최신 우선으로 상한(top-N). 더 보려면 필터·검색·로컬보기로 드릴다운(PRD §8.4).
+  const mems = db.prepare(
+    `SELECT id, content, type, importance, confidence, project, category, access_count, created_at
+     FROM memory ORDER BY importance DESC, id DESC LIMIT ?`
+  ).all(cap);
+  const inSet = new Set(mems.map(m => m.id));
+  const nodes = mems.map(m => ({ id: m.id, name: m.content, type: m.type, importance: m.importance || 1,
+    confidence: m.confidence, project: m.project || null, category: m.category || '기타',
+    access: m.access_count || 0, created_at: m.created_at, val: m.importance || 1 }));
 
   const linkSet = new Set();
   const links = [];
@@ -24,7 +33,7 @@ export function buildGraph(db, { neighbors = 2 } = {}) {
        ORDER BY distance LIMIT ${Number(neighbors) + 1}`
     );
     for (const m of mems) {
-      for (const r of knn.all(m.id)) if (r.id !== m.id) { addLink(m.id, r.id, r.distance); edgeMode = 'similarity'; }
+      for (const r of knn.all(m.id)) if (r.id !== m.id && inSet.has(r.id)) { addLink(m.id, r.id, r.distance); edgeMode = 'similarity'; } // 상한 집합 안에서만 연결
     }
   } catch { edgeMode = 'none'; }
 
@@ -56,5 +65,5 @@ export function buildGraph(db, { neighbors = 2 } = {}) {
   for (const l of merged) { deg[l.source] = (deg[l.source] || 0) + 1; deg[l.target] = (deg[l.target] || 0) + 1; }
   for (const n of nodes) n.val = (n.val || 1) + (deg[n.id] || 0) * 0.6;
 
-  return { nodes, links: merged, edgeMode, relCount: relations.length };
+  return { nodes, links: merged, edgeMode, relCount: relations.length, total, shown: nodes.length };
 }

@@ -18,11 +18,78 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
   return { id: tx(), redactedHits: hits };
 }
 
-export function listMemories(db, limit = 50) {
+const MEM_COLS = 'id, content, type, importance, confidence, source, project, category, access_count, created_at';
+export function listMemories(db, limit = 100, offset = 0) {
   return db.prepare(
-    `SELECT id, content, type, importance, confidence, source, category, access_count, created_at
-     FROM memory ORDER BY id DESC LIMIT ?`
-  ).all(limit);
+    `SELECT ${MEM_COLS} FROM memory ORDER BY id DESC LIMIT ? OFFSET ?`
+  ).all(Math.max(1, limit | 0), Math.max(0, offset | 0));
+}
+export function countMemories(db) { return db.prepare('SELECT COUNT(*) n FROM memory').get().n; }
+export function getMemory(db, id) {
+  return db.prepare(`SELECT ${MEM_COLS} FROM memory WHERE id = ?`).get(Number(id));
+}
+
+// 대시보드 개요용 집계 — DB 전체 기준(SQL COUNT/GROUP BY)이라 기억 수가 수천이어도 정확·빠름.
+export function getStats(db) {
+  const get = (sql, ...a) => db.prepare(sql).get(...a);
+  const rows = (sql, ...a) => db.prepare(sql).all(...a);
+  const total = get('SELECT COUNT(*) n FROM memory').n;
+  const recent7 = get("SELECT COUNT(*) n FROM memory WHERE created_at >= datetime('now','-7 days')").n;
+  const lowConf = get('SELECT COUNT(*) n FROM memory WHERE confidence IS NOT NULL AND confidence < 0.5').n;
+  const byType = {}; for (const r of rows('SELECT type, COUNT(*) c FROM memory GROUP BY type')) byType[r.type || '기타'] = r.c;
+  const byCategory = {}; for (const r of rows("SELECT COALESCE(category,'기타') cat, COUNT(*) c FROM memory GROUP BY cat")) byCategory[r.cat] = r.c;
+  const byProject = rows("SELECT project, COUNT(*) c FROM memory WHERE project IS NOT NULL AND project <> '' GROUP BY project ORDER BY c DESC");
+  let relCount = 0, orphans = total, hubs = [], topAccessed = [];
+  try {
+    relCount = get('SELECT COUNT(*) n FROM relation').n;
+    orphans = get('SELECT COUNT(*) n FROM memory WHERE id NOT IN (SELECT from_id FROM relation UNION SELECT to_id FROM relation)').n;
+    hubs = rows(`SELECT m.id, m.content, m.type, COUNT(*) d
+      FROM (SELECT from_id id FROM relation UNION ALL SELECT to_id id FROM relation) r
+      JOIN memory m ON m.id = r.id GROUP BY m.id ORDER BY d DESC LIMIT 3`);
+  } catch {}
+  topAccessed = rows('SELECT id, content, type, access_count FROM memory WHERE access_count > 0 ORDER BY access_count DESC LIMIT 3');
+  return { total, recent7, lowConf, byType, byCategory, byProject, relCount, orphans, hubs, topAccessed };
+}
+
+const MEM_TYPES = ['결정', '제약', '선호', '패턴', '지식'];
+// 기억 편집(사용자) — 내용 변경 시 재redact(보안 필수)+재embed+FTS/벡터 동기화. 편집=사람 검증이므로 source=user·confidence=1.0.
+export async function updateMemory(db, id, { content, type, importance } = {}) {
+  const mid = Number(id);
+  if (!Number.isInteger(mid) || mid <= 0) throw new Error('잘못된 id');
+  if (!db.prepare('SELECT 1 FROM memory WHERE id = ?').get(mid)) throw new Error('없는 기억');
+
+  const sets = [], vals = [];
+  let cleanContent = null, redactedHits = 0;
+  if (content != null) {
+    const { clean, hits } = redact(String(content));   // 보안: 저장 전 필수
+    if (!clean.trim()) throw new Error('내용이 비어 있어요');
+    cleanContent = clean; redactedHits = hits;
+    sets.push('content = ?'); vals.push(clean);
+  }
+  if (type != null) {
+    if (!MEM_TYPES.includes(type)) throw new Error('잘못된 유형');
+    sets.push('type = ?'); vals.push(type);
+  }
+  if (importance != null) {
+    const imp = Number(importance);
+    if (!Number.isInteger(imp) || imp < 1 || imp > 5) throw new Error('중요도는 1~5 사이');
+    sets.push('importance = ?'); vals.push(imp);
+  }
+  if (!sets.length) throw new Error('변경할 내용이 없어요');
+  sets.push("source = 'user'", 'confidence = 1.0');   // 사람이 확인·수정함 → 검증됨 표시
+
+  const vec = cleanContent != null ? toBlob(await embed(cleanContent)) : null; // 내용 변경 시에만 재임베딩
+  const tx = db.transaction(() => {
+    db.prepare(`UPDATE memory SET ${sets.join(', ')} WHERE id = ?`).run(...vals, mid);
+    if (cleanContent != null) {                         // 키워드(FTS)+벡터 동기화 — addMemory와 동일 패턴
+      try { db.prepare('DELETE FROM memory_fts WHERE rowid = ?').run(mid); } catch {}
+      db.prepare('INSERT INTO memory_fts(rowid, content) VALUES (?, ?)').run(mid, cleanContent);
+      try { db.prepare('DELETE FROM memory_vec WHERE rowid = ?').run(BigInt(mid)); } catch {}
+      db.prepare('INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)').run(BigInt(mid), vec);
+    }
+  });
+  tx();
+  return { ok: true, redactedHits };
 }
 
 // 조회 1회 기록 — 자주 본 기억(글로우) 신호. PRD 02 access_count·§8.1.

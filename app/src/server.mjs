@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { listMemories, deleteMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
+import { listMemories, countMemories, getMemory, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -31,7 +31,24 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
 
 app.get('/api/health', (req, res) => res.json({ ok: true, embed: embedMode(), port: PORT }));
-app.get('/api/memories', (req, res) => res.json(listMemories(db, 100)));
+// 목록 — 페이지네이션(대량 대비). limit 1~500, offset≥0. 총계는 /api/stats 또는 헤더.
+app.get('/api/memories', (req, res) => {
+  const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+  const offset = Math.max(0, Number(req.query.offset) || 0);
+  res.json(listMemories(db, limit, offset));
+});
+// 개요 통계 — DB 전체 기준 정확 집계(기억 수와 무관하게 빠름)
+app.get('/api/stats', (req, res) => {
+  try { res.json(getStats(db)); } catch (e) { res.status(500).json({ error: '통계 생성 실패' }); }
+});
+// 기억 1건 — 그래프에서 상한 밖 노드를 눌러도 상세를 열 수 있게(대량 대비)
+app.get('/api/memory/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  const m = getMemory(db, id);
+  if (!m) return res.status(404).json({ error: '없는 기억' });
+  res.json(m);
+});
 app.get('/api/search', async (req, res) => {
   const q = String(req.query.q || '').slice(0, 200); // 입력 길이 제한(ASVS V5)
   if (!q.trim()) return res.json([]);
@@ -39,7 +56,8 @@ app.get('/api/search', async (req, res) => {
   catch (e) { res.status(500).json({ error: '검색 실패' }); }
 });
 app.get('/api/graph', (req, res) => {
-  try { res.json(buildGraph(db)); } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
+  const limit = Math.min(2000, Math.max(50, Number(req.query.limit) || 600)); // 노드 상한(대량 프리즈 방지)
+  try { res.json(buildGraph(db, { limit })); } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
 });
 // 기억 삭제(사용자 요청) — id 검증 후 1건만 제거. 로컬 전용·파라미터 바인딩.
 app.delete('/api/memory/:id', (req, res) => {
@@ -50,6 +68,15 @@ app.delete('/api/memory/:id', (req, res) => {
     if (!deleted) return res.status(404).json({ error: '없는 기억' });
     res.json({ ok: true, deleted });
   } catch (e) { res.status(500).json({ error: '삭제 실패' }); }
+});
+
+// 기억 편집(사용자) — 내용/유형/중요도. 내용 변경 시 저장 전 자동 redact + 재임베딩(store.updateMemory).
+app.patch('/api/memory/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  const { content, type, importance } = req.body || {};
+  try { res.json(await updateMemory(db, id, { content, type, importance })); }
+  catch (e) { res.status(400).json({ error: e.message || '수정 실패' }); }
 });
 
 // 조회 기록(자주 본 기억 글로우) — 상세 열람 시 1회 증가.
