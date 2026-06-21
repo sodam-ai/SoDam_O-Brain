@@ -131,3 +131,38 @@ export function listRelations(db) {
 export function deleteRelation(db, id) {
   return db.prepare('DELETE FROM relation WHERE id = ?').run(Number(id)).changes;
 }
+
+// AI가 관계를 따라가게 — 특정 기억의 직접 연결(1-hop) 이웃 + 관계 유형·방향. 읽기 전용.
+export function getRelated(db, id) {
+  const mid = Number(id);
+  if (!Number.isInteger(mid) || mid <= 0) return [];
+  try {
+    return db.prepare(`
+      SELECT r.type AS relation,
+             CASE WHEN r.from_id = ? THEN 'out' ELSE 'in' END AS direction,
+             m.id, m.content, m.type, m.importance
+      FROM relation r
+      JOIN memory m ON m.id = (CASE WHEN r.from_id = ? THEN r.to_id ELSE r.from_id END)
+      WHERE r.from_id = ? OR r.to_id = ?
+      ORDER BY m.importance DESC, m.id DESC`).all(mid, mid, mid, mid);
+  } catch { return []; }
+}
+
+// 결정의 변천(타임라인) — 키워드 관련 기억을 시간순(오래된→최신) + 대체/충돌 관계 표기. 읽기 전용.
+export function getTimeline(db, { query = '', limit = 20 } = {}) {
+  const lim = Math.min(100, Math.max(1, limit | 0));
+  const q = String(query || '').trim();
+  let mems;
+  if (q) {
+    const like = '%' + q.slice(0, 100).replace(/[%_\\]/g, '') + '%';
+    mems = db.prepare(`SELECT id, content, type, importance, created_at FROM memory WHERE content LIKE ? ORDER BY created_at ASC, id ASC LIMIT ?`).all(like, lim);
+  } else {
+    mems = db.prepare(`SELECT id, content, type, importance, created_at FROM memory ORDER BY created_at ASC, id ASC LIMIT ?`).all(lim);
+  }
+  const ids = new Set(mems.map(m => m.id));
+  let rels = [];
+  try { rels = db.prepare(`SELECT from_id, to_id, type FROM relation WHERE type IN ('SUPERSEDES','CONTRADICTS')`).all(); } catch {}
+  const notes = {};
+  for (const r of rels) if (ids.has(r.from_id)) (notes[r.from_id] ||= []).push({ type: r.type, to: r.to_id });
+  return mems.map(m => ({ ...m, evolves: notes[m.id] || [] }));
+}
