@@ -1035,6 +1035,16 @@
       }
       if(gMode==='2d' && typeof G.linkLineDash==='function'){ G.linkLineDash(l=>l.rel==='CONTRADICTS'?[4,3]:null); } // 충돌=점선
       try { G.d3Force('charge').strength(-330); G.d3Force('link').distance(72); } catch(e){}
+      // 캔버스를 컨테이너 크기에 정확히 고정(라이브러리 자동크기가 창 크기로 잡혀 영역 밖으로 잘리던 버그 방지)
+      if(el.clientWidth>0 && el.clientHeight>0){ try{ G.width(el.clientWidth).height(el.clientHeight); }catch(e){} }
+      // 컨테이너 크기 변화(창 리사이즈·모바일·탭 전환) 시 캔버스 동기화 + 재맞춤 — ResizeObserver 1회만 설치
+      if(!window._graphRO && typeof ResizeObserver!=='undefined'){
+        let _rt=null;
+        window._graphRO=new ResizeObserver(()=>{ const h=document.getElementById('graphHost'); if(!h||!G||!h.clientWidth) return;
+          try{ G.width(h.clientWidth).height(h.clientHeight); }catch(e){}
+          clearTimeout(_rt); _rt=setTimeout(()=>{ try{ G.zoomToFit(400,120); }catch(e){} },180); });
+        window._graphRO.observe(document.getElementById('graphHost'));
+      }
       // 초기 자동맞춤: 물리 안정화(엔진 정지) 후 1회 — 너무 이른 zoomToFit로 과확대되는 문제 방지
       let _fit=false; const _doFit=()=>{ if(_fit) return; _fit=true; try{ G.zoomToFit(600,120); }catch(e){} };
       if(typeof G.onEngineStop==='function') G.onEngineStop(_doFit);
