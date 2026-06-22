@@ -34,7 +34,7 @@
 
 **① Register the marketplace**
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
 ```
 **② Install**
 ```
@@ -65,7 +65,7 @@ In the Claude Code input box:
 /o-brain:open
 ```
 → Starts the server if it's off and opens the dashboard in your browser.
-*(Or tell Claude "open the screen"; manually: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app; npm start` then open `http://127.0.0.1:7740/`.)*
+*(Or tell Claude "open the screen"; manually: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app; npm start` then open `http://127.0.0.1:7740/`.)*
 
 What you can do on screen:
 - Switch **Graph (start screen) · Overview · List · Timeline**. Search at the top (press `/` to jump), **⌘K (Ctrl+K)** for quick command/memory search, click an item for details.
@@ -77,7 +77,7 @@ What you can do on screen:
 
 ## 6. Backup & restore (protect your memories)
 - **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
-  - Location: `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app\data\backup\` (keeps the latest 7)
+  - Location: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\backup\` (keeps the latest 7)
 - **Restore**: copy the most recent `obrain-....db` from `backup\` over `app\data\obrain.db`. (Copy the current file elsewhere first.)
 
 ---
@@ -85,17 +85,17 @@ What you can do on screen:
 ## 7. Commands at a glance
 | What | Where | Command |
 |------|-------|---------|
-| Install ① | Claude Code | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin` |
+| Install ① | Claude Code | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin` |
 | Install ② | Claude Code | `/plugin install o-brain@o-brain-local` |
 | Status | Claude Code | `/o-brain:status` |
 | Self-test | Claude Code | `/o-brain:selftest` |
 | Backup | Claude Code | `/o-brain:backup` |
 | Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
-| Open screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
+| Open screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
 | Screen URL | Browser | `http://127.0.0.1:7740/` |
 
 ## 8. File & data locations (absolute paths)
-- Memory DB: `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app\data\obrain.db`
+- Memory DB: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\obrain.db`
 - Backups: `...\app\data\backup\`
 - Settings: `...\app\.env.local` (sample: `.env.local.example`)
 

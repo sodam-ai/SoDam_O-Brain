@@ -29,7 +29,7 @@ AI(클로드코드)는 똑똑하지만, **대화창을 닫으면 방금 한 이�
 1. **Node.js 설치** (없을 때만) → [nodejs.org](https://nodejs.org) 의 **LTS** 버전 → 설치 후 **창을 새로** 엽니다.
 2. **클로드코드 입력칸**에 두 줄을 차례로 칩니다:
    ```
-   /plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+   /plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
    /plugin install o-brain@o-brain-local
    ```
 3. **클로드코드를 새로 시작**합니다. → 설치 끝.
@@ -50,7 +50,7 @@ AI(클로드코드)는 똑똑하지만, **대화창을 닫으면 방금 한 이�
 | **웹 브라우저** | 필수 | 크롬·엣지 등 아무거나(화면 보기용). |
 | **API 키·결제** | **불필요** | O-Brain은 키·비용 **0**. 100% 무료·로컬입니다. |
 
-> **다운로드 방법(O-Brain 자체):** 이미 `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\` 폴더에 들어 있습니다. 따로 받을 게 없어요.
+> **다운로드 방법(O-Brain 자체):** 이미 `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\` 폴더에 들어 있습니다. 따로 받을 게 없어요.
 
 ---
 
@@ -60,7 +60,7 @@ AI(클로드코드)는 똑똑하지만, **대화창을 닫으면 방금 한 이�
 
 **① 목록 등록** — 플러그인이 있는 폴더를 알려줍니다.
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
 ```
 
 **② 설치** — 그 목록에서 O-Brain을 깝니다.
@@ -140,13 +140,13 @@ AI(클로드코드)는 똑똑하지만, **대화창을 닫으면 방금 한 이�
 
 | 무엇 | 어디에 | 명령 |
 |------|------|------|
-| 설치 ① 목록 등록 | 클로드코드 | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin` |
+| 설치 ① 목록 등록 | 클로드코드 | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin` |
 | 설치 ② 설치 | 클로드코드 | `/plugin install o-brain@o-brain-local` |
 | 상태 보기 | 클로드코드 | `/o-brain:status` |
 | 자가 점검 | 클로드코드 | `/o-brain:selftest` |
 | 백업 | 클로드코드 | `/o-brain:backup` |
 | 화면 띄우기(자동·추천) | 클로드코드 | `/o-brain:open` |
-| 화면(수동) | 터미널 | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
+| 화면(수동) | 터미널 | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
 | 화면 주소 | 브라우저 | `http://127.0.0.1:7740/` |
 | 백업(수동) | 터미널 | `cd ...\app` → `npm run backup` |
 
@@ -166,7 +166,7 @@ AI(클로드코드)는 똑똑하지만, **대화창을 닫으면 방금 한 이�
 
 | 무엇 | 위치 |
 |------|------|
-| 프로젝트 폴더 | `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\` |
+| 프로젝트 폴더 | `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\` |
 | 로컬앱(코드) | `...\app\` |
 | 플러그인 | `...\plugin\` |
 | **기억 DB(소중함)** | `...\app\data\obrain.db` |

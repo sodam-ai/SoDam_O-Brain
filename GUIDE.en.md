@@ -29,7 +29,7 @@ In a hurry? Just do this. Details from section 3 onward.
 1. **Install Node.js** (only if missing) → the **LTS** version at [nodejs.org](https://nodejs.org) → after installing, **open a new window**.
 2. In the **Claude Code input box**, type these two lines one by one:
    ```
-   /plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+   /plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
    /plugin install o-brain@o-brain-local
    ```
 3. **Restart Claude Code.** → Installation done.
@@ -50,7 +50,7 @@ In a hurry? Just do this. Details from section 3 onward.
 | **Web browser** | Required | Chrome, Edge, anything (to view the screen). |
 | **API key / payment** | **Not needed** | O-Brain costs **nothing** — 100% free and local. |
 
-> **Downloading O-Brain itself:** It's already in `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\`. Nothing extra to download.
+> **Downloading O-Brain itself:** It's already in `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\`. Nothing extra to download.
 
 ---
 
@@ -60,7 +60,7 @@ In a hurry? Just do this. Details from section 3 onward.
 
 **① Register the marketplace** — tells it where the plugin folder is.
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
 ```
 
 **② Install** — installs O-Brain from that list.
@@ -140,13 +140,13 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 
 | What | Where | Command |
 |------|------|------|
-| Install ① register | Claude Code | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin` |
+| Install ① register | Claude Code | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin` |
 | Install ② install | Claude Code | `/plugin install o-brain@o-brain-local` |
 | Status | Claude Code | `/o-brain:status` |
 | Self-test | Claude Code | `/o-brain:selftest` |
 | Backup | Claude Code | `/o-brain:backup` |
 | Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
-| Screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
+| Screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
 | Screen URL | Browser | `http://127.0.0.1:7740/` |
 | Backup (manual) | Terminal | `cd ...\app` → `npm run backup` |
 
@@ -166,7 +166,7 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 
 | What | Location |
 |------|------|
-| Project folder | `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\` |
+| Project folder | `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\` |
 | Local app (code) | `...\app\` |
 | Plugin | `...\plugin\` |
 | **Memory DB (precious)** | `...\app\data\obrain.db` |

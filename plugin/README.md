@@ -7,7 +7,7 @@
 
 ## 설치(로컬) — 2단계
 1. (한 번만) 앱 의존성: `cd ../app && npm install`
-2. 클로드코드에서 **목록 등록**: `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin`
+2. 클로드코드에서 **목록 등록**: `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin`
 3. 클로드코드에서 **설치**: `/plugin install o-brain@o-brain-local`
 4. **클로드코드 새로 시작** → 훅·MCP 등록 완료.
 

@@ -35,7 +35,7 @@
 
 **① 목록 등록**
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin
+/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
 ```
 **② 설치**
 ```
@@ -66,7 +66,7 @@
 /o-brain:open
 ```
 → 서버가 꺼져 있어도 자동으로 켜고 브라우저로 대시보드를 엽니다.
-*(또는 저에게 "화면 켜줘"라고 해도 되고, 수동으로는 `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app; npm start` 후 브라우저에서 `http://127.0.0.1:7740/`.)*
+*(또는 저에게 "화면 켜줘"라고 해도 되고, 수동으로는 `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app; npm start` 후 브라우저에서 `http://127.0.0.1:7740/`.)*
 
 화면에서 할 수 있는 것:
 - **그래프(첫 화면) · 개요 · 목록 · 타임라인** 탭 전환. 위 검색창(`/` 키로 바로 이동), **⌘K(Ctrl+K)** 로 명령·기억 빠른 검색, 항목 클릭 시 상세.
@@ -78,7 +78,7 @@
 
 ## 6. 백업 & 복원 (소중한 기억 보호)
 - **백업**: `/o-brain:backup` (또는 `npm run backup`). 서버 켤 때도 자동 백업돼요.
-  - 저장 위치: `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app\data\backup\` (최신 7개 보관)
+  - 저장 위치: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\backup\` (최신 7개 보관)
 - **복원**: 문제가 생기면, `backup\` 안의 가장 최근 `obrain-....db` 파일을
   `app\data\obrain.db` 로 **복사해 덮어쓰기** 하면 됩니다. (먼저 현재 파일을 다른 데 복사해 두세요)
 
@@ -87,17 +87,17 @@
 ## 7. 명령어 한눈에 (복붙용)
 | 무엇 | 어디에 | 명령 |
 |------|--------|------|
-| 설치 ① | 클로드코드 | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\plugin` |
+| 설치 ① | 클로드코드 | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin` |
 | 설치 ② | 클로드코드 | `/plugin install o-brain@o-brain-local` |
 | 상태 보기 | 클로드코드 | `/o-brain:status` |
 | 점검 | 클로드코드 | `/o-brain:selftest` |
 | 백업 | 클로드코드 | `/o-brain:backup` |
 | 화면 띄우기(자동·추천) | 클로드코드 | `/o-brain:open` |
-| 화면 켜기(수동) | 터미널/입력칸 | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app` → `npm start` |
+| 화면 켜기(수동) | 터미널/입력칸 | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
 | 화면 주소 | 브라우저 | `http://127.0.0.1:7740/` |
 
 ## 8. 파일·데이터 위치 (절대경로)
-- 기억 DB: `D:\AI_Dev_Work\2026y\26y_06m_21d_O-Brain\app\data\obrain.db`
+- 기억 DB: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\obrain.db`
 - 백업: `...\app\data\backup\`
 - 설정: `...\app\.env.local` (예시는 `.env.local.example`)
 
