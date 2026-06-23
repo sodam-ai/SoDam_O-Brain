@@ -106,7 +106,7 @@ Defaults are fine for most users. To change, copy `.env.local.example` to `.env.
 |----------|---------|-------------|
 | `OBRAIN_PORT` | `7740` | Dashboard port (`http://127.0.0.1:<port>`) |
 | `OBRAIN_DATA_DIR` | `./data` | Folder for the memory DB & backups |
-| `OBRAIN_EXTRACT_MODE` | `rule` | Extraction mode. Currently runs **rule-based (free, local)**. `ai` (Haiku) mode is next — needs `ANTHROPIC_API_KEY` when enabled |
+| `OBRAIN_EXTRACT_MODE` | `rule` | Extraction mode. **Rule-based (free, local)** auto-capture. AI-quality capture needs **no API key** — the host LLM (Claude Code/Codex) does it via `/o-brain:remember` / `save_memory`. Zero billing |
 | `OBRAIN_VEC_GATE` | `0.92` | Search relevance threshold (lower = stricter) |
 
 ### 8-2. Folder structure (at a glance)
@@ -156,7 +156,7 @@ O-Brain/
 
 ## 12. Honest limitations (current v0.1)
 - **Read-back conflict**: other memory tools on the same PC (memory-bank plugin · persona MEMORY.md) may mix in old/conflicting facts, so O-Brain's latest memory can get buried. (improvement planned)
-- **Rule-based extraction**: catches clear decision sentences well, but may miss subtle context. (AI/Haiku mode is next)
+- **Rule-based auto-capture**: catches clear decisions well, but may miss subtle context. → For higher quality, run `/o-brain:remember` (the host AI captures it — no API key / cost).
 - **Memory relations**: the *target* to link is **auto-suggested** (by similarity), but the *relation type* (supersede/support/influence/contradict) is **chosen by you** — auto-classifying the type can be wrong, so it's kept human on purpose (to avoid misleading auto-relations).
 
 ---

@@ -43,7 +43,8 @@
 2. ✅ **[Phase 1a — 실기기 자동캡처 확인 완료(2026-06-20)]** 실세션에서 결정문장 말하고 `/clear`(=SessionEnd) → **자동저장 성공**(#6 [결정] "포트 7740", 총 6건). SessionEnd stdin 스키마 확정 = `{session_id, transcript_path, cwd, hook_event_name, reason}`. `/clear`도 SessionEnd 발화. **미확인**: SessionStart 주입(되읽기) 실사용 · MCP 도구 실사용. ↓아래는 구현 이력:
    🔄 **[코어 구현·자체검증]** `plugin/`(훅+MCP 선언·런처) + `app/src`(`extract.mjs`·`extract-session.mjs`·`inject.mjs`·`mcp-server.mjs`). 자체검증 통과: 전사파싱→시크릿제거(전송 전)→규칙추출→저장 / SessionStart 주입문 / MCP `search_memory`·`get_memory`. **남은 1건(사용자 실행)**: 클로드코드 ①`/plugin marketplace add <plugin폴더>` ②`/plugin install o-brain@o-brain-local` → 실세션 종료로 자동캡처 + `app/data/_probe.json`(SessionEnd stdin 스키마) 확정 → 새 세션 주입 확인. (아키텍처: 무거운 코드/의존성=app/, 플러그인=절대경로 동적 import → 설치복사에도 견고. 폴더 이동 시 `OBRAIN_ROOT` 환경변수)
 3. ✅ **[Phase 1b + 갈무리 완료(2026-06-20)]** 그래프 2D/3D(react-force-graph, **브라우저 직접 검증**·의미유사도 엣지) + 타임라인 + **대시보드**(목록·그래프·타임라인 탭+검색+상세, `app/web/index.html`) + **자동백업**(`backup.mjs`, 시작시+수동, data/backup 7개 회전) + **README.md**(비개발자 사용설명서) + 슬래시명령 `/o-brain:status·selftest·backup`. → **v0.1 end-to-end 작동, 실사용 단계.**
-4. **(다음 · 실사용 후 결정)** 되읽기 충돌 근본수리(기억에 project 스코프 = 스키마) · AI(Haiku) 추출 모드 · 그래프 폴리시(과확대) · 라이선스 확정(공개 시) · 영문 README.
+4. **(다음 · 실사용 후 결정)** 되읽기 충돌 근본수리(기억에 project 스코프 = 스키마) · 그래프 폴리시(과확대) · 라이선스 확정(공개 시) · 영문 README.
+5. **(결정 변경 2026-06-23)** AI 추출은 유료 Haiku API가 아니라 **호스트 LLM(save_memory/remember) 재활용**으로 구현 — 사용자 지시(무과금) 반영, PRD의 Haiku 기본 결정 폐기.
 
 ## 5. 관통 원칙 (처음~끝)
 실제 SQLite(목업 X) · 시크릿 **저장 전 + 전송 전** 제거 · AI 호출 가시화 · 100% 로컬 · 비가역=확인 게이트 · 백업 day1 · 친절한 한국어 에러.

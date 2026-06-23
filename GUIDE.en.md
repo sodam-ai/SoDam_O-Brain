@@ -180,7 +180,7 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 **Key settings (.env.local):** *(defaults are fine for most — only when changing, copy `.env.local.example` to `.env.local`)*
 - `OBRAIN_PORT` — the screen's port (default 7740). Change it on conflict.
 - `OBRAIN_DATA_DIR` — folder to store memories (default `app\data`).
-- `OBRAIN_EXTRACT_MODE` — extraction mode (default `rule` = rule-based, free, local). `ai` (Haiku) mode is next — needs `ANTHROPIC_API_KEY` only when enabled.
+- `OBRAIN_EXTRACT_MODE` — extraction mode (default `rule` = rule-based, free, local auto-capture). AI-quality capture needs **no API key** — the host LLM (Claude Code/Codex) does it via `/o-brain:remember`. Zero billing.
 - `OBRAIN_VEC_GATE` — search sensitivity (default 0.92; lower = stricter).
 
 ---
@@ -238,7 +238,7 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 
 - It remembers **clear decision sentences** well; vague phrasing may be missed.
 - **Topic classification is automatic but sometimes wrong** (rule-based). For relations, the *target* is **auto-suggested** (by similarity) but the *type* (supersede/support/influence/contradict) is **chosen by you** (type auto-classification can be wrong, so it's kept human on purpose).
-- Smarter **AI auto-extraction** is not built yet (enabling it would require a separate API key / cost — currently not applied).
+- For smarter extraction, the **host LLM does it free via `/o-brain:remember`** — no separate API key / cost (uses the installed Claude Code/Codex).
 - It is a **single-user / this-PC** stage (moving/sharing to another PC needs extra work).
 - This is not a finished, warranted product — it's being refined through real use.
 
