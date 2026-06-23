@@ -81,6 +81,19 @@ export function parseTranscript(path, { tailLines = 600 } = {}) {
   return exchanges;
 }
 
+// 주입/시스템 텍스트 제거 — 클로드코드 전사의 user 턴에는 훅 주입·system-reminder·스킬/페르소나 마커·코드펜스가
+// 섞여 들어온다. 이를 추출 대상에서 빼서 '실제 사용자가 타이핑한 결정'만 남긴다(노이즈 기억 방지).
+// 사용자의 진짜 발화는 이 마커들과 무관하므로 안전(과필터 위험 낮음).
+export function stripInjected(text) {
+  let t = String(text || '');
+  t = t.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/gi, ' '); // 훅/리마인더 블록
+  t = t.replace(/```[\s\S]*?```/g, ' ');                                 // 코드펜스(설정·로그 등)
+  t = t.replace(/<command-[\s\S]*?<\/command-[a-z]*>/gi, ' ');           // 슬래시명령 래퍼
+  const drop = /(📌|O-Brain 자동 주입|O-Brain 로컬 기억|페르소나 v5|\[페르소나|persona_core|MANDATORY SKILL|hookSpecificOutput|additionalContext|UserPromptSubmit hook|SessionStart hook|SessionEnd hook|Skill\()/i;
+  t = t.split('\n').filter(line => !drop.test(line)).join('\n');         // 주입 마커 든 줄 제거
+  return t.replace(/[ \t]{2,}/g, ' ').trim();
+}
+
 export async function captureSession({ transcriptPath, projectPath } = {}) {
   // 입력 검증(방어) — 실제 .jsonl 파일만 읽음(임의 파일 읽기 차단)
   if (!transcriptPath || !String(transcriptPath).endsWith('.jsonl') || !existsSync(transcriptPath)) {
@@ -88,7 +101,10 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
   }
   const exchanges = parseTranscript(transcriptPath);
   // 시크릿은 '추출(=AI 전송 가능) 전'에 제거 — 보안 발견사항 반영.
-  for (const ex of exchanges) ex.text = redact(ex.text).clean;
+  for (const ex of exchanges) {
+    ex.text = redact(ex.text).clean;
+    if (ex.role === 'user') ex.text = stripInjected(ex.text); // 주입/시스템 텍스트 제거(노이즈 추출 방지)
+  }
   const memories = ruleExtract(exchanges);
   // 프로젝트 = 실제 편집한 파일 기준 자동 탐지(없으면 클로드코드 시작 폴더 cwd).
   const project = detectProject(transcriptPath, projectPath || null);

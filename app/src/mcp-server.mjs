@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { getRelated, getTimeline } from './store.mjs';
+import { getRelated, getTimeline, addMemory } from './store.mjs';
 
 const db = openDb();
 const server = new Server({ name: 'o-brain', version: '0.1.0' }, { capabilities: { tools: {} } });
@@ -15,6 +15,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: 'search_memory',
       description: '과거 기억을 의미+키워드 하이브리드로 검색해 소량 반환한다. project(현재 작업 폴더 절대경로)를 주면 그 프로젝트+전역 기억을 우선한다.',
       inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' }, project: { type: 'string' } }, required: ['query'] },
+    },
+    {
+      name: 'save_memory',
+      description: '대화에서 나온 결정·제약·선호·패턴·지식을 기억으로 저장한다. 사용자가 또렷이 정한 것만(잡담·추측·AI 발언 금지). 저장 전 시크릿은 자동으로 가려진다. project에는 현재 작업 폴더 절대경로를 준다.',
+      inputSchema: { type: 'object', properties: { content: { type: 'string' }, type: { type: 'string', enum: ['결정', '제약', '선호', '패턴', '지식'] }, importance: { type: 'number' }, project: { type: 'string' } }, required: ['content'] },
     },
     {
       name: 'get_memory',
@@ -40,6 +45,14 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const res = await search(db, String(args.query || '').slice(0, 200), Math.min(50, Math.max(1, Number(args.limit) || 8)), args.project ? String(args.project) : null);
     const slim = res.map(m => ({ id: m.id, type: m.type, importance: m.importance, content: m.content }));
     return { content: [{ type: 'text', text: JSON.stringify(slim) }] };
+  }
+  if (name === 'save_memory') {
+    const content = String(args.content || '').trim().slice(0, 1000);
+    if (!content) throw new Error('content 필요');
+    const type = ['결정', '제약', '선호', '패턴', '지식'].includes(args.type) ? args.type : '지식';
+    const importance = Math.min(5, Math.max(1, Number(args.importance) || 3));
+    const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project: args.project ? String(args.project) : null });
+    return { content: [{ type: 'text', text: JSON.stringify({ saved: true, id: r.id, redacted: r.redactedHits }) }] };
   }
   if (name === 'get_memory') {
     const m = db.prepare('SELECT * FROM memory WHERE id = ?').get(Number(args.id));
