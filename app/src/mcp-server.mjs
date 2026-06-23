@@ -13,8 +13,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'search_memory',
-      description: '과거 기억을 의미+키워드 하이브리드로 검색해 소량 반환한다. project(현재 작업 폴더 절대경로)를 주면 그 프로젝트+전역 기억을 우선한다.',
-      inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' }, project: { type: 'string' } }, required: ['query'] },
+      description: '과거 기억을 의미+키워드 하이브리드로 검색한다. 기본은 brief(제목 일부 snippet)로 토큰 절약 — 전체 내용이 필요하면 detail:"full" 또는 get_memory(id). project(현재 작업 폴더 절대경로)를 주면 그 프로젝트+전역을 우선한다.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number' }, project: { type: 'string' }, detail: { type: 'string', enum: ['brief', 'full'] } }, required: ['query'] },
     },
     {
       name: 'save_memory',
@@ -47,8 +47,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args = {} } = req.params;
   if (name === 'search_memory') {
+    const detail = args.detail === 'full' ? 'full' : 'brief';   // 토큰 절약: 기본 brief, 필요시 full
     const res = await search(db, String(args.query || '').slice(0, 200), Math.min(50, Math.max(1, Number(args.limit) || 8)), args.project ? String(args.project) : null);
-    const slim = res.map(m => ({ id: m.id, type: m.type, importance: m.importance, content: m.content }));
+    const slim = detail === 'full'
+      ? res.map(m => ({ id: m.id, type: m.type, importance: m.importance, content: m.content }))
+      : res.map(m => ({ id: m.id, type: m.type, snippet: String(m.content).slice(0, 70) }));
     return { content: [{ type: 'text', text: JSON.stringify(slim) }] };
   }
   if (name === 'save_memory') {
