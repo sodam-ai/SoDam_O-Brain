@@ -78,3 +78,13 @@ F1 터치타깃 ≥44px(24→13) · F2 좁은화면 라벨 과밀 방지(isNarro
 ## 실행 시 활용 도구
 - 스킬: `frontend-design`·`ui-ux-pro-max`·`shadcn-ui`. MCP: `shadcn`·`playwright`/`chrome-devtools`(시각 회귀).
 - 서브에이전트: `designer`(UI)·병렬 점검/구현(메인 컨텍스트 보호). 도구는 각 단계 필요한 것만.
+
+---
+
+## 다음 세션 이어서 할 일 (핸드오프 · 2026-06-23 푸시 시점)
+**① 가장 먼저 — 클로드코드 재시작.** 이번 세션의 새 MCP 도구(`save_memory`·`add_relation`)·명령(`/o-brain:remember`·`/o-brain:link`)·검색 점진공개는 **재시작 후 활성**(현 프로세스는 옛 코드). 재시작 후 `/o-brain:selftest`(✅✅✅) → "예전에 ○○?" 회상 → 결정 후 `/o-brain:remember` 저장 → `/o-brain:link` 관계 실사용 확인.
+**② 남은 백로그(선택, 안 해도 핵심 완성):**
+- **M4 일괄삭제**(노이즈 다중선택 삭제) — 비가역·`.row` 클릭충돌·94KB 회귀위험 → **삭제 전 자동백업+확인+undo** 안전설계로 전용 진행.
+- **M5 디자인** 마이크로 폴리시(선택) — 이미 절제된 프리미엄, 토큰/타이포 미세조정만.
+**완료(검증됨):** 폴더리네임 복구·그래프 잘림·되읽기 신뢰성·M1 기억질(save/remember/입력정제)·M2 모바일·무과금 호스트LLM 문서정렬·M3 중복방지/관계(add_relation·link)·검색 점진공개·터치타깃·README·GUIDE(한/영)+PDF 현행화.
+**원격:** `sodam-ai/SoDam_O-Brain` (PRIVATE) · 브랜치 `feat/v0.1-initial`.
