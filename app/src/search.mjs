@@ -11,7 +11,9 @@ function ftsQuery(q) {
     .map(t => t.replace(/["*()]/g, '') + '*').filter(t => t.length > 1).join(' OR ');
 }
 
-export async function search(db, query, k = 10) {
+export async function search(db, query, k = 10, projectFilter = null) {
+  // 프로젝트 우선 시 후보를 넉넉히 뽑아 필터 후에도 충분하게(미지정이면 기존과 동일)
+  const fetchK = projectFilter ? Math.max(k * 4, 40) : k;
   // 키워드 (FTS5)
   let kw = [];
   const fq = ftsQuery(query);
@@ -20,7 +22,7 @@ export async function search(db, query, k = 10) {
       kw = db.prepare(
         `SELECT m.id FROM memory_fts f JOIN memory m ON m.id=f.rowid
          WHERE memory_fts MATCH ? ORDER BY rank LIMIT ?`
-      ).all(fq, k);
+      ).all(fq, fetchK);
     } catch { kw = []; }
   }
   // 의미 (sqlite-vec KNN) — LIMIT은 내부 정수라 리터럴 보간(주입 아님)
@@ -28,7 +30,7 @@ export async function search(db, query, k = 10) {
   try {
     const qv = toBlob(await embed(query));
     vec = db.prepare(
-      `SELECT rowid AS id, distance FROM memory_vec WHERE embedding MATCH ? ORDER BY distance LIMIT ${Number(k)}`
+      `SELECT rowid AS id, distance FROM memory_vec WHERE embedding MATCH ? ORDER BY distance LIMIT ${Number(fetchK)}`
     ).all(qv).filter(r => r.distance <= VEC_GATE); // 관련도 문턱 적용(먼 결과 제외)
   } catch { vec = []; }
 
@@ -45,6 +47,9 @@ export async function search(db, query, k = 10) {
      FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
   ).all(...ids);
   const byId = new Map(rows.map(r => [r.id, r]));
-  return ids.map(id => ({ ...byId.get(id), _score: score.get(id) }))
-            .sort((a, b) => b._score - a._score).slice(0, k);
+  let out = ids.map(id => ({ ...byId.get(id), _score: score.get(id) }))
+               .sort((a, b) => b._score - a._score);
+  // 현재 프로젝트 우선 — 지정 시 현재 프로젝트 + 전역(NULL)만 남겨 타 프로젝트에 묻히지 않게
+  if (projectFilter) out = out.filter(m => m.project === projectFilter || m.project == null);
+  return out.slice(0, k);
 }

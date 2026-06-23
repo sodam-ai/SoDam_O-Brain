@@ -8,7 +8,17 @@ process.stdin.on('end', async () => {
   const out = { continue: true };
   try {
     let project = '';
-    try { project = JSON.parse(input || '{}').cwd || ''; } catch {}
+    try {
+      const p = JSON.parse(input || '{}');
+      project = p.cwd || '';
+      // 저장 시점(SessionEnd)과 동일한 detectProject로 프로젝트 키 정합 — cwd≠편집프로젝트 불일치 완화(resume 시 효과).
+      if (p.transcript_path) {
+        try {
+          const { detectProject } = await import(appUrl('extract-session.mjs'));
+          project = detectProject(p.transcript_path, project) || project;
+        } catch {}
+      }
+    } catch {}
     const { buildInjection } = await import(appUrl('inject.mjs'));
     const ctx = await buildInjection({ project, max: 8 });
     if (ctx) out.hookSpecificOutput = { hookEventName: 'SessionStart', additionalContext: ctx };
