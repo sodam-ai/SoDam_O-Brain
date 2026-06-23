@@ -335,6 +335,11 @@
     .subbar { padding:8px 12px; } section.view { padding:12px; }
     aside { width:100%; max-width:100%; }
     .legend { display:none; } #g3d { display:none; }
+    /* 터치 타깃 ≥44px (모바일 탭 편의 — 데스크톱 외형 불변) */
+    .icontop, .iconbtn { width:44px; height:44px; }
+    .icontop svg { width:18px; height:18px; }
+    .gzoom button { width:44px; height:44px; font-size:18px; }
+    [role="tab"] { min-height:44px; }
   }
 </style>
 </head>
@@ -972,6 +977,7 @@
     function drawGraph(){
       if(!gData){ initGraph(); return; }   // gData 미로딩 시 fetch 후 재호출(초기 로드/삭제/관계변경 자가치유 — null 역참조로 죽던 버그 방지)
       const el=document.getElementById('graphHost'); el.innerHTML=''; highlightNodes.clear(); highlightLinks.clear();
+      const isNarrow=(el.clientWidth||999)<600; // 좁은 화면(모바일): 라벨 과밀로 가독성 붕괴 방지
       renderNodeLegend();
       { const _ga=document.getElementById('gAll'); if(_ga){ _ga.style.display = (localFocus!=null||orphanView) ? '' : 'none'; _ga.textContent = orphanView ? '전체 보기' : '전체 보기'; } }
       const th=gTheme(); el.style.background=th.host;          // 그래프 배경도 테마 따라감
@@ -1023,7 +1029,7 @@
             g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
             ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI); ctx.fillStyle=g; ctx.fill();
             ctx.lineWidth=.8; ctx.strokeStyle=faded?th.strokeDim:th.stroke; ctx.stroke();
-            if(scale>1.35||hot||(n.val||0)>=6||(searchHits&&searchHits.has(n.id))){ ctx.fillStyle=faded?th.labelDim:th.label;
+            if(hot||(searchHits&&searchHits.has(n.id))||(isNarrow?(scale>2.2):(scale>1.35||(n.val||0)>=6))){ ctx.fillStyle=faded?th.labelDim:th.label;
               ctx.font=`${(n.val||0)>=6?600:400} ${Math.max(3.2,11/scale)}px -apple-system,system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
               ctx.fillText(String(n.name).slice(0, hot?28:16), n.x, n.y+r+3/scale+1.5); } })
           .onNodeHover(node=>{ highlightNodes.clear(); highlightLinks.clear();
