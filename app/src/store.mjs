@@ -5,6 +5,12 @@ import { classify } from './classify.mjs';
 
 export async function addMemory(db, { content, type = '지식', importance = 3, source = 'ai', confidence = 0.6, project = null, category = null }) {
   const { clean, hits } = redact(content);          // 1) 보안 (저장 전 필수)
+  // 1.2) 중복 방지 — 같은 프로젝트에 '내용(redact 후)이 정확히 같은' 기억이 있으면 재저장 안 함.
+  // 의미유사도가 아니라 '정확 일치'만 검사 → 서로 다른 결정은 절대 막지 않음(silent failure 방지). 스킵은 호출자에 가시화.
+  const dup = db.prepare(
+    "SELECT id FROM memory WHERE TRIM(content) = TRIM(?) AND IFNULL(project,'') = IFNULL(?,'') LIMIT 1"
+  ).get(clean, project);
+  if (dup) return { id: dup.id, redactedHits: hits, skipped: true };
   const cat = category || classify(clean);          // 1.5) 분류(온톨로지 v1) — 미지정 시 규칙 자동
   const vec = toBlob(await embed(clean));           // 2) 임베딩
   const tx = db.transaction(() => {                 // 3) 원자적 저장
