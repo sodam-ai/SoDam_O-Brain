@@ -94,6 +94,7 @@ In the Claude Code input box:
    - Not captured: small talk, plain commands like `cd folder`. (Only clear "decide / use / forbid"-type lines.)
 3. **End the chat**: type `/clear` (or close the window). → **Saved at this moment.**
 4. Verify: `/o-brain:status` → memory count grows and your sentence appears.
+5. **(Optional) Higher quality:** type `/o-brain:remember` → I (the AI) pick only this chat's decisions and save them (the installed Claude Code/Codex does it — **no API key / cost**). To link memories, use `/o-brain:link` (I suggest related memories → you confirm the type).
 
 > **Automatic security:** passwords / API keys (sk-… etc.) are **masked before being stored** (`[REDACTED]`). This is not a "100% safe" guarantee — always stay careful.
 
@@ -144,6 +145,8 @@ Address: `http://127.0.0.1:7740/` (bookmark it to reopen with one click).
 | Install ② install | Claude Code | `/plugin install o-brain@o-brain-local` |
 | Status | Claude Code | `/o-brain:status` |
 | Self-test | Claude Code | `/o-brain:selftest` |
+| Save memory (manual, high-quality) | Claude Code | `/o-brain:remember` |
+| Link memories (relations) | Claude Code | `/o-brain:link` |
 | Backup | Claude Code | `/o-brain:backup` |
 | Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
 | Screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |

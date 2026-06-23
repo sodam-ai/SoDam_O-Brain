@@ -58,6 +58,7 @@ In the Claude Code input box:
    *(Plain commands like `cd` or small talk are NOT saved — only "decide / use / forbid"-type sentences.)*
 2. **End the chat**: type `/clear` (or close the window). → saved at this moment.
 3. Verify: `/o-brain:status` → the **memory count grows** and your sentence appears.
+4. **For higher quality (optional)**: type `/o-brain:remember` → I (the AI) pick out this chat's decisions and save them (**no extra cost / API key** — the installed Claude Code/Codex does it). To link memories, use `/o-brain:link`.
 
 ## 5. See the dashboard
 **Easiest way** — in the Claude Code input box:
@@ -89,6 +90,8 @@ What you can do on screen:
 | Install ② | Claude Code | `/plugin install o-brain@o-brain-local` |
 | Status | Claude Code | `/o-brain:status` |
 | Self-test | Claude Code | `/o-brain:selftest` |
+| Save memory (manual, high-quality) | Claude Code | `/o-brain:remember` |
+| Link memories (relations) | Claude Code | `/o-brain:link` |
 | Backup | Claude Code | `/o-brain:backup` |
 | Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
 | Open screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
