@@ -1,8 +1,10 @@
 # CHECKPOINT.md — SoDam O-Brain v0.2 업그레이드 로드맵
 
 > 상태: **M1✅(3b572e7) · M2✅(d714175) · 문서정렬✅(3b04c15) · M3✅(01bd39f) · M4 부분(터치타깃✅ 1fe5109 · 일괄삭제 보류) · M5 미착수 · 연구반영: search_memory 점진공개✅**.
+> **PRD gap ✅(2026-06-28)**: Stop·UserPromptSubmit 훅 래퍼 + 프로젝트 훅 등록 + scope DB 마이그레이션 + listCategories(store/server/mcp) + list_categories MCP 도구 + save_memory scope — selftest ✅✅✅
+> **PRD gap 2차 ✅(2026-06-28)**: inject.mjs SUPERSEDES 필터(번복 기억 주입 버그 수정) + scope 필터(global 전용) + NOTICE 파일(Apache 2.0 의존성 고지) + index.html scope 필터 UI(전역/프로젝트 셀렉트) — selftest ✅✅✅
 > 진행 규칙: **한 마일스톤씩 세부 Plan→승인→착수→검증**. 한꺼번에 금지(94KB 단일 index.html 회귀 위험).
-> 작성/갱신: 2026-06-23. (검토용 — M3~M5 미실행.)
+> 작성/갱신: 2026-06-28.
 
 ## Context (왜)
 - v0.1 안정화 완료: 리네임 복구(f82c255)·그래프 잘림(e91051a)·되읽기/고아기억(9637166).

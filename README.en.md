@@ -1,167 +1,201 @@
-<!-- 한국어: [README.md](./README.md) · English: this file -->
+<!-- English: this file · 한국어: README.md · Full guide: GUIDE.en.md · (This document and README.en.pdf have identical content) -->
 
-# O-Brain — Your AI's Memory Notebook 🧠
+# SoDam O-Brain — AI Memory System
 
-> A **100% local** tool that **automatically remembers** the important decisions, rules, and preferences from your Claude Code conversations, and shows them as a **knowledge graph & timeline**.
+> **A 100% local memory tool that automatically saves important decisions and notes from your AI conversations, and visualizes them as a knowledge graph.**
 
-**In one line:** AI is smart but forgets everything once a chat ends — like a *brilliant friend with amnesia*. O-Brain is the **auto-notepad** you keep next to that friend: it writes down what matters and reminds the AI next time.
-
----
-
-## What does it do?
-- **Auto-save**: when a Claude Code session ends, it automatically records **decisions, promises, constraints** (e.g., "use port 7740 for this project") — no manual work.
-- **Auto-redaction (security)**: passwords / API keys are **automatically masked** before saving (`[REDACTED]`).
-- **See it as a graph**: browse memories as **dots & lines** (2D/3D graph) — **the graph is the start screen**. Also a **list** and a **timeline**.
-- **Overview at a glance**: total count, distribution by type/topic/**project**, most-connected memories, and most-viewed — all on one screen (**Overview** tab).
-- **Connect memories**: link them by relation — "this decision **supersedes / supports / influences / contradicts** that" — and see colored edges in the graph. The **target is auto-suggested** (by similarity), so you just click.
-- **Auto-categorize by topic**: memories are auto-grouped into topics (security, UI, deploy, …); toggle **"분류색"(category colors)** in the graph to color nodes by topic.
-- **Comfortable browsing**: search, type/**project** filters, sort, **light/dark theme**, **edit a memory**, export (JSON/Markdown), delete. **⌘K (Ctrl+K)** for quick search/navigation anywhere.
-- **The AI actually uses it**: new sessions auto-load relevant memories (recent & high-confidence first), and during a chat the AI can **search, trace relations, and view how decisions evolved**.
-- **Automatic project tagging**: each memory is auto-tagged with **the project whose files you actually edited in that session** (no matter where you launched Claude Code — it uses the project you touched most).
-- **Auto-refresh**: new memories show up **on their own** (when you return to the tab or after a short wait); the top-right **refresh (↻) button** updates instantly too.
-- **100% local**: everything stays on your PC. Nothing leaves over the internet.
+**In one line:** AI is brilliant but forgets everything the moment a chat ends.
+O-Brain is the **auto-notepad** you keep next to that AI — it writes down what matters and brings it back whenever you need it.
 
 ---
 
-## 1. Prerequisites
-- Windows PC
-- **Node.js** (LTS) — if missing, install from [nodejs.org](https://nodejs.org) and **open a new window**
-- **Claude Code**
-- Internet (only for installing)
+## Key Features
 
-## 2. Install (just 2 steps)
-> Type both into the **Claude Code input box**.
+| Feature | Description |
+|---------|-------------|
+| **100% Local** | All memories stay on your PC only. No external server or cloud transfer |
+| **Hybrid Search** | Keyword (FTS5) + semantic similarity (vector search) simultaneously |
+| **Knowledge Graph** | Visualize memories as 2D/3D dots and lines |
+| **Time Travel** | Query memories that were "alive" on any past date |
+| **Confidence Decay** | AI-extracted memories auto-decay with a 30-day half-life |
+| **Security Filter** | API keys and passwords auto-removed before saving (`[REDACTED]`) |
+| **Auto Backup** | Snapshot created automatically on server start and before bulk delete |
+| **MCP Integration** | 7 tools for saving/searching/linking memories directly from Claude Code |
+| **Orphan Node Visual** | Memories with no user-defined relations shown with a dashed ring |
 
-**① Register the marketplace**
+---
+
+## Prerequisites
+
+| Item | Requirement |
+|------|-------------|
+| OS | Windows 10 / 11 (64-bit) |
+| Node.js | 20.x LTS or higher (free from [nodejs.org](https://nodejs.org)) |
+| Storage | 500 MB+ (includes ~90 MB embedding model) |
+| RAM | 4 GB+ (8 GB+ recommended) |
+| Browser | Chrome, Edge, Firefox, etc. |
+
+> Claude Code is only required for MCP integration. The web dashboard works without it.
+
+---
+
+## Installation (2 Steps)
+
+**Step 1: Install dependencies (in a terminal)**
+
+```bash
+cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+npm install
+```
+
+**Step 2: Start the server**
+
+```bash
+npm start
+```
+
+→ When you see `O-Brain Local Server ▶ http://127.0.0.1:7740`, it's running.
+
+**Open in browser:**
+
+```
+http://127.0.0.1:7740
+```
+
+> **First run:** automatically downloads the AI embedding model (~90 MB). Takes 1–3 minutes. All subsequent runs start instantly.
+
+---
+
+## Claude Code Plugin (Optional)
+
+If you use Claude Code, you can also install it as a plugin:
+
 ```
 /plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
-```
-**② Install**
-```
 /plugin install o-brain@o-brain-local
 ```
-→ Then **restart Claude Code**. Done.
 
-> `o-brain` = plugin name, `o-brain-local` = marketplace name.
-> If ① is blocked because it's "not a git repo", run `git init && git add -A && git commit -m init` in that folder and retry.
+Restart Claude Code after installation → slash commands become available:
 
-## 3. Check it installed
-In the Claude Code input box:
-- `/o-brain:status` → see memories & status
-- `/o-brain:selftest` → one-shot brain check (save / security / search). ✅✅✅ means OK.
-
----
-
-## 4. How to use (easiest part)
-1. Chat as usual; to make it remember something, say a **clear decision sentence**.
-   e.g., `Let's set this project's test port to 7740`
-   *(Plain commands like `cd` or small talk are NOT saved — only "decide / use / forbid"-type sentences.)*
-2. **End the chat**: type `/clear` (or close the window). → saved at this moment.
-3. Verify: `/o-brain:status` → the **memory count grows** and your sentence appears.
-4. **For higher quality (optional)**: type `/o-brain:remember` → I (the AI) pick out this chat's decisions and save them (**no extra cost / API key** — the installed Claude Code/Codex does it). To link memories, use `/o-brain:link`.
-
-## 5. See the dashboard
-**Easiest way** — in the Claude Code input box:
-```
-/o-brain:open
-```
-→ Starts the server if it's off and opens the dashboard in your browser.
-*(Or tell Claude "open the screen"; manually: `! cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app; npm start` then open `http://127.0.0.1:7740/`.)*
-
-What you can do on screen:
-- Switch **Graph (start screen) · Overview · List · Timeline**. Search at the top (press `/` to jump), **⌘K (Ctrl+K)** for quick command/memory search, click an item for details.
-- **Overview** tab: total count, distribution by type/topic/**project**, most-connected and most-viewed memories. Click **"connected-less memories"** to see only the orphans in the graph.
-- In the detail panel: **copy · edit (content/type/importance) · delete**, and under **"this memory's relations"** link it to others (supersede/support/influence/contradict). It **suggests likely related memories** — click one to fill the target, then **just pick the relation type**. *(Secrets are auto-redacted again on edit.)*
-- Top-right **refresh (↻)** · **light/dark theme** · **export** (JSON/Markdown), type/**project** **filter · sort**. *(New memories auto-appear after a short wait / on tab return; projects are listed by most-recent activity.)*
-- Hover a graph node to highlight its connections; search highlights matching nodes. Use the **"분류색"(category)** button to recolor nodes by type ↔ topic.
-- Filter by **importance/period**, focus a memory's **neighborhood** (target ◎ button in detail), and frequently-opened memories **glow brighter** (view count). As memories grow, the graph shows the **most important ones first** and tells you *"top M of N"*.
-
-## 6. Backup & restore (protect your memories)
-- **Backup**: `/o-brain:backup` (or `npm run backup`). Also auto-runs when the server starts.
-  - Location: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\backup\` (keeps the latest 7)
-- **Restore**: copy the most recent `obrain-....db` from `backup\` over `app\data\obrain.db`. (Copy the current file elsewhere first.)
+| Command | What it does |
+|---------|-------------|
+| `/o-brain:status` | View current memory count and status |
+| `/o-brain:selftest` | Run save/search/security checks (✅✅✅ = OK) |
+| `/o-brain:remember` | Extract and save decisions from current chat |
+| `/o-brain:link` | Link memories with a relation |
+| `/o-brain:backup` | Create a manual backup |
+| `/o-brain:open` | Open the dashboard in your browser |
 
 ---
 
-## 7. Commands at a glance
-| What | Where | Command |
-|------|-------|---------|
-| Install ① | Claude Code | `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin` |
-| Install ② | Claude Code | `/plugin install o-brain@o-brain-local` |
-| Status | Claude Code | `/o-brain:status` |
-| Self-test | Claude Code | `/o-brain:selftest` |
-| Save memory (manual, high-quality) | Claude Code | `/o-brain:remember` |
-| Link memories (relations) | Claude Code | `/o-brain:link` |
-| Backup | Claude Code | `/o-brain:backup` |
-| Open dashboard (auto, recommended) | Claude Code | `/o-brain:open` |
-| Open screen (manual) | Terminal | `cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app` → `npm start` |
-| Screen URL | Browser | `http://127.0.0.1:7740/` |
+## MCP Tool Integration (Claude Code)
 
-## 8. File & data locations (absolute paths)
-- Memory DB: `D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\data\obrain.db`
-- Backups: `...\app\data\backup\`
-- Settings: `...\app\.env.local` (sample: `.env.local.example`)
+Register in Claude Code's `settings.json` to save/search memories mid-conversation:
 
-### 8-1. Environment variables (optional · `app\.env.local`)
-Defaults are fine for most users. To change, copy `.env.local.example` to `.env.local` and edit. *(`.env.local` must never be committed — already blocked.)*
+```json
+{
+  "mcpServers": {
+    "o-brain": {
+      "command": "node",
+      "args": ["C:/absolute/path/to/app/src/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+Available MCP tools: `save_memory`, `search_memory`, `get_memory`, `get_related`, `get_timeline`, `add_relation`, `list_categories`
+
+---
+
+## Key Commands
+
+```bash
+# Run from the app/ folder
+npm start          # Start server (port 7740)
+npm run selftest   # Run self-diagnostics
+npm run backup     # Manual backup
+npm run status     # View DB stats
+npm run seed       # Add sample data (for testing)
+```
+
+---
+
+## File & Data Locations
+
+| Item | Location |
+|------|----------|
+| Memory database | `app/data/obrain.db` |
+| Auto backups | `app/data/backups/` (keeps latest 10) |
+| API token file | `app/data/.api-token` (regenerated each run) |
+| Personal settings | `app/.env.local` (uses defaults if absent) |
+
+### Environment Variables (`app/.env.local`)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OBRAIN_PORT` | `7740` | Dashboard port (`http://127.0.0.1:<port>`) |
-| `OBRAIN_DATA_DIR` | `./data` | Folder for the memory DB & backups |
-| `OBRAIN_EXTRACT_MODE` | `rule` | Extraction mode. **Rule-based (free, local)** auto-capture. AI-quality capture needs **no API key** — the host LLM (Claude Code/Codex) does it via `/o-brain:remember` / `save_memory`. Zero billing |
-| `OBRAIN_VEC_GATE` | `0.92` | Search relevance threshold (lower = stricter) |
+| `OBRAIN_PORT` | `7740` | Server port number |
+| `OBRAIN_DATA_DIR` | `./data` | Data storage folder |
 
-### 8-2. Folder structure (at a glance)
+---
+
+## Security Overview
+
+- Server binds **only to 127.0.0.1 (your PC)** — not reachable from external devices
+- **API keys and passwords auto-removed** before saving (processed by redact.mjs)
+- New **local API token** auto-generated each server start (crypto.randomBytes)
+- `data/`, `.env.local`, `*.sqlite` are in `.gitignore` — never committed to Git
+- No external cloud communication. Embedding model runs entirely locally
+
+---
+
+## Architecture Summary
+
 ```
-O-Brain/
-├─ app/        Local app (server·DB·search·web dashboard)
-│  ├─ src/     Code (.mjs)
-│  ├─ web/     Dashboard UI (index.html)
-│  └─ data/    Memory DB & backups (personal data — not committed)
-├─ plugin/     Claude Code plugin (hooks·MCP·slash commands)
-├─ README.md · README.en.md · GUIDE.* (docs)
-└─ LICENSE
+[Claude Code / Browser]
+        ↓
+[Express Server 127.0.0.1:7740]
+        ↓
+[Security Filter] → [Embedding (local AI)] → [SQLite DB]
+                                               ├── FTS5 (keyword search)
+                                               └── sqlite-vec (vector search)
 ```
 
-### 8-3. Build · test · deploy (install)
-- **Build**: none (vanilla — the web UI runs with no build step). Just `cd app && npm install` once for dependencies.
-- **Test**: `/o-brain:selftest` (or `cd app && npm run selftest`) → ✅✅✅ means OK.
-- **Deploy (install)**: like **2. Install** — `/plugin marketplace add` → `/plugin install` in Claude Code. No cloud deploy (100% local).
+Tech stack: Node.js ES Modules · Express.js v5 · SQLite (better-sqlite3) · sqlite-vec · @huggingface/transformers (all-MiniLM-L6-v2) · force-graph / 3d-force-graph · @modelcontextprotocol/sdk
 
 ---
 
-## 9. Troubleshooting (things we actually hit)
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Marketplace not found` | Tried to install in one step | Use the **2 steps** (register → install) |
-| Nothing gets saved | No "decision" sentence / session not ended | Say a clear decision sentence, then **`/clear`** |
-| Screen (URL) won't open | Server not running / port in use | Run `npm start` again, or change `OBRAIN_PORT` in `.env.local` |
-| Wrong port answer in a new chat | **Conflict with other memory tools** (see limits) | Known limit — use `search_memory` directly |
-| `'node' is not recognized` | Node.js not installed | Install LTS from nodejs.org → **new window** |
-| 3D graph won't show | No WebGL / low-spec | Switch to **2D** |
-| New memory/project not visible | Screen is stale | Click the **refresh (↻) button** (or wait — it auto-refreshes) |
-| Projects collapsed into one | Old memories used the old rule (launch folder) | From the **next `/clear`**, memories auto-tag the project you actually worked in (old ones stay as-is) |
-| Install refused (not a git repo) | Local folder | In `plugin` folder: `git init && git add -A && git commit -m init` |
+## Troubleshooting Quick Reference
+
+| Symptom | Fix |
+|---------|-----|
+| `'node' is not recognized` | Install LTS from [nodejs.org](https://nodejs.org) → **open a new terminal** |
+| `EADDRINUSE :::7740` | Add `OBRAIN_PORT=7741` to `.env.local` and restart |
+| Graph is empty | Run `npm run seed` to add sample data |
+| Browser won't connect | Confirm `npm start` is running → check address is `http://127.0.0.1:7740` |
+| Embedding download fails | Check internet connection · allow Node.js through firewall |
+| Accidentally deleted a memory | Restore from `app/data/backups/` latest `.db` file |
+
+Full guide: **[GUIDE.en.md](./GUIDE.en.md)** (English) · **[GUIDE.md](./GUIDE.md)** (Korean)
 
 ---
 
-## 10. Safety & privacy
-- Runs **entirely on your PC**. Memories never leave over the internet.
-- Secrets (passwords/keys) are **auto-masked** before being stored.
-- Data lives only in the folder above — **back it up yourself** (avoid cloud-synced folders).
+## License · Copyright · Commercial Use
 
-## 11. License & warranty
-- License: **Apache License 2.0** © 2026 SoDam AI Studio (full text in [LICENSE](./LICENSE)).
-- **No warranty (AS-IS)**: provided as is; you are responsible for outcomes.
-- Bundled open source (better-sqlite3, sqlite-vec, transformers.js, force-graph, express, …) is under **their own licenses** (MIT/Apache, etc.).
-- If O-Brain uses Claude for extraction, **Anthropic's terms apply separately**.
+**Apache License 2.0 © SoDam AI Studio, 2026**
 
-## 12. Honest limitations (current v0.1)
-- **Read-back conflict**: other memory tools on the same PC (memory-bank plugin · persona MEMORY.md) may mix in old/conflicting facts, so O-Brain's latest memory can get buried. (improvement planned)
-- **Rule-based auto-capture**: catches clear decisions well, but may miss subtle context. → For higher quality, run `/o-brain:remember` (the host AI captures it — no API key / cost).
-- **Memory relations**: the *target* to link is **auto-suggested** (by similarity), but the *relation type* (supersede/support/influence/contradict) is **chosen by you** — auto-classifying the type can be wrong, so it's kept human on purpose (to avoid misleading auto-relations).
+| Item | Details |
+|------|---------|
+| Personal use | Free to use |
+| Modification · copying | Permitted (must preserve copyright notices) |
+| Commercial use | Permitted under Apache-2.0 terms |
+| Warranty | **None (AS-IS)** — you are responsible for outcomes |
+| External services | Claude / Anthropic and other service terms apply separately |
+
+- Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, etc.) are under **their own licenses** (MIT/Apache-2.0)
+- "Claude" and "Anthropic" are trademarks of their respective owners. O-Brain has no official affiliation with them
+- Full license text: `LICENSE` file
 
 ---
 
-*Written from verified, working values (not guesses). If something breaks, share the exact screen and we'll fix it together.*
+*This document and README.en.pdf have identical content.*
+*Full guide: [GUIDE.en.md](./GUIDE.en.md) (English) · [GUIDE.md](./GUIDE.md) (Korean)*
