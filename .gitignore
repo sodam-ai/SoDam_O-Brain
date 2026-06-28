@@ -35,3 +35,9 @@ Thumbs.db
 
 # ai-pair-programming 자동 세션 리포트
 .pair-programming-session.md
+
+# 로컬 전용 Claude Code 프로젝트 설정 (절대경로 포함 — 다른 PC에서 동작 안 함)
+.claude/
+
+# 내부 계획·감사 문서 (저장소 불필요)
+PLAN_PRD_AUDIT.md
