@@ -109,11 +109,21 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
   // 프로젝트 = 실제 편집한 파일 기준 자동 탐지(없으면 클로드코드 시작 폴더 cwd).
   const project = detectProject(transcriptPath, projectPath || null);
   const db = openDb();
+  // 세션 레코드 생성(PRD 02) — 기억의 출처 세션을 추적한다.
+  let session_id = null;
+  try {
+    const sessRow = db.prepare(
+      "INSERT INTO session(project, tool, ended_at) VALUES (?, 'claude-code', datetime('now'))"
+    ).run(project || null);
+    session_id = Number(sessRow.lastInsertRowid) || null;
+  } catch {}
+  // scope: project 탐지 시 'project', 없으면 'global' (PRD 02 확정: Phase 1은 전부 project)
+  const scope = project ? 'project' : 'global';
   const saved = [];
   for (const m of memories) {
-    const r = await addMemory(db, { ...m, project });
+    const r = await addMemory(db, { ...m, project, scope, session_id });
     saved.push({ id: r.id, type: m.type, content: m.content });
   }
   db.close();
-  return { exchanges: exchanges.length, candidates: memories.length, saved, project };
+  return { exchanges: exchanges.length, candidates: memories.length, saved, project, session_id };
 }

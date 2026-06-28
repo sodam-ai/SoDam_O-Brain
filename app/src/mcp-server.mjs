@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { openDb } from './db.mjs';
 import { search } from './search.mjs';
-import { getRelated, getTimeline, addMemory, addRelation } from './store.mjs';
+import { getRelated, getTimeline, addMemory, addRelation, listCategories } from './store.mjs';
 
 const db = openDb();
 const server = new Server({ name: 'o-brain', version: '0.1.0' }, { capabilities: { tools: {} } });
@@ -19,7 +19,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'save_memory',
       description: '대화에서 나온 결정·제약·선호·패턴·지식을 기억으로 저장한다. 사용자가 또렷이 정한 것만(잡담·추측·AI 발언 금지). 저장 전 시크릿은 자동으로 가려진다. project에는 현재 작업 폴더 절대경로를 준다.',
-      inputSchema: { type: 'object', properties: { content: { type: 'string' }, type: { type: 'string', enum: ['결정', '제약', '선호', '패턴', '지식'] }, importance: { type: 'number' }, project: { type: 'string' } }, required: ['content'] },
+      inputSchema: { type: 'object', properties: { content: { type: 'string' }, type: { type: 'string', enum: ['결정', '제약', '선호', '패턴', '지식'] }, importance: { type: 'number' }, project: { type: 'string' }, scope: { type: 'string', enum: ['global', 'project'] } }, required: ['content'] },
     },
     {
       name: 'get_memory',
@@ -41,6 +41,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: '두 기억을 관계로 연결한다. 관계 종류는 호출자가 명시(자동판정 금지): SUPERSEDES(번복)·SUPPORTS(뒷받침)·INFLUENCES(영향)·CONTRADICTS(충돌). 사용자가 확정한 관계만 연결할 것.',
       inputSchema: { type: 'object', properties: { from_id: { type: 'number' }, to_id: { type: 'number' }, type: { type: 'string', enum: ['SUPERSEDES', 'SUPPORTS', 'INFLUENCES', 'CONTRADICTS'] } }, required: ['from_id', 'to_id', 'type'] },
     },
+    {
+      name: 'list_categories',
+      description: '기억의 카테고리 목록과 각 카테고리의 기억 수를 반환한다. UI 필터·주제 파악에 쓴다.',
+      inputSchema: { type: 'object', properties: {} },
+    },
   ],
 }));
 
@@ -59,7 +64,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     if (!content) throw new Error('content 필요');
     const type = ['결정', '제약', '선호', '패턴', '지식'].includes(args.type) ? args.type : '지식';
     const importance = Math.min(5, Math.max(1, Number(args.importance) || 3));
-    const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project: args.project ? String(args.project) : null });
+    const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project: args.project ? String(args.project) : null, scope: args.scope === 'project' ? 'project' : 'global' });
     return { content: [{ type: 'text', text: JSON.stringify({ saved: !r.skipped, id: r.id, skipped: !!r.skipped, note: r.skipped ? '동일 내용 기억이 이미 있어 새로 저장하지 않음(중복)' : undefined, redacted: r.redactedHits }) }] };
   }
   if (name === 'get_memory') {
@@ -77,6 +82,10 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   if (name === 'add_relation') {
     const r = addRelation(db, { from_id: Number(args.from_id), to_id: Number(args.to_id), type: String(args.type) });
     return { content: [{ type: 'text', text: JSON.stringify({ linked: true, id: r.id, inserted: r.inserted }) }] };
+  }
+  if (name === 'list_categories') {
+    const rows = listCategories(db);
+    return { content: [{ type: 'text', text: JSON.stringify(rows) }] };
   }
   throw new Error('unknown tool: ' + name);
 });

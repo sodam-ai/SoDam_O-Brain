@@ -2,9 +2,11 @@
 import express from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openDb } from './db.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
-import { listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory } from './store.mjs';
+import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -15,6 +17,10 @@ const HOST = '127.0.0.1'; // 외부 기기 차단 (08 보안)
 
 const db = openDb();
 await initEmbedder();
+
+// 로컬 API 토큰 — 서버 실행마다 새로 생성. index.html에 주입 + data/.api-token 파일 공유(MCP 플러그인용).
+const API_TOKEN = randomBytes(16).toString('hex');
+try { writeFileSync(join(DATA_DIR, '.api-token'), API_TOKEN, { mode: 0o600 }); } catch {}
 
 const app = express();
 app.use((req, res, next) => {
@@ -40,11 +46,16 @@ app.get('/api/health', (req, res) => {
 app.get('/api/memories', (req, res) => {
   const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
   const offset = Math.max(0, Number(req.query.offset) || 0);
-  res.json(listMemories(db, limit, offset));
+  const scope = req.query.scope ? String(req.query.scope) : null;
+  const at = req.query.at ? String(req.query.at).slice(0, 10) : null; // YYYY-MM-DD 시간여행
+  res.json(listMemories(db, limit, offset, scope, at));
 });
 // 개요 통계 — DB 전체 기준 정확 집계(기억 수와 무관하게 빠름)
 app.get('/api/stats', (req, res) => {
   try { res.json(getStats(db)); } catch (e) { res.status(500).json({ error: '통계 생성 실패' }); }
+});
+app.get('/api/categories', (req, res) => {
+  try { res.json(listCategories(db)); } catch (e) { res.status(500).json({ error: '카테고리 조회 실패' }); }
 });
 // 기억 1건 — 그래프에서 상한 밖 노드를 눌러도 상세를 열 수 있게(대량 대비)
 app.get('/api/memory/:id', (req, res) => {
@@ -79,6 +90,34 @@ app.delete('/api/memory/:id', (req, res) => {
     if (!deleted) return res.status(404).json({ error: '없는 기억' });
     res.json({ ok: true, deleted });
   } catch (e) { res.status(500).json({ error: '삭제 실패' }); }
+});
+
+// 일괄 삭제 — 삭제 전 자동 백업 필수(실패 시 전체 중단). 성공·실패 id 분리 반환.
+app.post('/api/memory/batch-delete', async (req, res) => {
+  const { ids } = req.body || {};
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'ids 배열 필수' });
+  const validIds = ids.map(Number).filter(n => Number.isInteger(n) && n > 0);
+  if (!validIds.length) return res.status(400).json({ error: '유효한 id가 없어요' });
+  try { await backupOnce({ tag: 'before-delete' }); }
+  catch (e) { return res.status(500).json({ error: '백업 실패로 삭제 중단: ' + (e?.message || '') }); }
+  const deleted = [], failed = [];
+  for (const id of validIds) {
+    try { const n = deleteMemory(db, id); if (n) deleted.push(id); else failed.push(id); }
+    catch { failed.push(id); }
+  }
+  res.json({ ok: true, deleted, failed });
+});
+
+// 기억 생성(UI 복원·신규용) — addMemory 재사용(redact·embed·중복방지 포함)
+app.post('/api/memory', async (req, res) => {
+  const { content, type = '지식', importance = 3, source = 'user', confidence = 1, project = null, scope = 'global' } = req.body || {};
+  if (!content || typeof content !== 'string' || !content.trim())
+    return res.status(400).json({ error: '내용 필수' });
+  try {
+    const result = await addMemory(db, { content, type, importance: Number(importance) || 3,
+      source, confidence: Number(confidence) ?? 1, project, scope: scope === 'project' ? 'project' : 'global' });
+    res.status(result.skipped ? 200 : 201).json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ error: e.message || '저장 실패' }); }
 });
 
 // 기억 편집(사용자) — 내용/유형/중요도. 내용 변경 시 저장 전 자동 redact + 재임베딩(store.updateMemory).
@@ -116,12 +155,23 @@ app.delete('/api/relation/:id', (req, res) => {
 // 그래프 라이브러리는 로컬에서 제공(100% 로컬 — CDN 미사용)
 app.use('/vendor/force-graph', express.static(join(HERE, '..', 'node_modules', 'force-graph', 'dist')));
 app.use('/vendor/3d-force-graph', express.static(join(HERE, '..', 'node_modules', '3d-force-graph', 'dist')));
+// index.html에 API 토큰 주입 — static보다 먼저 등록해야 덮어씀(PRD 08 로컬 보안)
+app.get('/', (req, res) => {
+  try {
+    const html = readFileSync(join(HERE, '..', 'web', 'index.html'), 'utf8');
+    res.type('text/html').send(html.replace('__OBRAIN_TOKEN__', API_TOKEN));
+  } catch { res.status(500).send('index.html 로딩 실패'); }
+});
 app.use(express.static(join(HERE, '..', 'web')));
 
 app.listen(PORT, HOST, () => {
   console.log(`O-Brain 로컬 서버 ▶ http://${HOST}:${PORT}  (임베딩: ${embedMode()})`);
   // 시작 시 데이터 안전망 — 자동 백업(PRD 05 §4)
   backupOnce({ tag: 'startup' })
-    .then(r => console.log(`[backup] 스냅샷 저장: ${r.dest} (보관 ${r.total}개)`))
+    .then(r => {
+      console.log(`[backup] 스냅샷 저장: ${r.dest} (보관 ${r.total}개)`);
+      try { const n = applyConfidenceDecay(db); if (n > 0) console.log(`[decay] 신뢰도 감쇠 적용: ${n}개`); }
+      catch (e) { console.error('[decay] 실패(무시):', e?.message); }
+    })
     .catch(e => console.error('[backup] 실패(무시):', e?.message));
 });

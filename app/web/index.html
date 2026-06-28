@@ -9,6 +9,7 @@
 <script>
   // 테마 선적용(깜빡임 방지)
   try { var _t = localStorage.getItem('obrain-theme'); if (_t) document.documentElement.dataset.theme = _t; } catch (e) {}
+  window.__OBT__ = '__OBRAIN_TOKEN__'; // API 토큰 (서버 실행 시 주입 — PRD 08)
 </script>
 <style>
   :root {
@@ -343,6 +344,34 @@
     .gbtn, .chip, .loadmore { min-height:44px; }
     .subbar select, .subbar button { min-height:44px; }
   }
+  /* ── 일괄삭제 선택 모드 ── */
+  .row-cb { display:none; width:20px; height:20px; flex:none; accent-color:var(--danger); margin-top:1px; pointer-events:none; cursor:default; }
+  .sel-mode .row-cb { display:block; }
+  .row.row-selected { background:rgba(242,85,90,.08); border-color:rgba(242,85,90,.35); }
+  .sel-mode .row:hover { transform:none; box-shadow:none; }
+  #selBar { max-width:880px; margin:0 auto 6px; display:flex; align-items:center; gap:8px;
+    position:sticky; top:0; z-index:9; background:color-mix(in srgb,var(--bg2) 85%,transparent);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); padding:6px 0; }
+  #selBar .s-count { flex:1; font-size:12.5px; color:var(--muted); display:none; }
+  #selBar .s-cancel { display:none; background:var(--surface2); border:1px solid var(--border2);
+    color:var(--muted); border-radius:9px; padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  #selBar .s-cancel:hover { color:var(--text); }
+  #selBar .s-del { display:none; background:var(--danger); border:none; color:#fff;
+    border-radius:9px; padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  #selBar .s-del:disabled { opacity:.45; cursor:default; }
+  #selBar .s-del:not(:disabled):hover { filter:brightness(1.08); }
+  .bd-scrim { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:70; display:none; place-items:center; }
+  .bd-scrim.open { display:grid; }
+  .bd-box { background:var(--surface); border:1px solid var(--border2); border-radius:var(--r-lg);
+    padding:24px 24px 20px; max-width:380px; width:92vw; box-shadow:var(--shadow); }
+  .bd-box h4 { margin:0 0 8px; font-size:15px; font-weight:700; }
+  .bd-box p { margin:0 0 18px; font-size:13px; color:var(--muted); line-height:1.6; }
+  .bd-box .bd-acts { display:flex; gap:8px; justify-content:flex-end; }
+  .bd-box .bd-acts button { border-radius:9px; padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; border:none; }
+  .bd-cancel-btn { background:var(--surface2); border:1px solid var(--border2) !important; color:var(--muted); }
+  .bd-cancel-btn:hover { color:var(--text); }
+  .bd-del-btn { background:var(--danger); color:#fff; }
+  .bd-del-btn:hover { filter:brightness(1.08); }
 </style>
 </head>
 <body>
@@ -385,7 +414,14 @@
   <main>
     <section id="view-overview" class="view" role="tabpanel" aria-labelledby="t-overview" hidden><div class="ov" id="ov"></div></section>
 
-    <section id="view-list" class="view" role="tabpanel" aria-labelledby="t-list" hidden><div class="list" id="rows">
+    <section id="view-list" class="view" role="tabpanel" aria-labelledby="t-list" hidden>
+      <div id="selBar">
+        <span class="s-count" id="selCount"></span>
+        <button class="s-cancel" id="selCancel">취소</button>
+        <button class="s-del" id="selDel" disabled>삭제</button>
+        <button class="chip" id="selModeBtn" style="margin-left:auto"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="4" height="4" rx="1"/><rect x="3" y="11" width="4" height="4" rx="1"/><rect x="3" y="17" width="4" height="4" rx="1"/><path d="M11 7h10M11 13h10M11 19h10"/></svg> 선택</button>
+      </div>
+      <div class="list" id="rows">
       <div class="skel" aria-hidden="true">
         <div class="skrow"><div class="skb" style="width:48px;height:22px;border-radius:7px"></div><div style="flex:1"><div class="skb" style="width:72%"></div><div class="skb" style="width:34%;margin-top:9px;height:9px"></div></div></div>
         <div class="skrow"><div class="skb" style="width:48px;height:22px;border-radius:7px"></div><div style="flex:1"><div class="skb" style="width:88%"></div><div class="skb" style="width:30%;margin-top:9px;height:9px"></div></div></div>
@@ -456,6 +492,16 @@
     <div class="cmdk-foot"><span><b>↑</b> <b>↓</b> 이동</span><span><b>Enter</b> 실행</span><span><b>Esc</b> 닫기</span></div>
   </div>
 
+  <div class="bd-scrim" id="bdScrim" aria-hidden="true">
+    <div class="bd-box" role="dialog" aria-modal="true" aria-labelledby="bd-title">
+      <h4 id="bd-title">기억 <span id="bdCount"></span>개 삭제</h4>
+      <p>선택한 기억을 삭제합니다. 삭제 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span></p>
+      <div class="bd-acts">
+        <button class="bd-cancel-btn" id="bdCancel">취소</button>
+        <button class="bd-del-btn" id="bdDelConfirm">삭제</button>
+      </div>
+    </div>
+  </div>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <script src="/vendor/force-graph/force-graph.min.js"></script>
@@ -481,6 +527,16 @@
     const REL = { SUPERSEDES:{ko:'번복함',c:'#5B8DEF',desc:'이 결정이 예전 결정을 대체해요(번복).'}, SUPPORTS:{ko:'뒷받침함',c:'#2DBE9E',desc:'이 기억이 다른 기억의 근거가 돼요.'}, INFLUENCES:{ko:'영향을 줌',c:'#8B93A3',desc:'이 기억이 다른 기억에 영향을 줘요.'}, CONTRADICTS:{ko:'충돌함',c:'#F2555A',desc:'이 기억이 다른 기억과 서로 부딪혀요(충돌).'} };
     const relColor = r => (REL[r] && REL[r].c) || 'rgba(120,135,160,.20)';
     let rels = [];
+    // API 토큰 자동 주입 — 서버가 주입한 토큰을 모든 /api/ 요청 헤더에 첨부(PRD 08 로컬 보안)
+    if (window.__OBT__ && window.__OBT__ !== '__OBRAIN_TOKEN__') {
+      const _f0 = window.fetch.bind(window);
+      window.fetch = (url, opts = {}) => {
+        if (typeof url === 'string' && url.startsWith('/api/')) {
+          opts = { ...opts, headers: { 'X-OBrain-Token': window.__OBT__, ...(opts.headers || {}) } };
+        }
+        return _f0(url, opts);
+      };
+    }
     const get = u => fetch(u).then(r => r.json());
     const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
     function hexA(hex, a){ const h=hex.replace('#',''); const n=parseInt(h.length===3?h.replace(/(.)/g,'$1$1'):h,16);
@@ -489,7 +545,8 @@
       r=Math.round(r+(255-r)*amt); g=Math.round(g+(255-g)*amt); b=Math.round(b+(255-b)*amt); return `rgb(${r},${g},${b})`; }
 
     let all = [], searchResults = null, activeType = '', tab = 'graph', curQuery = '', sortMode = 'new';
-    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', orphanView = false; // 중요도/기간/프로젝트 필터 + 로컬(이웃) 포커스 + 고립보기
+    let selMode = false, selectedIds = new Set(); // 일괄삭제 선택 모드
+    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = ''; // 중요도/기간/프로젝트/범위 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
     let statTotal = 0, listLoading = false; const _memCache = {}; // 대량 대비: 전체 총계 + 목록 더보기 + 단건 캐시
     const baseName = p => String(p||'').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
     // 기억 1건 얻기 — 로드된 all에 없으면(상한 밖) 서버에서 id로 가져옴(대량 대비)
@@ -499,7 +556,7 @@
     function ovBar(c, label, v, max){ return `<div class="ov-bar"><span class="bl"><i style="background:${c}"></i>${esc(label)}</span><span class="bt"><span class="bf" style="background:${c};width:${Math.round(v/Math.max(1,max)*100)}%"></span></span><span class="bn">${v}</span></div>`; }
     function ovHub(id, type, content, suffix){ return `<div class="ov-hub" data-id="${id}" tabindex="0" role="button">${pill(type)}<span class="hubt">${esc(String(content).slice(0,90))}</span><span class="hubn">${esc(suffix)}</span></div>`; }
     async function loadMore(){ if(listLoading) return; listLoading=true;
-      try{ const next=await get('/api/memories?limit=100&offset='+all.length);
+      try{ const next=await get('/api/memories?limit=100&offset='+all.length+(travelDate?'&at='+travelDate:''));
         if(Array.isArray(next)&&next.length){ const seen=new Set(all.map(m=>m.id)); for(const m of next) if(!seen.has(m.id)) all.push(m); renderLists(); if(tab==='graph') drawGraph(); }
       }catch{} finally{ listLoading=false; } }
 
@@ -530,6 +587,7 @@
       if(activeType && m.type!==activeType) return false;
       if(minImp && (m.importance||0) < minImp) return false;
       if(projectFilter && (m.project||'')!==projectFilter) return false;
+      if(scopeFilter && (m.scope||'global')!==scopeFilter) return false;
       if(period!=='all'){ const d=parseDate(m.created_at); if(!d) return false; if((Date.now()-d.getTime())/86400000 > Number(period)) return false; }
       return true;
     }
@@ -540,7 +598,8 @@
     function renderList(mems){ const host=document.getElementById('rows');
       if(!mems.length){ host.innerHTML=emptyState(); return; }
       let html = mems.map(m => `
-        <div class="row" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.type)} 기억 열기">
+        <div class="row${selectedIds.has(m.id)?' row-selected':''}" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.type)} 기억 열기">
+          <input type="checkbox" class="row-cb"${selectedIds.has(m.id)?' checked':''} tabindex="-1" aria-hidden="true">
           ${pill(m.type)}
           <div class="rc"><div class="rtext">${hl(m.content)}</div>
             <div class="rmeta">${impDots(m.importance)}<span class="rtime" title="${esc(absTime(m.created_at))}">${esc(relTime(m.created_at))}</span><span class="src">${esc(m.source||'-')}</span></div>
@@ -645,8 +704,13 @@
           + projects.map(p=>`<option value="${esc(p)}"${projectFilter===p?' selected':''}>${esc(baseName(p))} · ${esc(relTime(projInfo[p].s))}</option>`).join('')
           + `</select>`;
       }
+      html+=`<select class="sortsel" id="scopeSel" aria-label="범위 필터">
+        <option value=""${scopeFilter===''?' selected':''}>범위 전체</option>
+        <option value="global"${scopeFilter==='global'?' selected':''}>전역(global)</option>
+        <option value="project"${scopeFilter==='project'?' selected':''}>프로젝트(project)</option></select>
+      <input type="date" id="travelDate" class="sortsel" title="시간여행: 이 날짜 기준으로 살아있던 기억만 표시" value="${travelDate}" max="${new Date().toISOString().slice(0,10)}">`;
       const shown=currentSet().length;
-      const filtered = !!(activeType || minImp || projectFilter || period!=='all');
+      const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all');
       const info = searchResults!==null ? `검색 “${esc(curQuery)}” · ${shown}개`
         : (filtered ? `${shown}개 표시 · 총 ${all.length}개` : `총 ${all.length}개의 기억`);
       const sb=document.getElementById('subbar'); sb.innerHTML = html + `<span class="countinfo">${info}</span>`;
@@ -654,6 +718,8 @@
       sb.querySelector('#impSel').addEventListener('change', e=>{ minImp=Number(e.target.value); renderAll(); });
       sb.querySelector('#perSel').addEventListener('change', e=>{ period=e.target.value; renderAll(); });
       const _ps=sb.querySelector('#projSel'); if(_ps) _ps.addEventListener('change', e=>{ projectFilter=e.target.value; renderAll(); });
+      const _ss=sb.querySelector('#scopeSel'); if(_ss) _ss.addEventListener('change', e=>{ scopeFilter=e.target.value; renderAll(); });
+      const _td=sb.querySelector('#travelDate'); if(_td) _td.addEventListener('change', async e=>{ travelDate=e.target.value; all=[]; await softRefresh(); });
     }
 
     /* 관계(사용자 수동 연결) */
@@ -754,6 +820,72 @@
         all=all.filter(x=>x.id!==m.id); if(searchResults!==null) searchResults=searchResults.filter(x=>x.id!==m.id); if(statTotal>0) statTotal--;
         gData=null; closeDetail(); renderAll(); toast('기억을 삭제했어요','ok');
       } catch { toast('삭제하지 못했어요(서버 확인)','err'); } }
+    /* ── 일괄삭제 선택 모드 ── */
+    function updateSelToolbar(){
+      const n=selectedIds.size;
+      const countEl=document.getElementById('selCount'), cancelEl=document.getElementById('selCancel'),
+            delEl=document.getElementById('selDel'), toggleEl=document.getElementById('selModeBtn');
+      countEl.style.display=selMode?'':'none'; countEl.textContent=n+'개 선택됨';
+      cancelEl.style.display=selMode?'':'none';
+      delEl.style.display=selMode?'':'none'; delEl.disabled=n===0;
+      if(toggleEl) toggleEl.style.display=selMode?'none':'';
+    }
+    function toggleSelMode(){
+      selMode=!selMode; if(!selMode) selectedIds.clear();
+      document.getElementById('view-list').classList.toggle('sel-mode',selMode);
+      updateSelToolbar(); renderList(currentSet());
+    }
+    function exitSelMode(){ selMode=false; selectedIds.clear();
+      document.getElementById('view-list').classList.remove('sel-mode');
+      updateSelToolbar(); renderList(currentSet()); }
+    function openBatchDelModal(){ if(!selectedIds.size) return;
+      document.getElementById('bdCount').textContent=selectedIds.size;
+      const scrim=document.getElementById('bdScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden');
+      setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20); }
+    function closeBatchDelModal(){
+      const scrim=document.getElementById('bdScrim'); scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
+    async function execBatchDelete(){
+      closeBatchDelModal();
+      const ids=[...selectedIds];
+      const pairs=ids.map(id=>{ const m=all.find(x=>x.id===id)||{}; if(!m.content) return null;
+        return { id, content:m.content, type:m.type||'지식', importance:m.importance||3,
+          source:'user', confidence:m.confidence??1, project:m.project||null,
+          relations:rels.filter(r=>r.from_id===id||r.to_id===id) }; }).filter(Boolean);
+      exitSelMode();
+      let res;
+      try{
+        const r=await fetch('/api/memory/batch-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})});
+        res=await r.json().catch(()=>({})); if(!r.ok) throw new Error(res.error||'서버 오류');
+      }catch(e){ toast('삭제 실패: '+(e.message||''),'err'); return; }
+      const deleted=new Set(res.deleted||[]);
+      if(!deleted.size){ toast(res.failed?.length?'삭제하지 못했어요':'대상이 없어요','err'); return; }
+      all=all.filter(x=>!deleted.has(x.id));
+      if(searchResults!==null) searchResults=searchResults.filter(x=>!deleted.has(x.id));
+      rels=rels.filter(r=>!deleted.has(r.from_id)&&!deleted.has(r.to_id));
+      if(statTotal>0) statTotal-=deleted.size;
+      gData=null; closeDetail(); renderAll();
+      const failNote=res.failed?.length?` (${res.failed.length}개 실패)`:'';
+      toast(deleted.size+'개 삭제됨'+failNote,'ok', async()=>{
+        let ok=0, fail=0;
+        for(const p of pairs){
+          if(!deleted.has(p.id)) continue;
+          try{
+            const r=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({content:p.content,type:p.type,importance:p.importance,source:p.source,confidence:p.confidence,project:p.project})});
+            const j=await r.json().catch(()=>({})); if(!r.ok) throw 0;
+            const nid=j.id;
+            for(const rel of p.relations){
+              try{ await fetch('/api/relation',{method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({from_id:rel.from_id===p.id?nid:rel.from_id,to_id:rel.to_id===p.id?nid:rel.to_id,type:rel.type})}); }catch{}
+            }
+            ok++;
+          }catch{ fail++; }
+        }
+        await softRefresh();
+        toast(ok+'개 복원됨'+(fail?` (${fail}개 실패, 관계 일부 미복원 가능)`:''),'ok');
+      }, 10000);
+    }
+
     async function copyDetail(){ if(!curDetail) return;
       try { await navigator.clipboard.writeText(curDetail.content); toast('내용을 복사했어요','ok'); }
       catch { toast('복사하지 못했어요','err'); } }
@@ -791,10 +923,10 @@
 
     /* 토스트 */
     let toastTimer;
-    function toast(msg, kind, undoFn){ const el=document.getElementById('toast'); el.className=''; el.textContent=msg;
+    function toast(msg, kind, undoFn, dur){ const el=document.getElementById('toast'); el.className=''; el.textContent=msg;
       if(undoFn){ const b=document.createElement('button'); b.className='undo'; b.textContent='되돌리기'; b.onclick=()=>{ el.classList.remove('show'); undoFn(); }; el.appendChild(b); }
       void el.offsetWidth; el.classList.add('show'); if(kind) el.classList.add(kind);
-      clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), undoFn?5500:2200); }
+      clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), dur||(undoFn?5500:2200)); }
 
     /* 탭 */
     function showTab(t){ tab=t;
@@ -821,8 +953,18 @@
     /* 클릭/키보드 위임 */
     function openById(el){ const id=el.dataset.id; const m=all.find(x=>String(x.id)===id)||(searchResults||[]).find(x=>String(x.id)===id); if(m) openDetail(m); }
     document.querySelector('main').addEventListener('click', e=>{
-      const chip=e.target.closest('.chip'); if(chip){ activeType=chip.dataset.type||''; renderAll(); return; }
-      const el=e.target.closest('[data-id]'); if(el) openById(el); });
+      const chip=e.target.closest('.chip'); if(chip && !selMode){ activeType=chip.dataset.type||''; renderAll(); return; }
+      const el=e.target.closest('[data-id]'); if(el){
+        if(selMode && el.classList.contains('row')){
+          const id=Number(el.dataset.id);
+          if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+          el.classList.toggle('row-selected',selectedIds.has(id));
+          const cb=el.querySelector('.row-cb'); if(cb) cb.checked=selectedIds.has(id);
+          updateSelToolbar(); return;
+        }
+        if(!selMode) openById(el);
+      }
+    });
     document.querySelector('main').addEventListener('keydown', e=>{
       if((e.key==='Enter'||e.key===' ')){ const el=e.target.closest('[data-id]'); if(el){ e.preventDefault(); openById(el); } } });
     document.getElementById('subbar').addEventListener('click', e=>{ const chip=e.target.closest('.chip'); if(chip){ activeType=chip.dataset.type||''; renderAll(); } });
@@ -864,10 +1006,16 @@
     exBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=exMenu.classList.toggle('open'); exBtn.setAttribute('aria-expanded', open?'true':'false'); });
     exMenu.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>exportData(b.dataset.fmt)));
     document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
+    document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
+    document.getElementById('selCancel').addEventListener('click', exitSelMode);
+    document.getElementById('selDel').addEventListener('click', openBatchDelModal);
+    document.getElementById('bdCancel').addEventListener('click', closeBatchDelModal);
+    document.getElementById('bdDelConfirm').addEventListener('click', execBatchDelete);
+    document.getElementById('bdScrim').addEventListener('click', e=>{ if(e.target===document.getElementById('bdScrim')) closeBatchDelModal(); });
 
     /* 단축키 */
     document.addEventListener('keydown', e=>{
-      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); }
+      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); if(selMode) exitSelMode(); }
       else if(e.key==='/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||'')){ e.preventDefault(); qEl.focus(); } });
 
     /* ── 커맨드 팔레트 (⌘K / Ctrl+K) ── */
@@ -1031,6 +1179,7 @@
             g.addColorStop(0, faded?hexA(c,.40):lighten(c,.45)); g.addColorStop(1, faded?hexA(c,.22):c);
             ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI); ctx.fillStyle=g; ctx.fill();
             ctx.lineWidth=.8; ctx.strokeStyle=faded?th.strokeDim:th.stroke; ctx.stroke();
+            if(n.isOrphan&&!orphanView&&!faded){ ctx.setLineDash([2,3]); ctx.beginPath(); ctx.arc(n.x,n.y,r+2,0,2*Math.PI); ctx.strokeStyle=hexA('#9AA4B2',.55); ctx.lineWidth=1.2; ctx.stroke(); ctx.setLineDash([]); }
             if(hot||(searchHits&&searchHits.has(n.id))||(isNarrow?(scale>2.2):(scale>1.35||(n.val||0)>=6))){ ctx.fillStyle=faded?th.labelDim:th.label;
               ctx.font=`${(n.val||0)>=6?600:400} ${Math.max(3.2,11/scale)}px -apple-system,system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
               ctx.fillText(String(n.name).slice(0, hot?28:16), n.x, n.y+r+3/scale+1.5); } })
@@ -1064,7 +1213,7 @@
     document.getElementById('zfit').addEventListener('click',()=>{ try{ G.zoomToFit(500,120); }catch(e){} });
 
     /* 초기 로드 */
-    Promise.all([ get('/api/memories?limit=100&offset=0'), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ])
+    Promise.all([ get('/api/memories?limit=100&offset=0'+(travelDate?'&at='+travelDate:'')), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ])
       .then(([m,r,s])=>{ all=Array.isArray(m)?m:[]; rels=Array.isArray(r)?r:[]; if(s&&s.total) statTotal=s.total; renderAll(); if(tab==='graph') initGraph(); })
       .catch(()=>{ document.getElementById('rows').innerHTML='<div class="empty"><h4>불러오지 못했어요</h4><p>서버가 켜져 있는지 확인해 주세요.</p></div>'; });
 
@@ -1073,7 +1222,7 @@
     async function softRefresh(){
       if(_refreshing) return; _refreshing = true;
       try{
-        const [m,r,s] = await Promise.all([ get('/api/memories?limit=100&offset=0'), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ]);
+        const [m,r,s] = await Promise.all([ get('/api/memories?limit=100&offset=0'+(travelDate?'&at='+travelDate:'')), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ]);
         all = Array.isArray(m)?m:[]; rels = Array.isArray(r)?r:[]; if(s && s.total!=null) statTotal = s.total;
         gData = null;                                   // 그래프 재조회 유도(drawGraph 자가치유)
         if(tab==='overview') renderOverview(); else renderAll();

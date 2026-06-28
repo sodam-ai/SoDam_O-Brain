@@ -64,6 +64,10 @@ export function buildGraph(db, { neighbors = 2, limit = 600 } = {}) {
   const deg = {};
   for (const l of merged) { deg[l.source] = (deg[l.source] || 0) + 1; deg[l.target] = (deg[l.target] || 0) + 1; }
   for (const n of nodes) n.val = (n.val || 1) + (deg[n.id] || 0) * 0.6;
+  // 고립 기억: 사용자 관계(relation 테이블)에 등장하지 않는 노드 — UI orphanView·고립 강조 연동
+  const relNodeIds = new Set();
+  for (const r of relations) { relNodeIds.add(r.from_id); relNodeIds.add(r.to_id); }
+  for (const n of nodes) n.isOrphan = !relNodeIds.has(n.id);
 
   return { nodes, links: merged, edgeMode, relCount: relations.length, total, shown: nodes.length };
 }

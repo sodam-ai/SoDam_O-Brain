@@ -3,7 +3,7 @@ import { redact } from './redact.mjs';
 import { embed, toBlob } from './embed.mjs';
 import { classify } from './classify.mjs';
 
-export async function addMemory(db, { content, type = '지식', importance = 3, source = 'ai', confidence = 0.6, project = null, category = null }) {
+export async function addMemory(db, { content, type = '지식', importance = 3, source = 'ai', confidence = 0.6, project = null, category = null, scope = 'global', session_id = null }) {
   const { clean, hits } = redact(content);          // 1) 보안 (저장 전 필수)
   // 1.2) 중복 방지 — 같은 프로젝트에 '내용(redact 후)이 정확히 같은' 기억이 있으면 재저장 안 함.
   // 의미유사도가 아니라 '정확 일치'만 검사 → 서로 다른 결정은 절대 막지 않음(silent failure 방지). 스킵은 호출자에 가시화.
@@ -13,10 +13,12 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
   if (dup) return { id: dup.id, redactedHits: hits, skipped: true };
   const cat = category || classify(clean);          // 1.5) 분류(온톨로지 v1) — 미지정 시 규칙 자동
   const vec = toBlob(await embed(clean));           // 2) 임베딩
+  const sid = session_id ? Number(session_id) : null;
+  const today = new Date().toISOString().slice(0, 10); // valid_from = 저장 날짜(YYYY-MM-DD)
   const tx = db.transaction(() => {                 // 3) 원자적 저장
     const id = Number(db.prepare(
-      `INSERT INTO memory(content, type, importance, confidence, source, project, category) VALUES (?,?,?,?,?,?,?)`
-    ).run(clean, type, importance, confidence, source, project, cat).lastInsertRowid);
+      `INSERT INTO memory(content, type, importance, confidence, source, project, category, scope, session_id, valid_from) VALUES (?,?,?,?,?,?,?,?,?,?)`
+    ).run(clean, type, importance, confidence, source, project, cat, scope || 'global', sid, today).lastInsertRowid);
     db.prepare(`INSERT INTO memory_fts(rowid, content) VALUES (?, ?)`).run(id, clean);
     db.prepare(`INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)`).run(BigInt(id), vec);
     return id;
@@ -25,10 +27,20 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
 }
 
 const MEM_COLS = 'id, content, type, importance, confidence, source, project, category, access_count, created_at';
-export function listMemories(db, limit = 100, offset = 0) {
+export function listMemories(db, limit = 100, offset = 0, scope = null, at = null) {
+  const lim = Math.max(1, limit | 0), off = Math.max(0, offset | 0);
+  const conds = [], params = [];
+  if (scope) { conds.push('scope = ?'); params.push(scope); }
+  if (at) {
+    const d = String(at).slice(0, 10); // YYYY-MM-DD
+    conds.push('(valid_from IS NULL OR valid_from <= ?)');
+    conds.push('(valid_until IS NULL OR valid_until > ?)');
+    params.push(d, d);
+  }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
   return db.prepare(
-    `SELECT ${MEM_COLS} FROM memory ORDER BY id DESC LIMIT ? OFFSET ?`
-  ).all(Math.max(1, limit | 0), Math.max(0, offset | 0));
+    `SELECT ${MEM_COLS} FROM memory ${where} ORDER BY id DESC LIMIT ? OFFSET ?`
+  ).all(...params, lim, off);
 }
 export function countMemories(db) { return db.prepare('SELECT COUNT(*) n FROM memory').get().n; }
 export function getMemory(db, id) {
@@ -158,6 +170,10 @@ export function addRelation(db, { from_id, to_id, type }) {
   const r = db.prepare(
     `INSERT OR IGNORE INTO relation(from_id, to_id, type) VALUES (?,?,?)`
   ).run(a, b, type);
+  // SUPERSEDES: 대체된 기억(b)을 오늘 날짜로 무효화 — 시간여행 필터와 연동
+  if (type === 'SUPERSEDES' && r.changes > 0) {
+    db.prepare("UPDATE memory SET valid_until = date('now'), invalidated_by = ? WHERE id = ?").run(a, b);
+  }
   return { id: Number(r.lastInsertRowid), inserted: r.changes };
 }
 export function listRelations(db) {
@@ -200,4 +216,37 @@ export function getTimeline(db, { query = '', limit = 20 } = {}) {
   const notes = {};
   for (const r of rels) if (ids.has(r.from_id)) (notes[r.from_id] ||= []).push({ type: r.type, to: r.to_id });
   return mems.map(m => ({ ...m, evolves: notes[m.id] || [] }));
+}
+
+// 카테고리별 기억 수 집계 — UI 필터 드롭다운·MCP list_categories 공용
+export function listCategories(db) {
+  return db.prepare(
+    "SELECT COALESCE(category,'기타') AS cat, COUNT(*) AS c FROM memory GROUP BY cat ORDER BY c DESC"
+  ).all();
+}
+
+// 신뢰도 감쇠(Memento 30일 반감기) — source='user' 또는 conf≥0.99는 건너뜀(사람이 확인한 기억 보호)
+// 12시간 미만이면 실행 안 함(서버 재시작 폭풍 방지). app_settings.last_decay_at에 타임스탬프 저장.
+export function applyConfidenceDecay(db) {
+  const row = db.prepare("SELECT value FROM app_settings WHERE key = 'last_decay_at'").get();
+  const lastMs = row ? new Date(row.value).getTime() : 0;
+  const nowMs = Date.now();
+  const hoursSince = (nowMs - lastMs) / 3_600_000;
+  if (hoursSince < 12) return 0; // 너무 잦은 실행 방지
+  const daysSince = hoursSince / 24;
+  const factor = Math.pow(0.5, daysSince / 30); // 30일 반감기
+  const rows = db.prepare(
+    "SELECT id, confidence FROM memory WHERE source != 'user' AND confidence IS NOT NULL AND confidence < 0.99"
+  ).all();
+  if (!rows.length) return 0;
+  let updated = 0;
+  const upd = db.prepare('UPDATE memory SET confidence = ? WHERE id = ?');
+  db.transaction(() => {
+    for (const m of rows) {
+      const newConf = Math.max(0.1, (m.confidence ?? 0.6) * factor);
+      if (Math.abs(newConf - (m.confidence ?? 0.6)) > 0.001) { upd.run(newConf, m.id); updated++; }
+    }
+    db.prepare("INSERT OR REPLACE INTO app_settings(key,value) VALUES('last_decay_at',?)").run(new Date().toISOString());
+  })();
+  return updated;
 }

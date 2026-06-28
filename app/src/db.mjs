@@ -40,6 +40,16 @@ export function openDb() {
       created_at TEXT DEFAULT (datetime('now')),
       UNIQUE(from_id, to_id, type)
     );
+    -- 세션(PRD 02) — 클로드코드 한 번의 대화 단위. 기억의 출처 추적용.
+    CREATE TABLE IF NOT EXISTS session(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project TEXT,
+      tool TEXT DEFAULT 'claude-code',
+      ended_at TEXT DEFAULT (datetime('now')),
+      summary TEXT
+    );
+    -- 앱 설정(키-값) — last_decay_at 등 서버 재시작 간 지속 상태 저장.
+    CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY, value TEXT);
   `);
   // 마이그레이션(비파괴) — 기존 DB에 컬럼 없으면 추가(기존 행은 NULL)
   const cols = db.prepare('PRAGMA table_info(memory)').all().map(c => c.name);
@@ -47,6 +57,11 @@ export function openDb() {
   if (!cols.includes('category')) db.exec('ALTER TABLE memory ADD COLUMN category TEXT'); // 분류(온톨로지 v1)
   if (!cols.includes('access_count')) db.exec('ALTER TABLE memory ADD COLUMN access_count INTEGER DEFAULT 0'); // 조회수(글로우)
   if (!cols.includes('last_accessed_at')) db.exec('ALTER TABLE memory ADD COLUMN last_accessed_at TEXT');
+  if (!cols.includes('scope')) db.exec("ALTER TABLE memory ADD COLUMN scope TEXT DEFAULT 'global'"); // 범위(project/global)
+  if (!cols.includes('session_id')) db.exec('ALTER TABLE memory ADD COLUMN session_id INTEGER');      // 출처 세션(PRD 02)
+  if (!cols.includes('valid_from')) db.exec('ALTER TABLE memory ADD COLUMN valid_from TEXT');       // 유효 시작(PRD 02/03) — 저장 시 store.mjs에서 채움
+  if (!cols.includes('valid_until')) db.exec('ALTER TABLE memory ADD COLUMN valid_until TEXT');       // 유효 종료(PRD 02/03)
+  if (!cols.includes('invalidated_by')) db.exec('ALTER TABLE memory ADD COLUMN invalidated_by INTEGER'); // 무효화한 기억 id(PRD 02/03)
   // 분류 백필 — 비어있는 것만(멱등). 기존 기억에도 규칙 기반 주제 부여.
   try {
     const need = db.prepare(`SELECT id, content FROM memory WHERE category IS NULL OR category = ''`).all();

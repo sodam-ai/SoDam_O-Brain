@@ -26,15 +26,25 @@ export async function buildInjection({ query = '', project = '', max = 8 } = {})
       mems = await search(db, query, max);
     } else {
       // 후보 풀 = 최근 60 + 중요도 상위 40(오래된 핵심 기억도 후보 유지) → 합성점수로 재정렬.
-      // 현재 프로젝트 + 전역(project NULL)만(다른 프로젝트 섞임 방지). project 없으면 전체.
-      const where = project ? 'WHERE project = ? OR project IS NULL' : '';
+      // project 있으면 해당 프로젝트 + 전역(NULL) 기억. project 없으면 global scope만(타 프로젝트 섞임 방지).
+      const where = project
+        ? 'WHERE (project = ? OR project IS NULL)'
+        : "WHERE (scope IS NULL OR scope = 'global')";
       const args = project ? [project] : [];
       const cols = 'id, content, type, importance, confidence, created_at';
       const recent = db.prepare(`SELECT ${cols} FROM memory ${where} ORDER BY created_at DESC, id DESC LIMIT 60`).all(...args);
       const important = db.prepare(`SELECT ${cols} FROM memory ${where} ORDER BY importance DESC, id DESC LIMIT 40`).all(...args);
       const seen = new Set(); const pool = [];
       for (const r of recent.concat(important)) if (!seen.has(r.id)) { seen.add(r.id); pool.push(r); }
-      mems = rankNoQuery(pool, max);
+      // SUPERSEDES 당한 기억(번복된 결정) 제외 — 무효화된 기억이 주입되지 않도록(PRD 07 §5)
+      let invalidated;
+      try {
+        invalidated = new Set(
+          db.prepare("SELECT DISTINCT to_id FROM relation WHERE type='SUPERSEDES'").all().map(r => r.to_id)
+        );
+      } catch { invalidated = new Set(); }
+      const valid = invalidated.size ? pool.filter(m => !invalidated.has(m.id)) : pool;
+      mems = rankNoQuery(valid, max);
     }
   } catch (e) {
     try { mems = listMemories(db, max); } catch { mems = []; }                    // 폴백: 실패 시 기존 동작(중요도순)
