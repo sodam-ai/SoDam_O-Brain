@@ -26,7 +26,7 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
   return { id: tx(), redactedHits: hits };
 }
 
-const MEM_COLS = 'id, content, type, importance, confidence, source, project, category, access_count, created_at';
+const MEM_COLS = 'id, content, type, importance, confidence, source, project, category, access_count, created_at, session_id';
 export function listMemories(db, limit = 100, offset = 0, scope = null, at = null) {
   const lim = Math.max(1, limit | 0), off = Math.max(0, offset | 0);
   const conds = [], params = [];

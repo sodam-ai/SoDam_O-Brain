@@ -789,6 +789,15 @@
       document.getElementById('detail').classList.add('open');
       document.getElementById('scrim').classList.add('open');
       document.getElementById('d-close').focus();
+      // 어느 세션(창)에서 저장됐는지 — 여러 창을 동시에 쓸 때 출처 구분(실패해도 무시, 있으면만 붙임)
+      if(m.session_id){
+        fetch('/api/session/'+m.session_id).then(r=>r.ok?r.json():null).then(s=>{
+          if(!s || curDetail!==m) return;
+          const meta=document.getElementById('d-meta');
+          if(meta && !meta.querySelector('.tag-session'))
+            meta.insertAdjacentHTML('beforeend', `<span class="tag tag-session" title="이 기억이 저장된 창(세션)의 작업 폴더 — 기존 '출처'(추출방식)와는 다른 정보">저장 세션 ${esc(baseName(s.project))} · ${esc(relTime(s.ended_at))}</span>`);
+        }).catch(()=>{});
+      }
     }
     function closeDetail(){ exitEditUI(); document.getElementById('detail').classList.remove('open'); document.getElementById('scrim').classList.remove('open');
       curDetail=null; if(lastFocused && lastFocused.focus){ try{ lastFocused.focus(); }catch(e){} } }

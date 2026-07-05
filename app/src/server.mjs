@@ -63,7 +63,22 @@ app.get('/api/memory/:id', (req, res) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
   const m = getMemory(db, id);
   if (!m) return res.status(404).json({ error: '없는 기억' });
+  // 어느 세션에서 저장됐는지 — 여러 창(세션)이 동시에 O-Brain을 쓸 때 출처 구분용(읽기 전용, 실패해도 무시)
+  if (m.session_id) {
+    try { m.session = db.prepare('SELECT project, tool, ended_at FROM session WHERE id = ?').get(m.session_id) || null; }
+    catch { m.session = null; }
+  }
   res.json(m);
+});
+// 세션 정보 — 여러 창(세션)이 동시에 O-Brain을 쓸 때 "이 기억이 어느 세션에서 왔는지" 출처 확인용.
+app.get('/api/session/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
+  try {
+    const s = db.prepare('SELECT id, project, tool, ended_at FROM session WHERE id = ?').get(id);
+    if (!s) return res.status(404).json({ error: '없는 세션' });
+    res.json(s);
+  } catch (e) { res.status(500).json({ error: '세션 조회 실패' }); }
 });
 // 관계 연결 추천 — 이 기억과 비슷한(유사도) 기억 목록(연결 대상 후보). 종류는 추정 안 함.
 app.get('/api/memory/:id/similar', (req, res) => {
