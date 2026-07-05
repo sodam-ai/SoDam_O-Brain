@@ -650,7 +650,7 @@
         : `<div class="ov-mut">아직 자주 본 기억이 없어요. 기억을 열어보면 여기에 쌓여요.</div>`;
       let projHtml='';
       if(s.byProject && s.byProject.length>1){ const pm=Math.max(1,...s.byProject.map(p=>p.c));
-        projHtml=`<div class="ov-card"><h4>프로젝트별 기억</h4>${s.byProject.slice(0,8).map(p=>ovBar('#5B8CFF', baseName(p.project), p.c, pm)).join('')}</div>`; }
+        projHtml=`<div class="ov-card"><h4 title="이 기억을 저장할 당시 작업 중이던 폴더 기준이에요 — 기억 내용과 다를 수 있어요">프로젝트별 기억</h4>${s.byProject.slice(0,8).map(p=>ovBar('#5B8CFF', baseName(p.project), p.c, pm)).join('')}</div>`; }
       host.innerHTML=`
         <div class="ov-grid">
           <div class="ov-stat"><span class="ic">${svgIco('brain')}</span><div class="n">${s.total}</div><div class="l">전체 기억</div></div>
@@ -677,7 +677,9 @@
     function renderSubbar(){
       const base = searchResults !== null ? searchResults : all;
       const counts={}; for(const m of base) counts[m.type]=(counts[m.type]||0)+1;
-      let html=`<button class="chip all${activeType===''?' on':''}" data-type="" title="모든 기억 보기"><span>전체</span><span class="cnt">${base.length}</span></button>`;
+      const moreToLoad = searchResults===null && statTotal>base.length;
+      const allTitle = moreToLoad ? `지금까지 불러온 기억이에요(${base.length}/${statTotal}) — 아래로 스크롤해 '더 보기'를 누르면 더 불러와요` : '모든 기억 보기';
+      let html=`<button class="chip all${activeType===''?' on':''}" data-type="" title="${esc(allTitle)}"><span>전체</span><span class="cnt">${base.length}</span></button>`;
       for(const t of TYPES){ const c=counts[t]||0; if(c===0 && activeType!==t) continue;
         html+=`<button class="chip${activeType===t?' on':''}" data-type="${t}" title="${esc(t)} — ${esc(TYPE_DESC[t]||'')}"><i class="cdot" style="background:${color(t)}"></i><span>${esc(t)}</span><span class="cnt">${c}</span></button>`; }
       html+=`<select class="sortsel" id="sortSel" aria-label="정렬">
@@ -699,7 +701,7 @@
         if(!projInfo[p] || t>projInfo[p].t) projInfo[p]={ t, s:m.created_at }; }
       const projects=Object.keys(projInfo).sort((a,b)=>projInfo[b].t-projInfo[a].t);
       if(projects.length>1 || projectFilter){
-        html+=`<select class="sortsel" id="projSel" aria-label="프로젝트 필터" title="프로젝트로 거르기(최근 활동순)">`
+        html+=`<select class="sortsel" id="projSel" aria-label="프로젝트 필터" title="프로젝트로 거르기(최근 활동순) — 저장 당시 작업 폴더 기준, 기억 내용과 다를 수 있어요">`
           +`<option value=""${projectFilter===''?' selected':''}>프로젝트 전체</option>`
           + projects.map(p=>`<option value="${esc(p)}"${projectFilter===p?' selected':''}>${esc(baseName(p))} · ${esc(relTime(projInfo[p].s))}</option>`).join('')
           + `</select>`;

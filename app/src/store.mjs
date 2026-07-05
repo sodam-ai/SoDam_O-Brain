@@ -229,7 +229,14 @@ export function listCategories(db) {
 // 12시간 미만이면 실행 안 함(서버 재시작 폭풍 방지). app_settings.last_decay_at에 타임스탬프 저장.
 export function applyConfidenceDecay(db) {
   const row = db.prepare("SELECT value FROM app_settings WHERE key = 'last_decay_at'").get();
-  const lastMs = row ? new Date(row.value).getTime() : 0;
+  // 최초 1회 실행(row 없음) — 1970년부터 감쇠 안 한 것으로 계산하면 기존 기억이 전부 바닥까지
+  // 떨어지는 실측 버그(2026-06-29 배포 시 06-20~21 기억이 즉시 0.1로 붕괴) 재발 방지.
+  // 시각만 기록하고 이번 실행은 감쇠 건너뜀 — 다음 실행부터 정상적으로 짧은 구간만 감쇠.
+  if (!row) {
+    db.prepare("INSERT OR REPLACE INTO app_settings(key,value) VALUES('last_decay_at',?)").run(new Date().toISOString());
+    return 0;
+  }
+  const lastMs = new Date(row.value).getTime();
   const nowMs = Date.now();
   const hoursSince = (nowMs - lastMs) / 3_600_000;
   if (hoursSince < 12) return 0; // 너무 잦은 실행 방지
