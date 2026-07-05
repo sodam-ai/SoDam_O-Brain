@@ -4,8 +4,10 @@
 > **PRD gap ✅(2026-06-28)**: Stop·UserPromptSubmit 훅 래퍼 + 프로젝트 훅 등록 + scope DB 마이그레이션 + listCategories(store/server/mcp) + list_categories MCP 도구 + save_memory scope — selftest ✅✅✅
 > **PRD gap 2차 ✅(2026-06-28)**: inject.mjs SUPERSEDES 필터(번복 기억 주입 버그 수정) + scope 필터(global 전용) + NOTICE 파일(Apache 2.0 의존성 고지) + index.html scope 필터 UI(전역/프로젝트 셀렉트) — selftest ✅✅✅
 > **M4 실사용검증+버그수정 ✅(2026-07-05)**: 코드는 이미 구현돼 있었으나 문서(본 파일)만 "보류"로 뒤처져 있었음 — 브라우저 실사용 검증 중 선택모드 진입 시 삭제/취소/개수 툴바가 절대 보이지 않는 버그 발견(`updateSelToolbar()`가 `style.display=''`로 리셋 → CSS `#selBar .s-del{display:none}` 규칙으로 그대로 되돌아감. `selModeBtn`은 기본 클래스에 `display:none`이 없어 우연히 정상 동작했던 것). `''` → `'inline'`/`'inline-block'` 명시값으로 최소 수정, 선택→확인모달→삭제→10초 되돌리기(새 id로 재삽입, 내용 정상 복원)까지 전 구간 재검증 + selftest ✅✅✅. **교훈: 이후 CHECKPOINT.md 상태는 반드시 실사용 확인 후에만 갱신할 것** — 코드 존재 ≠ 실제 작동.
+> **MCP 도구 전량 실사용 검증 ✅(2026-07-05)**: search_memory·save_memory·get_memory·get_related·get_timeline·list_categories·add_relation 7개 전부 실제 MCP 프로토콜로 호출해 확인(이전엔 store.mjs 직접 호출로만 검증했던 상태).
+> **search_memory 잘림 투명화 ✅(2026-07-06, d84b6fe+779df54)**: `search()`가 `limit`으로 자르기 전 전체 매칭 수를 감추던 걸 고쳐, 결과가 잘렸을 때 "관련 기억이 N건 더 있어요" 안내가 뜨도록 함(silent truncation 방지). **1차 커밋(d84b6fe) 문구에 실수 있었음** — "남은 개수" 대신 "전체 매칭 수"를 그대로 써서 "11건 더"(실제는 3건 더)로 잘못 표시. 재시작된 실제 세션에서 `search_memory('포트')` 라이브 호출 결과를 사용자가 그대로 붙여넣어줘서 발견 → `res.total - slim.length`로 즉시 수정(779df54). **교훈 추가: 스크립트로 숫자만 따로 찍어보는 것과, 실제로 조합된 문장을 눈으로 보는 것은 다르다** — 이번 버그는 라이브 실사용이 아니었으면 못 잡았음.
 > 진행 규칙: **한 마일스톤씩 세부 Plan→승인→착수→검증**. 한꺼번에 금지(94KB 단일 index.html 회귀 위험).
-> 작성/갱신: 2026-07-05.
+> 작성/갱신: 2026-07-06.
 
 ## Context (왜)
 - v0.1 안정화 완료: 리네임 복구(f82c255)·그래프 잘림(e91051a)·되읽기/고아기억(9637166).
