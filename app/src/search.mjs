@@ -51,5 +51,7 @@ export async function search(db, query, k = 10, projectFilter = null) {
                .sort((a, b) => b._score - a._score);
   // 현재 프로젝트 우선 — 지정 시 현재 프로젝트 + 전역(NULL)만 남겨 타 프로젝트에 묻히지 않게
   if (projectFilter) out = out.filter(m => m.project === projectFilter || m.project == null);
-  return out.slice(0, k);
+  const sliced = out.slice(0, k);
+  sliced.total = out.length; // 잘려나간 개수를 호출자가 알 수 있게(배열이라 JSON.stringify·기존 소비자는 영향 없음)
+  return sliced;
 }
