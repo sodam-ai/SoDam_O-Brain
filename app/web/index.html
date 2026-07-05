@@ -825,9 +825,9 @@
       const n=selectedIds.size;
       const countEl=document.getElementById('selCount'), cancelEl=document.getElementById('selCancel'),
             delEl=document.getElementById('selDel'), toggleEl=document.getElementById('selModeBtn');
-      countEl.style.display=selMode?'':'none'; countEl.textContent=n+'개 선택됨';
-      cancelEl.style.display=selMode?'':'none';
-      delEl.style.display=selMode?'':'none'; delEl.disabled=n===0;
+      countEl.style.display=selMode?'inline':'none'; countEl.textContent=n+'개 선택됨';
+      cancelEl.style.display=selMode?'inline-block':'none';
+      delEl.style.display=selMode?'inline-block':'none'; delEl.disabled=n===0;
       if(toggleEl) toggleEl.style.display=selMode?'none':'';
     }
     function toggleSelMode(){
