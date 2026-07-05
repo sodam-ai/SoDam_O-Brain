@@ -60,7 +60,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     // 관련 기억이 더 있는데 잘렸으면 그 사실을 감추지 않고 알린다(silent truncation 방지).
     const payload = res.total > slim.length
       ? { results: slim, shown: slim.length, total_matches: res.total,
-          note: `관련 기억이 ${res.total}건 더 있어요 — limit을 높이거나(최대 50) 더 구체적인 검색어로 다시 찾아보세요.` }
+          note: `관련 기억이 ${res.total - slim.length}건 더 있어요 — limit을 높이거나(최대 50) 더 구체적인 검색어로 다시 찾아보세요.` }
       : { results: slim, shown: slim.length, total_matches: res.total };
     return { content: [{ type: 'text', text: JSON.stringify(payload) }] };
   }
