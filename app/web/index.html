@@ -828,7 +828,7 @@
         pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} renderSettingsPage(); all=[]; await softRefresh();
       });
       const _pgc=body.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
-        const n=Math.min(500,Math.max(1,Number(e.target.value)||100));
+        const n=Math.min(500,Math.max(1,Math.round(Number(e.target.value))||100));
         pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} renderSettingsPage(); all=[]; await softRefresh();
       });
 
@@ -837,7 +837,7 @@
         graphLimitCustomMode=false; graphLimit=Number(e.target.value); try{ localStorage.setItem('obrain-graphlimit', String(graphLimit)); }catch(e){} renderSettingsPage(); gData=null; await initGraph();
       });
       const _glc=body.querySelector('#graphLimitCustom'); if(_glc) _glc.addEventListener('change', async e=>{
-        const n=Math.min(2000,Math.max(50,Number(e.target.value)||600));
+        const n=Math.min(2000,Math.max(50,Math.round(Number(e.target.value))||600));
         graphLimitCustomMode=false; graphLimit=n; try{ localStorage.setItem('obrain-graphlimit', String(n)); }catch(e){} renderSettingsPage(); gData=null; await initGraph();
       });
 
@@ -845,7 +845,7 @@
         autoRefreshOn=e.target.checked; try{ localStorage.setItem('obrain-autorefresh', autoRefreshOn?'1':'0'); }catch(err){}
       });
       body.querySelector('#autoRefreshSecInput').addEventListener('change', e=>{
-        const n=Math.min(300,Math.max(10,Number(e.target.value)||45));
+        const n=Math.min(300,Math.max(10,Math.round(Number(e.target.value))||45));
         autoRefreshSec=n; try{ localStorage.setItem('obrain-autorefresh-sec', String(n)); }catch(err){} renderSettingsPage(); restartPolling();
       });
 
@@ -984,7 +984,8 @@
       const scrim=document.getElementById('bdScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden');
       setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20); }
     function closeBatchDelModal(){
-      const scrim=document.getElementById('bdScrim'); scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
+      const scrim=document.getElementById('bdScrim'); if(scrim.contains(document.activeElement)) document.getElementById('selDel').focus();
+      scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
     async function execBatchDelete(){
       closeBatchDelModal();
       const ids=[...selectedIds];
@@ -1262,7 +1263,10 @@
       } else { return gData; }                                                // 필터/포커스 없음 → 기존 그대로
       return { nodes, links, edgeMode:gData.edgeMode };
     }
-    async function initGraph(){ if(!gData) gData=await get('/api/graph?limit='+graphLimit); drawGraph(); }
+    async function initGraph(){
+      if(!gData){ try{ const d=await get('/api/graph?limit='+graphLimit); if(d && Array.isArray(d.nodes)) gData=d; }catch{} }
+      if(gData) drawGraph();
+    }
     function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph(); }
     const nodeR = n => 3.7*Math.sqrt(Math.max(1, n.val||1));
 

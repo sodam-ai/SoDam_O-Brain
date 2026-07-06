@@ -93,7 +93,7 @@ app.get('/api/search', async (req, res) => {
   catch (e) { res.status(500).json({ error: '검색 실패' }); }
 });
 app.get('/api/graph', (req, res) => {
-  const limit = Math.min(2000, Math.max(50, Number(req.query.limit) || 600)); // 노드 상한(대량 프리즈 방지)
+  const limit = Math.min(2000, Math.max(50, Number(req.query.limit) | 0 || 600)); // 노드 상한(대량 프리즈 방지) — 소수 입력 시 정수화(better-sqlite3 LIMIT 바인딩 방어)
   try { res.json(buildGraph(db, { limit })); } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
 });
 // 기억 삭제(사용자 요청) — id 검증 후 1건만 제거. 로컬 전용·파라미터 바인딩.

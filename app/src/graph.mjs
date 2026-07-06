@@ -3,7 +3,7 @@
 
 export function buildGraph(db, { neighbors = 2, limit = 600 } = {}) {
   const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
-  const cap = Math.max(1, Number(limit) || 600);
+  const cap = Math.max(1, (Number(limit) | 0) || 600); // 정수화(better-sqlite3 LIMIT은 정수만 허용)
   // 대량 대비: 중요도+최신 우선으로 상한(top-N). 더 보려면 필터·검색·로컬보기로 드릴다운(PRD §8.4).
   const mems = db.prepare(
     `SELECT id, content, type, importance, confidence, project, category, access_count, created_at
