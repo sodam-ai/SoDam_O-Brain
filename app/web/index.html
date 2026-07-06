@@ -1065,7 +1065,7 @@
     function toast(msg, kind, undoFn, dur){ const el=document.getElementById('toast'); el.className=''; el.textContent=msg;
       if(undoFn){ const b=document.createElement('button'); b.className='undo'; b.textContent='되돌리기'; b.onclick=()=>{ el.classList.remove('show'); undoFn(); }; el.appendChild(b); }
       void el.offsetWidth; el.classList.add('show'); if(kind) el.classList.add(kind);
-      clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), dur||(undoFn?5500:2200)); }
+      clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), dur||(undoFn?10000:2200)); }
 
     /* 탭 */
     function showTab(t){ tab=t;
