@@ -395,10 +395,7 @@
           <button data-fmt="md" role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>마크다운으로 저장</button>
         </div>
       </div>
-      <div style="position:relative">
-        <button class="icontop" id="settingsBtn" aria-label="설정" title="설정" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-        <div class="menu" id="settingsMenu" role="menu" style="min-width:190px"></div>
-      </div>
+      <button class="icontop" id="settingsBtn" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="segmented" role="tablist" aria-label="보기 전환">
         <button id="t-graph" class="on" role="tab" aria-selected="true" aria-controls="view-graph" data-tab="graph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="9" r="2.4"/><circle cx="9" cy="18" r="2.4"/><path d="M7 7.5 16.5 9M8 16l2-6M17 11l-6.5 5.2"/></svg><span>그래프</span></button>
         <button id="t-overview" role="tab" aria-selected="false" aria-controls="view-overview" data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>개요</span></button>
@@ -504,6 +501,16 @@
       <div class="bd-acts">
         <button class="bd-cancel-btn" id="bdCancel">취소</button>
         <button class="bd-del-btn" id="bdDelConfirm">삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bd-scrim" id="setScrim" aria-hidden="true">
+    <div class="bd-box" role="dialog" aria-modal="true" aria-labelledby="set-title" style="max-width:420px">
+      <h4 id="set-title">설정</h4>
+      <div id="setBody"></div>
+      <div class="bd-acts" style="margin-top:18px">
+        <button class="bd-cancel-btn" id="setClose">닫기</button>
       </div>
     </div>
   </div>
@@ -733,10 +740,10 @@
     }
 
     /* 설정 팝업(헤더 ⚙) — 목록/타임라인/개요 불러오기 개수. 탭과 무관하게 항상 여기서 접근 가능. */
-    function renderSettingsMenu(){
+    function renderSettingsBody(){
       const pageSizePreset=[50,100,200,500];
       const pageSizeShowCustom = pageSizeCustomMode || !pageSizePreset.includes(pageSize);
-      let html = `<div class="menu-label">한 번에 불러올 개수</div>
+      let html = `<div class="menu-label" style="padding:0 0 6px">한 번에 불러올 개수</div>
       <select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 이 브라우저에 저장돼 다음에 열어도 유지돼요. 그래프 탭에는 적용되지 않음." style="width:100%">
         <option value="50"${pageSize===50?' selected':''}>50개씩</option>
         <option value="100"${pageSize===100?' selected':''}>100개씩</option>
@@ -746,16 +753,18 @@
       if(pageSizeShowCustom){
         html += `<input type="number" id="pageSizeCustom" class="sortsel" min="1" max="500" step="1" value="${pageSize}" title="1~500 사이 원하는 개수" style="width:100%;margin-top:6px">`;
       }
-      const menu=document.getElementById('settingsMenu'); menu.innerHTML=html;
-      menu.querySelector('#pageSizeSel').addEventListener('change', async e=>{
-        if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSettingsMenu(); return; }
-        pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} renderSettingsMenu(); all=[]; await softRefresh();
+      const body=document.getElementById('setBody'); body.innerHTML=html;
+      body.querySelector('#pageSizeSel').addEventListener('change', async e=>{
+        if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSettingsBody(); return; }
+        pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} renderSettingsBody(); all=[]; await softRefresh();
       });
-      const _pgc=menu.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
+      const _pgc=body.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
         const n=Math.min(500,Math.max(1,Number(e.target.value)||100));
-        pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} renderSettingsMenu(); all=[]; await softRefresh();
+        pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} renderSettingsBody(); all=[]; await softRefresh();
       });
     }
+    function openSettingsModal(){ renderSettingsBody(); const scrim=document.getElementById('setScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden'); }
+    function closeSettingsModal(){ const scrim=document.getElementById('setScrim'); if(scrim.contains(document.activeElement)) document.getElementById('settingsBtn').focus(); scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
 
     /* 관계(사용자 수동 연결) */
     async function refreshRels(){ try{ rels = await get('/api/relations'); }catch{ rels=[]; } if(!Array.isArray(rels)) rels=[]; }
@@ -1050,10 +1059,9 @@
     exBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=exMenu.classList.toggle('open'); exBtn.setAttribute('aria-expanded', open?'true':'false'); });
     exMenu.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>exportData(b.dataset.fmt)));
     document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
-    const setBtn=document.getElementById('settingsBtn'), setMenu=document.getElementById('settingsMenu');
-    renderSettingsMenu();
-    setBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=setMenu.classList.toggle('open'); setBtn.setAttribute('aria-expanded', open?'true':'false'); });
-    document.addEventListener('click', e=>{ if(!e.target.closest('#settingsBtn')&&!e.target.closest('#settingsMenu')){ setMenu.classList.remove('open'); setBtn.setAttribute('aria-expanded','false'); } });
+    document.getElementById('settingsBtn').addEventListener('click', openSettingsModal);
+    document.getElementById('setClose').addEventListener('click', closeSettingsModal);
+    document.getElementById('setScrim').addEventListener('click', e=>{ if(e.target===document.getElementById('setScrim')) closeSettingsModal(); });
     document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
     document.getElementById('selCancel').addEventListener('click', exitSelMode);
     document.getElementById('selDel').addEventListener('click', openBatchDelModal);
@@ -1063,7 +1071,7 @@
 
     /* 단축키 */
     document.addEventListener('keydown', e=>{
-      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); if(selMode) exitSelMode(); }
+      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); closeSettingsModal(); if(selMode) exitSelMode(); }
       else if(e.key==='/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||'')){ e.preventDefault(); qEl.focus(); } });
 
     /* ── 커맨드 팔레트 (⌘K / Ctrl+K) ── */
