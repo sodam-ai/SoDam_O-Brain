@@ -548,7 +548,8 @@
     let selMode = false, selectedIds = new Set(); // 일괄삭제 선택 모드
     let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = ''; // 중요도/기간/프로젝트/범위 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
     let statTotal = 0, listLoading = false; const _memCache = {}; // 대량 대비: 전체 총계 + 목록 더보기 + 단건 캐시
-    let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 세션 한정 — 새로고침 시 100으로 초기화). 그래프 탭은 /api/graph 별도 사용, 영향 없음.
+    let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 브라우저에 저장돼 다음에 열어도 유지됨). 그래프 탭은 /api/graph 별도 사용, 영향 없음.
+    try { const _ps = Number(localStorage.getItem('obrain-pagesize')); if (_ps >= 1 && _ps <= 500) pageSize = _ps; } catch (e) {}
     let pageSizeCustomMode = false; // "직접 입력…" 선택 시 숫자칸을 펼쳐두기 위한 UI 상태
     const baseName = p => String(p||'').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
     // 기억 1건 얻기 — 로드된 all에 없으면(상한 밖) 서버에서 id로 가져옴(대량 대비)
@@ -715,7 +716,7 @@
       <input type="date" id="travelDate" class="sortsel" title="시간여행: 이 날짜 기준으로 살아있던 기억만 표시" value="${travelDate}" max="${new Date().toISOString().slice(0,10)}">`;
       const pageSizePreset=[50,100,200,500];
       const pageSizeShowCustom = pageSizeCustomMode || !pageSizePreset.includes(pageSize);
-      html+=`<select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 그래프 탭에는 적용되지 않음.">
+      html+=`<select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 이 브라우저에 저장돼 다음에 열어도 유지돼요. 그래프 탭에는 적용되지 않음.">
         <option value="50"${pageSize===50?' selected':''}>50개씩</option>
         <option value="100"${pageSize===100?' selected':''}>100개씩</option>
         <option value="200"${pageSize===200?' selected':''}>200개씩</option>
@@ -737,11 +738,11 @@
       const _td=sb.querySelector('#travelDate'); if(_td) _td.addEventListener('change', async e=>{ travelDate=e.target.value; all=[]; await softRefresh(); });
       const _pgs=sb.querySelector('#pageSizeSel'); if(_pgs) _pgs.addEventListener('change', async e=>{
         if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSubbar(); return; }
-        pageSizeCustomMode=false; pageSize=Number(e.target.value); all=[]; await softRefresh();
+        pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} all=[]; await softRefresh();
       });
       const _pgc=sb.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
         const n=Math.min(500,Math.max(1,Number(e.target.value)||100));
-        pageSizeCustomMode=false; pageSize=n; all=[]; await softRefresh();
+        pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} all=[]; await softRefresh();
       });
     }
 
