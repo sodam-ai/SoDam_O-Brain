@@ -713,6 +713,17 @@
         <option value="global"${scopeFilter==='global'?' selected':''}>전역(global)</option>
         <option value="project"${scopeFilter==='project'?' selected':''}>프로젝트(project)</option></select>
       <input type="date" id="travelDate" class="sortsel" title="시간여행: 이 날짜 기준으로 살아있던 기억만 표시" value="${travelDate}" max="${new Date().toISOString().slice(0,10)}">`;
+      const pageSizePreset=[50,100,200,500];
+      const pageSizeShowCustom = pageSizeCustomMode || !pageSizePreset.includes(pageSize);
+      html+=`<select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 그래프 탭에는 적용되지 않음.">
+        <option value="50"${pageSize===50?' selected':''}>50개씩</option>
+        <option value="100"${pageSize===100?' selected':''}>100개씩</option>
+        <option value="200"${pageSize===200?' selected':''}>200개씩</option>
+        <option value="500"${pageSize===500?' selected':''}>500개(최대)</option>
+        <option value="custom"${pageSizeShowCustom?' selected':''}>직접 입력…</option></select>`;
+      if(pageSizeShowCustom){
+        html+=`<input type="number" id="pageSizeCustom" class="sortsel" min="1" max="500" step="1" value="${pageSize}" title="1~500 사이 원하는 개수" style="width:72px">`;
+      }
       const shown=currentSet().length;
       const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all');
       const info = searchResults!==null ? `검색 “${esc(curQuery)}” · ${shown}개`
@@ -724,6 +735,14 @@
       const _ps=sb.querySelector('#projSel'); if(_ps) _ps.addEventListener('change', e=>{ projectFilter=e.target.value; renderAll(); });
       const _ss=sb.querySelector('#scopeSel'); if(_ss) _ss.addEventListener('change', e=>{ scopeFilter=e.target.value; renderAll(); });
       const _td=sb.querySelector('#travelDate'); if(_td) _td.addEventListener('change', async e=>{ travelDate=e.target.value; all=[]; await softRefresh(); });
+      const _pgs=sb.querySelector('#pageSizeSel'); if(_pgs) _pgs.addEventListener('change', async e=>{
+        if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSubbar(); return; }
+        pageSizeCustomMode=false; pageSize=Number(e.target.value); all=[]; await softRefresh();
+      });
+      const _pgc=sb.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
+        const n=Math.min(500,Math.max(1,Number(e.target.value)||100));
+        pageSizeCustomMode=false; pageSize=n; all=[]; await softRefresh();
+      });
     }
 
     /* 관계(사용자 수동 연결) */
