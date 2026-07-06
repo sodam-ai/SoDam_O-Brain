@@ -99,6 +99,12 @@
     padding:8px 11px; border-radius:7px; cursor:pointer; font-size:13px; text-align:left; }
   .menu button:hover { background:var(--surface2); }
   .menu-label { color:var(--muted); font-size:12px; padding:4px 9px 6px; }
+  .set-group { background:var(--surface); border:1px solid var(--border2); border-radius:var(--r-lg); padding:18px 20px; }
+  .set-group h3 { margin:0 0 14px; font-size:14px; font-weight:700; }
+  .set-row { margin-bottom:14px; }
+  .set-row:last-child { margin-bottom:0; }
+  .set-row label.set-check { display:flex; align-items:center; gap:9px; font-size:13px; cursor:pointer; }
+  .set-row .set-desc { color:var(--muted); font-size:12px; margin:4px 0 0 24px; line-height:1.5; }
 
   /* ── 서브바(통계 + 필터 + 정렬) ── */
   .subbar { display:flex; align-items:center; gap:8px; padding:9px 18px; border-bottom:1px solid var(--border);
@@ -460,6 +466,8 @@
 
     <section id="view-timeline" class="view" role="tabpanel" aria-labelledby="t-timeline" hidden><div class="tl" id="tl"></div></section>
 
+    <section id="view-settings" class="view" role="tabpanel" aria-labelledby="settingsBtn" hidden><div class="ov" id="settingsPage"></div></section>
+
     <div class="scrim" id="scrim"></div>
     <aside id="detail" role="dialog" aria-modal="true" aria-labelledby="d-title" tabindex="-1">
       <div class="dhead">
@@ -505,15 +513,6 @@
     </div>
   </div>
 
-  <div class="bd-scrim" id="setScrim" aria-hidden="true">
-    <div class="bd-box" role="dialog" aria-modal="true" aria-labelledby="set-title" style="max-width:420px">
-      <h4 id="set-title">설정</h4>
-      <div id="setBody"></div>
-      <div class="bd-acts" style="margin-top:18px">
-        <button class="bd-cancel-btn" id="setClose">닫기</button>
-      </div>
-    </div>
-  </div>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <script src="/vendor/force-graph/force-graph.min.js"></script>
@@ -563,6 +562,13 @@
     let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 브라우저에 저장돼 다음에 열어도 유지됨). 그래프 탭은 /api/graph 별도 사용, 영향 없음.
     try { const _ps = Number(localStorage.getItem('obrain-pagesize')); if (_ps >= 1 && _ps <= 500) pageSize = _ps; } catch (e) {}
     let pageSizeCustomMode = false; // "직접 입력…" 선택 시 숫자칸을 펼쳐두기 위한 UI 상태
+    let graphLimit = 600; // 그래프에 표시할 노드 상한(서버 클램프 50~2000, 기본 600과 동일)
+    try { const _gl = Number(localStorage.getItem('obrain-graphlimit')); if (_gl >= 50 && _gl <= 2000) graphLimit = _gl; } catch (e) {}
+    let graphLimitCustomMode = false;
+    let autoRefreshOn = true; // 자동 새로고침(폴링) 켜짐 여부
+    try { if (localStorage.getItem('obrain-autorefresh') === '0') autoRefreshOn = false; } catch (e) {}
+    let autoRefreshSec = 45; // 폴링 주기(초)
+    try { const _as = Number(localStorage.getItem('obrain-autorefresh-sec')); if (_as >= 10 && _as <= 300) autoRefreshSec = _as; } catch (e) {}
     const baseName = p => String(p||'').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
     // 기억 1건 얻기 — 로드된 all에 없으면(상한 밖) 서버에서 id로 가져옴(대량 대비)
     async function getMemById(id){ id=Number(id); const a=(all||[]).find(x=>x.id===id); if(a) return a;
@@ -740,31 +746,113 @@
     }
 
     /* 설정 팝업(헤더 ⚙) — 목록/타임라인/개요 불러오기 개수. 탭과 무관하게 항상 여기서 접근 가능. */
-    function renderSettingsBody(){
+    function setTheme(mode){ // mode: 'light' | 'dark'
+      if(mode==='light') document.documentElement.dataset.theme='light'; else delete document.documentElement.dataset.theme;
+      try{ localStorage.setItem('obrain-theme', mode); }catch(e){}
+      applyThemeIcon();
+      if(tab==='graph') drawGraph();
+    }
+    function setIntroVisible(show){
+      const bar=document.getElementById('introbar'); if(bar) bar.hidden=!show;
+      try{ localStorage.setItem('obrain-intro-done', show?'0':'1'); }catch(e){}
+    }
+    function renderSettingsPage(){
       const pageSizePreset=[50,100,200,500];
       const pageSizeShowCustom = pageSizeCustomMode || !pageSizePreset.includes(pageSize);
-      let html = `<div class="menu-label" style="padding:0 0 6px">한 번에 불러올 개수</div>
-      <select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 이 브라우저에 저장돼 다음에 열어도 유지돼요. 그래프 탭에는 적용되지 않음." style="width:100%">
-        <option value="50"${pageSize===50?' selected':''}>50개씩</option>
-        <option value="100"${pageSize===100?' selected':''}>100개씩</option>
-        <option value="200"${pageSize===200?' selected':''}>200개씩</option>
-        <option value="500"${pageSize===500?' selected':''}>500개(최대)</option>
-        <option value="custom"${pageSizeShowCustom?' selected':''}>직접 입력…</option></select>`;
-      if(pageSizeShowCustom){
-        html += `<input type="number" id="pageSizeCustom" class="sortsel" min="1" max="500" step="1" value="${pageSize}" title="1~500 사이 원하는 개수" style="width:100%;margin-top:6px">`;
-      }
-      const body=document.getElementById('setBody'); body.innerHTML=html;
+      const graphPreset=[300,600,1000,2000];
+      const graphShowCustom = graphLimitCustomMode || !graphPreset.includes(graphLimit);
+      const introShown = !document.getElementById('introbar')?.hidden;
+      const isLight = document.documentElement.dataset.theme==='light';
+      let html = `
+      <div class="set-group">
+        <h3>목록</h3>
+        <div class="set-row">
+          <div class="menu-label" style="padding:0 0 6px">한 번에 불러올 개수</div>
+          <select class="sortsel" id="pageSizeSel" aria-label="한 번에 불러올 개수" title="목록·타임라인·개요에 한 번에 불러올 기억 개수(1~500). 이 브라우저에 저장돼 다음에 열어도 유지돼요. 그래프 탭에는 적용되지 않음." style="width:100%">
+            <option value="50"${pageSize===50?' selected':''}>50개씩</option>
+            <option value="100"${pageSize===100?' selected':''}>100개씩</option>
+            <option value="200"${pageSize===200?' selected':''}>200개씩</option>
+            <option value="500"${pageSize===500?' selected':''}>500개(최대)</option>
+            <option value="custom"${pageSizeShowCustom?' selected':''}>직접 입력…</option></select>
+          ${pageSizeShowCustom?`<input type="number" id="pageSizeCustom" class="sortsel" min="1" max="500" step="1" value="${pageSize}" title="1~500 사이 원하는 개수" style="width:100%;margin-top:6px">`:''}
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>그래프</h3>
+        <div class="set-row">
+          <div class="menu-label" style="padding:0 0 6px">표시할 노드 개수</div>
+          <select class="sortsel" id="graphLimitSel" aria-label="그래프에 표시할 노드 개수" title="그래프 탭에 표시할 기억 노드 상한(50~2000). 이 브라우저에 저장돼 다음에 열어도 유지돼요." style="width:100%">
+            <option value="300"${graphLimit===300?' selected':''}>300개</option>
+            <option value="600"${graphLimit===600?' selected':''}>600개(기본)</option>
+            <option value="1000"${graphLimit===1000?' selected':''}>1000개</option>
+            <option value="2000"${graphLimit===2000?' selected':''}>2000개(최대)</option>
+            <option value="custom"${graphShowCustom?' selected':''}>직접 입력…</option></select>
+          ${graphShowCustom?`<input type="number" id="graphLimitCustom" class="sortsel" min="50" max="2000" step="1" value="${graphLimit}" title="50~2000 사이 원하는 개수" style="width:100%;margin-top:6px">`:''}
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>새로고침</h3>
+        <div class="set-row">
+          <label class="set-check"><input type="checkbox" id="autoRefreshChk"${autoRefreshOn?' checked':''}> 자동 새로고침 켜기</label>
+          <div class="set-desc">켜두면 일정 주기로 새 기억이 있는지 조용히 확인해 반영해요.</div>
+        </div>
+        <div class="set-row">
+          <div class="menu-label" style="padding:0 0 6px">주기(초)</div>
+          <input type="number" id="autoRefreshSecInput" class="sortsel" min="10" max="300" step="5" value="${autoRefreshSec}" title="10~300초 사이" style="width:100%">
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>화면</h3>
+        <div class="set-row">
+          <div class="menu-label" style="padding:0 0 6px">테마</div>
+          <select class="sortsel" id="themeSel" aria-label="테마" style="width:100%">
+            <option value="dark"${!isLight?' selected':''}>어둡게</option>
+            <option value="light"${isLight?' selected':''}>밝게</option></select>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>안내</h3>
+        <div class="set-row">
+          <label class="set-check"><input type="checkbox" id="introChk"${introShown?' checked':''}> 안내 배너 표시</label>
+          <div class="set-desc">상단의 "클로드코드 대화에서 자동으로 모은 기억이에요" 안내문을 다시 보이거나 숨겨요.</div>
+        </div>
+      </div>`;
+      const body=document.getElementById('settingsPage'); body.innerHTML=html;
+
       body.querySelector('#pageSizeSel').addEventListener('change', async e=>{
-        if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSettingsBody(); return; }
-        pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} renderSettingsBody(); all=[]; await softRefresh();
+        if(e.target.value==='custom'){ pageSizeCustomMode=true; renderSettingsPage(); return; }
+        pageSizeCustomMode=false; pageSize=Number(e.target.value); try{ localStorage.setItem('obrain-pagesize', String(pageSize)); }catch(e){} renderSettingsPage(); all=[]; await softRefresh();
       });
       const _pgc=body.querySelector('#pageSizeCustom'); if(_pgc) _pgc.addEventListener('change', async e=>{
         const n=Math.min(500,Math.max(1,Number(e.target.value)||100));
-        pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} renderSettingsBody(); all=[]; await softRefresh();
+        pageSizeCustomMode=false; pageSize=n; try{ localStorage.setItem('obrain-pagesize', String(n)); }catch(e){} renderSettingsPage(); all=[]; await softRefresh();
       });
+
+      body.querySelector('#graphLimitSel').addEventListener('change', async e=>{
+        if(e.target.value==='custom'){ graphLimitCustomMode=true; renderSettingsPage(); return; }
+        graphLimitCustomMode=false; graphLimit=Number(e.target.value); try{ localStorage.setItem('obrain-graphlimit', String(graphLimit)); }catch(e){} renderSettingsPage(); gData=null; await initGraph();
+      });
+      const _glc=body.querySelector('#graphLimitCustom'); if(_glc) _glc.addEventListener('change', async e=>{
+        const n=Math.min(2000,Math.max(50,Number(e.target.value)||600));
+        graphLimitCustomMode=false; graphLimit=n; try{ localStorage.setItem('obrain-graphlimit', String(n)); }catch(e){} renderSettingsPage(); gData=null; await initGraph();
+      });
+
+      body.querySelector('#autoRefreshChk').addEventListener('change', e=>{
+        autoRefreshOn=e.target.checked; try{ localStorage.setItem('obrain-autorefresh', autoRefreshOn?'1':'0'); }catch(err){}
+      });
+      body.querySelector('#autoRefreshSecInput').addEventListener('change', e=>{
+        const n=Math.min(300,Math.max(10,Number(e.target.value)||45));
+        autoRefreshSec=n; try{ localStorage.setItem('obrain-autorefresh-sec', String(n)); }catch(err){} renderSettingsPage(); restartPolling();
+      });
+
+      body.querySelector('#themeSel').addEventListener('change', e=>{ setTheme(e.target.value); });
+
+      body.querySelector('#introChk').addEventListener('change', e=>{ setIntroVisible(e.target.checked); });
     }
-    function openSettingsModal(){ renderSettingsBody(); const scrim=document.getElementById('setScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden'); }
-    function closeSettingsModal(){ const scrim=document.getElementById('setScrim'); if(scrim.contains(document.activeElement)) document.getElementById('settingsBtn').focus(); scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
 
     /* 관계(사용자 수동 연결) */
     async function refreshRels(){ try{ rels = await get('/api/relations'); }catch{ rels=[]; } if(!Array.isArray(rels)) rels=[]; }
@@ -963,10 +1051,7 @@
     const moonIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
     function applyThemeIcon(){ const light=document.documentElement.dataset.theme==='light';
       document.getElementById('themeBtn').innerHTML = light?moonIcon:sunIcon; }
-    function toggleTheme(){ const light=document.documentElement.dataset.theme==='light';
-      const next=light?'dark':'light'; if(next==='dark') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme='light';
-      try{ localStorage.setItem('obrain-theme',next); }catch(e){} applyThemeIcon();
-      if(tab==='graph') drawGraph(); } // 그래프 색도 테마 따라 다시 그림
+    function toggleTheme(){ const light=document.documentElement.dataset.theme==='light'; setTheme(light?'dark':'light'); }
     applyThemeIcon();
 
     /* 첫 사용자 안내 배너 */
@@ -986,9 +1071,11 @@
       for(const x of ['overview','list','graph','timeline']){
         document.getElementById('view-'+x).hidden=(x!==t);
         const b=document.getElementById('t-'+x); b.classList.toggle('on', x===t); b.setAttribute('aria-selected', x===t?'true':'false'); }
-      document.getElementById('subbar').style.display = (t==='overview') ? 'none' : '';
+      document.getElementById('view-settings').hidden = (t!=='settings');
+      document.getElementById('subbar').style.display = (t==='overview'||t==='settings') ? 'none' : '';
       if(t==='overview') renderOverview();
-      if(t==='graph') initGraph(); }
+      if(t==='graph') initGraph();
+      if(t==='settings') renderSettingsPage(); }
 
     /* 검색 */
     let timer; const qEl=document.getElementById('q');
@@ -1059,9 +1146,7 @@
     exBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=exMenu.classList.toggle('open'); exBtn.setAttribute('aria-expanded', open?'true':'false'); });
     exMenu.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>exportData(b.dataset.fmt)));
     document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
-    document.getElementById('settingsBtn').addEventListener('click', openSettingsModal);
-    document.getElementById('setClose').addEventListener('click', closeSettingsModal);
-    document.getElementById('setScrim').addEventListener('click', e=>{ if(e.target===document.getElementById('setScrim')) closeSettingsModal(); });
+    document.getElementById('settingsBtn').addEventListener('click', ()=>showTab('settings'));
     document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
     document.getElementById('selCancel').addEventListener('click', exitSelMode);
     document.getElementById('selDel').addEventListener('click', openBatchDelModal);
@@ -1071,7 +1156,7 @@
 
     /* 단축키 */
     document.addEventListener('keydown', e=>{
-      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); closeSettingsModal(); if(selMode) exitSelMode(); }
+      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); if(selMode) exitSelMode(); }
       else if(e.key==='/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||'')){ e.preventDefault(); qEl.focus(); } });
 
     /* ── 커맨드 팔레트 (⌘K / Ctrl+K) ── */
@@ -1083,6 +1168,7 @@
         {t:'목록 보기', ico:'≡', hint:'탭', run:()=>showTab('list')},
         {t:'그래프 보기', ico:'◔', hint:'탭', run:()=>showTab('graph')},
         {t:'타임라인 보기', ico:'≣', hint:'탭', run:()=>showTab('timeline')},
+        {t:'설정 보기', ico:'⚙', hint:'탭', run:()=>showTab('settings')},
         {t:'밝게 / 어둡게 전환', ico:'◐', hint:'테마', run:()=>toggleTheme()},
         {t:'JSON으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('json')},
         {t:'마크다운으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('md')},
@@ -1176,7 +1262,7 @@
       } else { return gData; }                                                // 필터/포커스 없음 → 기존 그대로
       return { nodes, links, edgeMode:gData.edgeMode };
     }
-    async function initGraph(){ if(!gData) gData=await get('/api/graph'); drawGraph(); }
+    async function initGraph(){ if(!gData) gData=await get('/api/graph?limit='+graphLimit); drawGraph(); }
     function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph(); }
     const nodeR = n => 3.7*Math.sqrt(Math.max(1, n.val||1));
 
@@ -1290,6 +1376,7 @@
           || ((document.getElementById('q').value||'').trim() !== '');
     }
     async function pollHealth(){
+      if(!autoRefreshOn) return;
       if(document.visibilityState !== 'visible') return;
       let h; try{ h = await get('/api/health'); } catch { return; }
       const sig = (h.total ?? '') + ':' + (h.lastId ?? '');
@@ -1300,7 +1387,8 @@
         toast('새 기억을 반영했어요','ok');
       }
     }
-    setInterval(pollHealth, 45000);                           // 45초마다 가벼운 변경 확인(탭 보일 때만)
+    let _pollTimer = setInterval(pollHealth, autoRefreshSec*1000); // 기본 45초마다 가벼운 변경 확인(탭 보일 때만) — 설정에서 켜짐/주기 조절 가능
+    function restartPolling(){ clearInterval(_pollTimer); _pollTimer=setInterval(pollHealth, autoRefreshSec*1000); }
     document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') pollHealth(); });
     window.addEventListener('focus', pollHealth);             // 탭 복귀 시 즉시 확인(빠른 인식)
     document.getElementById('refreshBtn').addEventListener('click', async ()=>{
