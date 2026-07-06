@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SoDam O-Brain — README</title>
+<style>:root { color-scheme: light dark; }
+body { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Roboto, Helvetica, Arial, sans-serif; line-height: 1.65; color: #1b1f24; background: #ffffff; }
+@media (prefers-color-scheme: dark) { body { color: #e6edf3; background: #0d1117; } }
+h1, h2, h3, h4 { line-height: 1.3; margin-top: 1.8em; margin-bottom: 0.6em; scroll-margin-top: 16px; }
+h1 { font-size: 2em; border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+h2 { font-size: 1.5em; border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+h3 { font-size: 1.2em; }
+@media (prefers-color-scheme: dark) { h1, h2 { border-color: #30363d; } }
+a { color: #0969da; text-decoration: none; }
+@media (prefers-color-scheme: dark) { a { color: #58a6ff; } }
+a:hover { text-decoration: underline; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; display: block; overflow-x: auto; }
+th, td { border: 1px solid #d0d7de; padding: 6px 13px; text-align: left; }
+@media (prefers-color-scheme: dark) { th, td { border-color: #30363d; } }
+th { background: #f6f8fa; font-weight: 600; }
+@media (prefers-color-scheme: dark) { th { background: #161b22; } }
+code { background: rgba(175,184,193,0.2); padding: 0.2em 0.4em; border-radius: 6px; font-size: 85%; font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace; }
+pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; }
+@media (prefers-color-scheme: dark) { pre { background: #161b22; } }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 4px solid #d0d7de; margin: 0; padding: 0 1em; color: #59636e; }
+@media (prefers-color-scheme: dark) { blockquote { border-color: #30363d; color: #9198a1; } }
+hr { border: none; border-top: 1px solid #d0d7de; margin: 2em 0; }
+@media (prefers-color-scheme: dark) { hr { border-color: #30363d; } }
+details { border: 1px solid #d0d7de; border-radius: 6px; padding: 10px 16px; margin: 0.8em 0; }
+@media (prefers-color-scheme: dark) { details { border-color: #30363d; } }
+summary { cursor: pointer; font-weight: 600; }
+img { max-width: 100%; }</style>
+</head>
+<body>
+<!-- English: this file · 한국어: README.md · Full guide: GUIDE.en.md · (This document and README.en.html have identical content) --><h1 id="sodam-o-brain--ai-memory-system">SoDam O-Brain — AI Memory System</h1>
+<blockquote>
+<p><strong>A 100% local memory tool that automatically saves important decisions and notes from your AI conversations, and visualizes them as a knowledge graph.</strong></p>
+</blockquote>
+<p><strong>In one line:</strong> AI is brilliant but forgets everything the moment a chat ends.
+O-Brain is the <strong>auto-notepad</strong> you keep next to that AI — it writes down what matters and brings it back whenever you need it.</p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#key-features">Key Features</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#how-to-download">How to Download</a></li>
+<li><a href="#installation-2-steps">Installation (2 Steps)</a></li>
+<li><a href="#claude-code-plugin-optional">Claude Code Plugin (Optional)</a></li>
+<li><a href="#mcp-tool-integration-claude-code">MCP Tool Integration (Claude Code)</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#running--usage">Running · Usage</a></li>
+<li><a href="#key-commands">Key Commands</a></li>
+<li><a href="#file--data-locations">File &amp; Data Locations</a></li>
+<li><a href="#workflow">Workflow</a></li>
+<li><a href="#architecture-summary">Architecture Summary</a></li>
+<li><a href="#security-overview--data-flow">Security Overview · Data Flow</a></li>
+<li><a href="#changelog">Changelog</a></li>
+<li><a href="#troubleshooting-quick-reference">Troubleshooting Quick Reference</a></li>
+<li><a href="#faq-frequently-asked-questions">FAQ</a></li>
+<li><a href="#license--copyright--commercial-use">License · Copyright · Commercial Use</a></li>
+</ol>
+<hr>
+<h2 id="key-features">Key Features</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>100% Local</strong></td>
+<td>All memories stay on your PC only. No external server or cloud transfer</td>
+</tr>
+<tr>
+<td><strong>Hybrid Search</strong></td>
+<td>Keyword (FTS5) + semantic similarity (vector search) simultaneously</td>
+</tr>
+<tr>
+<td><strong>Knowledge Graph</strong></td>
+<td>Visualize memories as 2D/3D dots and lines</td>
+</tr>
+<tr>
+<td><strong>Time Travel</strong></td>
+<td>Query memories that were &quot;alive&quot; on any past date</td>
+</tr>
+<tr>
+<td><strong>Confidence Decay</strong></td>
+<td>AI-extracted memories auto-decay with a 30-day half-life</td>
+</tr>
+<tr>
+<td><strong>Security Filter</strong></td>
+<td>API keys and passwords auto-removed before saving (<code>[REDACTED]</code>)</td>
+</tr>
+<tr>
+<td><strong>Auto Backup</strong></td>
+<td>Snapshot created automatically on server start and before bulk delete</td>
+</tr>
+<tr>
+<td><strong>MCP Integration</strong></td>
+<td>7 tools for saving/searching/linking memories directly from Claude Code</td>
+</tr>
+<tr>
+<td><strong>Orphan Node Visual</strong></td>
+<td>Memories with no user-defined relations shown with a dashed ring</td>
+</tr>
+<tr>
+<td><strong>Multi-select &amp; Bulk Delete</strong></td>
+<td>Select multiple memories and delete at once + 10-second undo</td>
+</tr>
+<tr>
+<td><strong>⚙ Settings Page</strong></td>
+<td>Adjust list page size, graph node count, auto-refresh, theme, and intro banner directly in the app — saved to your browser so it persists</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="prerequisites">Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OS</td>
+<td>Windows 10 / 11 (64-bit)</td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>20.x LTS or higher (free from <a href="https://nodejs.org">nodejs.org</a>)</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>500 MB+ (includes ~90 MB embedding model)</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>4 GB+ (8 GB+ recommended)</td>
+</tr>
+<tr>
+<td>Browser</td>
+<td>Chrome, Edge, Firefox, etc.</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Claude Code is only required for MCP integration or plugin installation. The web dashboard works without it.</p>
+</blockquote>
+<hr>
+<h2 id="how-to-download">How to Download</h2>
+<p>If you&#39;re reading this, the O-Brain files are already on your computer. Just locate the project folder (absolute path on this PC).</p>
+<p>If using Git (for developers):</p>
+<pre><code class="language-bash">git clone [repository URL]
+cd [folder name]
+</code></pre>
+<blockquote>
+<p>Access permission is required if the repository is private.</p>
+</blockquote>
+<hr>
+<h2 id="installation-2-steps">Installation (2 Steps)</h2>
+<p><strong>Step 1: Install dependencies (in a terminal)</strong></p>
+<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+npm install
+</code></pre>
+<p><strong>Step 2: Start the server</strong></p>
+<pre><code class="language-bash">npm start
+</code></pre>
+<p>→ When you see <code>O-Brain Local Server ▶ http://127.0.0.1:7740</code>, it&#39;s running.</p>
+<p><strong>Open in browser:</strong></p>
+<pre><code>http://127.0.0.1:7740
+</code></pre>
+<blockquote>
+<p><strong>First run:</strong> automatically downloads the AI embedding model (~90 MB). Takes 1–3 minutes. All subsequent runs start instantly.</p>
+</blockquote>
+<hr>
+<h2 id="claude-code-plugin-optional">Claude Code Plugin (Optional)</h2>
+<p>If you use Claude Code, you can also install it as a plugin. <strong>You must run this in two separate steps</strong> (attempting both at once causes a &quot;Marketplace not found&quot; error):</p>
+<pre><code>/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+/plugin install o-brain@o-brain-local
+</code></pre>
+<p>Restart Claude Code after installation → slash commands become available:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/o-brain:status</code></td>
+<td>View current memory count and status</td>
+</tr>
+<tr>
+<td><code>/o-brain:selftest</code></td>
+<td>Run save/search/security checks (✅✅✅ = OK)</td>
+</tr>
+<tr>
+<td><code>/o-brain:remember</code></td>
+<td>Extract and save decisions from current chat</td>
+</tr>
+<tr>
+<td><code>/o-brain:link</code></td>
+<td>Link memories with a relation</td>
+</tr>
+<tr>
+<td><code>/o-brain:backup</code></td>
+<td>Create a manual backup</td>
+</tr>
+<tr>
+<td><code>/o-brain:open</code></td>
+<td>Open the dashboard in your browser (auto-starts the server if it&#39;s off)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="mcp-tool-integration-claude-code">MCP Tool Integration (Claude Code)</h2>
+<p>Register in Claude Code&#39;s <code>settings.json</code> to save/search memories mid-conversation:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;o-brain&quot;: {
+      &quot;command&quot;: &quot;node&quot;,
+      &quot;args&quot;: [&quot;C:/absolute/path/to/app/src/mcp-server.mjs&quot;]
+    }
+  }
+}
+</code></pre>
+<blockquote>
+<p>Use an <strong>absolute path</strong> with forward slashes (<code>/</code>) — backslashes (<code>\</code>) may cause problems.</p>
+</blockquote>
+<p>Available MCP tools: <code>save_memory</code>, <code>search_memory</code>, <code>get_memory</code>, <code>get_related</code>, <code>get_timeline</code>, <code>add_relation</code>, <code>list_categories</code></p>
+<hr>
+<h2 id="quick-start">Quick Start</h2>
+<ol>
+<li><code>npm install</code> (once) → <code>npm start</code></li>
+<li>Open <code>http://127.0.0.1:7740</code> in your browser</li>
+<li>(Claude Code users) Speak a clear decision during a normal conversation, then run <code>/clear</code> → it&#39;s saved automatically</li>
+<li>Use <strong>⚙ Settings</strong> in the top right to adjust list size, graph node count, and more to your taste</li>
+</ol>
+<p>Full step-by-step guide: <strong><a href="./GUIDE.en.md">GUIDE.en.md</a></strong></p>
+<hr>
+<h2 id="running--usage">Running · Usage</h2>
+<h3 id="running">Running</h3>
+<pre><code class="language-bash"># Run from the app/ folder
+npm start                              # Start server (default port 7740)
+$env:OBRAIN_PORT=7741; npm start       # Start on a different port (PowerShell)
+</code></pre>
+<p>Stop the server: <code>Ctrl + C</code> in the terminal.</p>
+<h3 id="usage--web-dashboard-5-tabs">Usage — Web Dashboard (5 tabs)</h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Graph</strong></td>
+<td>Knowledge map showing memories as dots and lines. Home screen.</td>
+</tr>
+<tr>
+<td><strong>Overview</strong></td>
+<td>Total memory count, distribution by type/category, most-connected memories</td>
+</tr>
+<tr>
+<td><strong>List</strong></td>
+<td>Memories as cards. Select mode allows bulk delete</td>
+</tr>
+<tr>
+<td><strong>Timeline</strong></td>
+<td>Memories in chronological order</td>
+</tr>
+<tr>
+<td><strong>⚙ Settings</strong></td>
+<td>Adjust page size for List/Timeline/Overview, graph node count, auto-refresh on/off and interval, theme, and intro banner visibility — 5 controls in one page. Values are saved to your browser (localStorage) and persist across visits</td>
+</tr>
+</tbody></table>
+<p>For detailed usage (graph interaction, linking relations, search, time travel, bulk delete, etc.), see <strong><a href="./GUIDE.en.md">GUIDE.en.md</a></strong> Section 7.</p>
+<hr>
+<h2 id="key-commands">Key Commands</h2>
+<pre><code class="language-bash"># Run from the app/ folder
+npm start          # Start server (port 7740)
+npm run selftest   # Run self-diagnostics
+npm run backup     # Manual backup
+npm run status     # View DB stats
+npm run seed       # Add sample data (for testing)
+</code></pre>
+<p>Full HTTP API endpoint list and MCP tool input/output table: <strong><a href="./GUIDE.en.md#10-complete-command-reference">GUIDE.en.md Section 10</a></strong>.</p>
+<hr>
+<h2 id="file--data-locations">File &amp; Data Locations</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Memory database</td>
+<td><code>app/data/obrain.db</code></td>
+</tr>
+<tr>
+<td>Auto backups</td>
+<td><code>app/data/backups/</code> (keeps latest 10)</td>
+</tr>
+<tr>
+<td>API token file</td>
+<td><code>app/data/.api-token</code> (regenerated each run)</td>
+</tr>
+<tr>
+<td>Personal settings</td>
+<td><code>app/.env.local</code> (uses defaults if absent)</td>
+</tr>
+<tr>
+<td>These documents</td>
+<td>Project root (<code>README.md</code>/<code>GUIDE.md</code>, English variants, and each <code>.html</code>)</td>
+</tr>
+</tbody></table>
+<h3 id="environment-variables-appenvlocal">Environment Variables (<code>app/.env.local</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OBRAIN_PORT</code></td>
+<td><code>7740</code></td>
+<td>Server port number</td>
+</tr>
+<tr>
+<td><code>OBRAIN_DATA_DIR</code></td>
+<td><code>./data</code></td>
+<td>Data storage folder</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="workflow">Workflow</h2>
+<p><strong>General user (web UI focused):</strong> Start with <code>npm start</code> in the morning → review yesterday&#39;s memories → add important decisions directly during work → link related memories and clean up in the evening.</p>
+<p><strong>Claude Code user (MCP/plugin):</strong> Speak decisions during chat, end the session with <code>/clear</code> → auto-saved → occasionally open the dashboard with <code>/o-brain:open</code> → back up regularly with <code>/o-brain:backup</code>.</p>
+<p>Full workflow details: <strong><a href="./GUIDE.en.md#11-workflow-typical-daily-usage">GUIDE.en.md Section 11</a></strong>.</p>
+<hr>
+<h2 id="architecture-summary">Architecture Summary</h2>
+<pre><code>[Claude Code / Browser]
+        ↓
+[Express Server 127.0.0.1:7740]
+        ↓
+[Security Filter] → [Embedding (local AI)] → [SQLite DB]
+                                               ├── FTS5 (keyword search)
+                                               └── sqlite-vec (vector search)
+</code></pre>
+<p>Tech stack: Node.js ES Modules · Express.js v5 · SQLite (better-sqlite3) · sqlite-vec · @huggingface/transformers (all-MiniLM-L6-v2) · force-graph / 3d-force-graph · @modelcontextprotocol/sdk</p>
+<hr>
+<h2 id="security-overview--data-flow">Security Overview · Data Flow</h2>
+<ul>
+<li>Server binds <strong>only to 127.0.0.1 (your PC)</strong> — not reachable from external devices</li>
+<li><strong>API keys and passwords auto-removed</strong> before saving (processed by redact.mjs)</li>
+<li>New <strong>local API token</strong> auto-generated each server start (crypto.randomBytes)</li>
+<li><code>data/</code>, <code>.env.local</code>, <code>*.sqlite</code> are in <code>.gitignore</code> — never committed to Git</li>
+<li>No external cloud communication. Embedding model runs entirely locally</li>
+<li>Input validation: invalid IDs, out-of-range numbers, and disallowed CORS origins are all safely rejected by the server with 400/403/404 (verified by testing)</li>
+</ul>
+<p>Full data flow diagram and security header list: <strong><a href="./GUIDE.en.md#12-security--data-flow">GUIDE.en.md Section 12</a></strong>.</p>
+<hr>
+<h2 id="changelog">Changelog</h2>
+<p>Most recent entries first. Click any entry to expand it.</p>
+<details>
+<summary><b>2026-07-06 — New ⚙ Settings page + 2 bugs found and fixed during real-world testing</b></summary><ul>
+<li>List/Timeline/Overview page size is now adjustable (50/100/200/500/custom, 1–500), saved to your browser so it persists across visits.</li>
+<li>The header ⚙ button now opens a <strong>real 5th tab (a full settings page)</strong>. Added graph node count (50–2000), auto-refresh on/off and interval (10–300s), theme (light/dark), and intro banner visibility — 5 controls total.</li>
+<li><strong>Bug fix 1</strong>: Entering a decimal (e.g. 500.7) for graph node count caused a server 500 error and an unhandled exception on screen — fixed by forcing integers on both server and client.</li>
+<li><strong>Bug fix 2</strong>: The bulk-delete confirmation said &quot;undo within 10 seconds&quot; but the actual undo button disappeared after 5.5 seconds — unified to 10 seconds.</details></li>
+</ul>
+<details>
+<summary><b>2026-07-06 — Session-source display, search truncation transparency, confidence decay bug fix</b></summary><ul>
+<li>Added a &quot;Saved in session · N hours ago&quot; tag to memory detail view (helps when running multiple Claude Code windows at once).</li>
+<li>Fixed search results silently truncating — now shows &quot;N more related memories&quot; when results are cut off by <code>limit</code>.</li>
+<li>Fixed a bug where confidence decay dropped existing memories to the floor immediately on first run.</details></li>
+</ul>
+<details>
+<summary><b>2026-07-05 — Bulk-delete verified end-to-end + display bug fix, full MCP tool verification</b></summary><ul>
+<li>Verified the full multi-select → bulk delete → confirmation modal → undo toast flow live in the browser.</li>
+<li>Found and fixed a bug where the delete/cancel toolbar didn&#39;t appear when entering select mode.</li>
+<li>Verified all 7 MCP tools (save_memory, search_memory, get_memory, get_related, get_timeline, list_categories, add_relation) via the actual protocol.</details></li>
+</ul>
+<details>
+<summary><b>2026-06-28 to 2026-06-29 — Convenience features (M3) · Noise cleanup (M4) · scope filter</b></summary><ul>
+<li>Duplicate-save prevention (near-identical memories are skipped, with a reason returned).</li>
+<li>MCP <code>add_relation</code> tool, <code>/o-brain:link</code> command (suggests candidates → human confirms the relation type).</li>
+<li>Dashboard multi-select bulk delete (confirmation + undo), touch-target accessibility fixes.</li>
+<li>scope (global/project) filter, formal Apache-2.0 license adoption, removed paid Haiku API dependency (replaced with reusing the host LLM).</details></li>
+</ul>
+<details>
+<summary><b>2026-06-20 to 2026-06-23 — Initial implementation (M1·M2) · Security hardening</b></summary><ul>
+<li>save_memory MCP tool, <code>/o-brain:remember</code>, rule-based input sanitization (&quot;memory quality&quot; work).</li>
+<li>Dashboard mobile readability and touch targets ≥44px.</li>
+<li>Dashboard XSS protection, CSP/security headers added.</details></li>
+</ul>
+<p>The complete milestone-by-milestone history is in the project&#39;s <code>CHECKPOINT.md</code> (a development reference document).</p>
+<hr>
+<h2 id="troubleshooting-quick-reference">Troubleshooting Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&#39;node&#39; is not recognized</code></td>
+<td>Install LTS from <a href="https://nodejs.org">nodejs.org</a> → <strong>open a new terminal</strong></td>
+</tr>
+<tr>
+<td><code>EADDRINUSE :::7740</code></td>
+<td>Add <code>OBRAIN_PORT=7741</code> to <code>.env.local</code> and restart</td>
+</tr>
+<tr>
+<td>Graph is empty</td>
+<td>Run <code>npm run seed</code> to add sample data</td>
+</tr>
+<tr>
+<td>Browser won&#39;t connect</td>
+<td>Confirm <code>npm start</code> is running → check address is <code>http://127.0.0.1:7740</code></td>
+</tr>
+<tr>
+<td>Embedding download fails</td>
+<td>Check internet connection · allow Node.js through firewall</td>
+</tr>
+<tr>
+<td>Accidentally deleted a memory</td>
+<td>Click &quot;Undo&quot; on screen within 10 seconds. If it&#39;s too late, restore from the latest <code>.db</code> file in <code>app/data/backups/</code></td>
+</tr>
+<tr>
+<td>Changed a count in Settings but the graph didn&#39;t change</td>
+<td>This is expected — the Graph tab uses a separate &quot;node count&quot; setting (different from the list page size)</td>
+</tr>
+</tbody></table>
+<p>More symptom-specific fixes: <strong><a href="./GUIDE.en.md#15-troubleshooting">GUIDE.en.md Section 15</a></strong>.</p>
+<hr>
+<h2 id="faq-frequently-asked-questions">FAQ (Frequently Asked Questions)</h2>
+<p><strong>Q. Where is my data stored?</strong>
+A. Only in <code>app/data/obrain.db</code> (an SQLite file). Nothing is sent externally.</p>
+<p><strong>Q. Does it cost anything?</strong>
+A. O-Brain itself is free. If you use Claude Code or the Anthropic API, those services&#39; fees may apply separately.</p>
+<p><strong>Q. Are the graph node count and the list page size the same setting?</strong>
+A. No. In the ⚙ Settings page, &quot;page size&quot; applies only to List/Timeline/Overview, while &quot;graph node count&quot; applies only to the Graph tab.</p>
+<p>More FAQs: <strong><a href="./GUIDE.en.md#16-faq-frequently-asked-questions">GUIDE.en.md Section 16</a></strong>.</p>
+<hr>
+<h2 id="license--copyright--commercial-use">License · Copyright · Commercial Use</h2>
+<p><strong>Apache License 2.0 © SoDam AI Studio, 2026</strong></p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Personal use</td>
+<td>Free to use</td>
+</tr>
+<tr>
+<td>Modification · copying</td>
+<td>Permitted (must preserve copyright notices)</td>
+</tr>
+<tr>
+<td>Commercial use</td>
+<td>Permitted under Apache-2.0 terms</td>
+</tr>
+<tr>
+<td>Warranty</td>
+<td><strong>None (AS-IS)</strong> — you are responsible for outcomes</td>
+</tr>
+<tr>
+<td>External services</td>
+<td>Claude / Anthropic and other service terms apply separately</td>
+</tr>
+</tbody></table>
+<ul>
+<li>Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, etc.) are under <strong>their own licenses</strong> (MIT/Apache-2.0)</li>
+<li>&quot;Claude&quot; and &quot;Anthropic&quot; are trademarks of their respective owners. O-Brain has no official affiliation with them</li>
+<li>Full license text: <code>LICENSE</code> file · Full dependency notices: <code>NOTICE</code> file</li>
+<li>For the detailed legal/copyright/commercial terms (permitted uses, obligations, liability limits, trademarks, privacy, and more — 12 subsections), see <strong><a href="./GUIDE.en.md#17-legal--copyright--license--commercial-use">GUIDE.en.md Section 17</a></strong></li>
+</ul>
+<hr>
+<p><em>This document and README.en.html have identical content.</em>
+<em>Full guide: <a href="./GUIDE.en.md">GUIDE.en.md</a> (English) · <a href="./GUIDE.md">GUIDE.md</a> (Korean)</em></p>
+
+</body>
+</html>
