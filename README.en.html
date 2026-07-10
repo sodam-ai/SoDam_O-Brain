@@ -114,6 +114,18 @@ O-Brain is the <strong>auto-notepad</strong> you keep next to that AI — it wri
 <td><strong>⚙ Settings Page</strong></td>
 <td>Adjust list page size, graph node count, auto-refresh, theme, and intro banner directly in the app — saved to your browser so it persists</td>
 </tr>
+<tr>
+<td><strong>Duplicate Cleanup</strong></td>
+<td>Auto-detects similar memory pairs and lets you review, merge, or delete (backed up + 10-second undo)</td>
+</tr>
+<tr>
+<td><strong>API Token Verification</strong></td>
+<td>Every API request is checked against a local token; missing or wrong tokens are rejected</td>
+</tr>
+<tr>
+<td><strong>Performance Guard</strong></td>
+<td>Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="prerequisites">Prerequisites</h2>
@@ -301,7 +313,7 @@ npm run seed       # Add sample data (for testing)
 </tr>
 <tr>
 <td>Auto backups</td>
-<td><code>app/data/backups/</code> (keeps latest 10)</td>
+<td><code>app/data/backup/</code> (keeps latest 7)</td>
 </tr>
 <tr>
 <td>API token file</td>
@@ -367,6 +379,13 @@ npm run seed       # Add sample data (for testing)
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
 <details>
+<summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary><ul>
+<li><strong>Graph performance</strong>: Graph generation took 9.8s at 5,000 memories; added an auto-simplify guard past 1,500 memories, cutting this to 8ms (~300x).</li>
+<li><strong>Duplicate memory cleanup</strong>: New Overview-tab feature that auto-detects similar memory pairs for review, then lets you &quot;Keep A / Keep B / Combine both&quot; (backed up + 10-second undo).</li>
+<li><strong>Security hardening</strong>: The local API token was issued but never actually checked — now every request is verified. Fixed a gap where saving a memory via the API could accept out-of-range importance/confidence values.</li>
+<li><strong>Full functional verification</strong>: Directly executed all 19 HTTP API routes, all 7 MCP tools, both session hooks (run against a real conversation transcript), and the live web browser (2D/3D graph, search, script-injection defense) — 90+ test cases total.</details></li>
+</ul>
+<details>
 <summary><b>2026-07-06 — New ⚙ Settings page + 2 bugs found and fixed during real-world testing</b></summary><ul>
 <li>List/Timeline/Overview page size is now adjustable (50/100/200/500/custom, 1–500), saved to your browser so it persists across visits.</li>
 <li>The header ⚙ button now opens a <strong>real 5th tab (a full settings page)</strong>. Added graph node count (50–2000), auto-refresh on/off and interval (10–300s), theme (light/dark), and intro banner visibility — 5 controls total.</li>
@@ -430,7 +449,7 @@ npm run seed       # Add sample data (for testing)
 </tr>
 <tr>
 <td>Accidentally deleted a memory</td>
-<td>Click &quot;Undo&quot; on screen within 10 seconds. If it&#39;s too late, restore from the latest <code>.db</code> file in <code>app/data/backups/</code></td>
+<td>Click &quot;Undo&quot; on screen within 10 seconds. If it&#39;s too late, restore from the latest <code>.db</code> file in <code>app/data/backup/</code></td>
 </tr>
 <tr>
 <td>Changed a count in Settings but the graph didn&#39;t change</td>

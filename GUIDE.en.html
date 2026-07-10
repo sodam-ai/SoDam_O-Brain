@@ -459,7 +459,7 @@ $env:OBRAIN_PORT=7741; npm start
 <li>Right after deletion, a toast appears at the bottom: &quot;N deleted · Undo&quot;. <strong>Click &quot;Undo&quot; within 10 seconds to restore them</strong> (note: restored memories get a new ID, and previously linked relations are restored on a best-effort basis, not guaranteed)</li>
 </ol>
 <blockquote>
-<p><strong>Note</strong>: The undo button disappears after 10 seconds. After that, restore from the latest backup file in <code>app/data/backups/</code>.</p>
+<p><strong>Note</strong>: The undo button disappears after 10 seconds. After that, restore from the latest backup file in <code>app/data/backup/</code>.</p>
 </blockquote>
 <h3 id="7-12--settings-page">7-12. ⚙ Settings Page</h3>
 <p>Click the gear (⚙) icon in the header to open the dedicated settings page — a full 5th screen alongside Graph/Overview/List/Timeline. There are 5 adjustable groups, all <strong>saved to this browser</strong> so they persist across visits.</p>
@@ -498,6 +498,24 @@ $env:OBRAIN_PORT=7741; npm start
 </tr>
 </tbody></table>
 <p>Selecting &quot;Custom…&quot; in any dropdown reveals a number input. Out-of-range values (e.g. 99999 for graph nodes) or decimals are automatically clamped to a safe value on both the client and server.</p>
+<h3 id="7-13-cleaning-up-duplicate-memories">7-13. Cleaning Up Duplicate Memories</h3>
+<p>If similar memories are found, a card appears at the bottom of the <strong>Overview</strong> tab.</p>
+<ol>
+<li><strong>Check the candidate list</strong>: Opening the Overview tab automatically scans for similar memory pairs and displays them.</li>
+<li><strong>Click a card</strong>: Clicking a candidate card opens a confirmation dialog showing both memories&#39; full content side by side.</li>
+<li><strong>Choose a cleanup method</strong>:<ul>
+<li><strong>Keep A</strong>: Keep the top memory, delete the bottom one</li>
+<li><strong>Keep B</strong>: Keep the bottom memory, delete the top one</li>
+<li><strong>Combine both</strong>: Merge both contents into one memory and delete the other</li>
+<li><strong>Cancel</strong>: Close without doing anything</li>
+</ul>
+</li>
+<li><strong>Safety net</strong>: A backup is created automatically before execution, and clicking &quot;Undo&quot; within 10 seconds restores the original state (a merge reverts to the original content; a delete re-creates the deleted memory under a new ID).</li>
+<li><strong>If memories exceed 1500</strong>, this feature is automatically disabled for safety (shown as a &quot;skipped — too many memories&quot; message).</li>
+</ol>
+<blockquote>
+<p><strong>The comparison threshold differs from search.</strong> Search is deliberately loose (&quot;might be relevant&quot;), while duplicate detection is much stricter (&quot;genuinely close to identical&quot;). So search may return several hits for a topic while none of them appear as duplicate candidates — that&#39;s expected behavior.</p>
+</blockquote>
 <hr>
 <h2 id="8-how-to-use--mcp-tools--claude-code-plugin">8. How to Use — MCP Tools · Claude Code Plugin</h2>
 <h3 id="8-1-register-the-mcp-server-settingsjson-method">8-1. Register the MCP Server (settings.json method)</h3>
@@ -640,15 +658,25 @@ Feel free to skip if you&#39;re not interested in technical details.</p>
 <li><strong>Edges (manual)</strong>: User-added relations (SUPERSEDES/SUPPORTS, etc.) — shown as colored lines</li>
 <li><strong>Size</strong>: Proportional to importance + connection count</li>
 <li><strong>Performance limit</strong>: 600 nodes by default (highest importance first). Adjustable from 50–2000 in ⚙ Settings (Section 7-12)</li>
+<li><strong>Performance guard (auto-simplify)</strong>: Once total memories exceed 1500, the server automatically skips the heavy per-node similarity calculation and draws the graph using only saved (manual) relations. This is an automatic switch to prevent the screen from freezing — it turns on and off by itself based on memory count.</li>
 </ul>
-<h3 id="9-5-local-api-token">9-5. Local API Token</h3>
+<h3 id="9-5-duplicate-detection--merge-logic">9-5. Duplicate Detection &amp; Merge Logic</h3>
+<ul>
+<li><strong>Detection threshold</strong>: A pair of memories is flagged as a &quot;duplicate candidate&quot; when their vector search <code>distance</code> is 0.6 or below. This is a raw distance value (lower = more similar), not cosine similarity — measured values show near-identical content close to 0, while merely related search hits sit close to 1. That&#39;s why merging uses a much stricter threshold (0.6) than search.</li>
+<li><strong>No automatic execution</strong>: Candidates are only displayed (Overview tab) — nothing is deleted or merged automatically. A human must compare the two contents on screen and click a button to execute.</li>
+<li><strong>3 cleanup options</strong>: &quot;Keep A&quot; (delete B), &quot;Keep B&quot; (delete A), &quot;Combine both&quot; (merge the two contents into one and delete the other).</li>
+<li><strong>Safety net</strong>: An automatic backup is created before execution, and an &quot;Undo&quot; appears for 10 seconds afterward to restore the previous state (see Section 7-13 for usage).</li>
+<li><strong>Scale limit</strong>: If memories exceed 1500, duplicate detection is skipped entirely for safety (shows a &quot;skipped — too many memories&quot; notice).</li>
+</ul>
+<h3 id="9-6-local-api-token">9-6. Local API Token</h3>
 <p>A new random token is generated each time the server starts:</p>
 <ul>
 <li>Automatically injected into the browser and sent with API requests</li>
 <li>Also saved to <code>data/.api-token</code> (for the MCP server to read)</li>
 <li>New token issued on each server restart (enhanced security)</li>
+<li><strong>Every <code>/api/</code> request is actually checked against this token.</strong> Missing or mismatched tokens are rejected with 403 (not allowed) — normal use requires no action since the browser attaches the token automatically.</li>
 </ul>
-<h3 id="9-6-how--settings-values-are-stored">9-6. How ⚙ Settings Values Are Stored</h3>
+<h3 id="9-7-how--settings-values-are-stored">9-7. How ⚙ Settings Values Are Stored</h3>
 <p>The values in the ⚙ Settings page (page size, graph node count, auto-refresh, theme, banner) are stored in <strong>this browser&#39;s localStorage</strong>, not on the server. This means:</p>
 <ul>
 <li>Opening on a different computer or browser starts fresh with defaults (100 items / 600 nodes / 45s / dark / banner shown)</li>
@@ -862,9 +890,24 @@ Feel free to skip if you&#39;re not interested in technical details.</p>
 <td><code>/api/session/:id</code></td>
 <td>Get session (conversation) info</td>
 </tr>
+<tr>
+<td>GET</td>
+<td><code>/api/memory/:id/similar</code></td>
+<td>Suggest memories similar to this one (link candidates)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/duplicates</code></td>
+<td>List duplicate candidates (read-only, no action taken)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/duplicates/merge</code></td>
+<td>Execute duplicate cleanup (backs up first; requires keepId/dropId/mode)</td>
+</tr>
 </tbody></table>
 <blockquote>
-<p>All numeric parameters (<code>limit</code>/<code>offset</code>) are automatically clamped to a safe value by the server, even with out-of-range, decimal, or non-numeric input (verified by testing). Requests from disallowed origins (CORS) are rejected with 403.</p>
+<p>All numeric parameters (<code>limit</code>/<code>offset</code>) are automatically clamped to a safe value by the server, even with out-of-range, decimal, or non-numeric input (verified by testing). Requests from disallowed origins (CORS) are rejected with 403. Every <code>/api/</code> request is checked against the local API token (Section 9-6) — missing or mismatched tokens are rejected with 403.</p>
 </blockquote>
 <h3 id="10-5-environment-variables-envlocal">10-5. Environment Variables (<code>.env.local</code>)</h3>
 <p>Create an <code>.env.local</code> file in the <code>app/</code> folder to configure:</p>
@@ -1035,6 +1078,14 @@ Safety before features; the default configuration is the most secure state.</p>
 <td>Rounded to an integer (previously caused a server error — now fixed)</td>
 </tr>
 <tr>
+<td>Importance (1–5) out of range (e.g. 999, -5)</td>
+<td>Auto-clamped to 1–5</td>
+</tr>
+<tr>
+<td>Confidence (0–1) out of range or non-numeric</td>
+<td>Auto-clamped to 0–1; falls back to the default if not a number</td>
+</tr>
+<tr>
 <td>Non-existent memory ID</td>
 <td>Returns 404</td>
 </tr>
@@ -1047,8 +1098,16 @@ Safety before features; the default configuration is the most secure state.</p>
 <td>Returns 403</td>
 </tr>
 <tr>
+<td>Missing or wrong API token</td>
+<td>Returns 403 (Section 9-6)</td>
+</tr>
+<tr>
 <td>Search query with SQL special characters</td>
 <td>Safely handled via parameter binding, returns normal (possibly empty) results</td>
+</tr>
+<tr>
+<td>Content containing script code (<code>&lt;script&gt;</code>)</td>
+<td>Stored as-is (plain text), but rendered as literal text on screen — never executed (verified in a real browser)</td>
 </tr>
 </tbody></table>
 <h3 id="12-6-file-system-security">12-6. File System Security</h3>
@@ -1356,7 +1415,7 @@ Injected into index.html              Saved to data/.api-token
 │   │
 │   ├── data/                 ← Personal data (not committed to Git)
 │   │   ├── obrain.db         SQLite database (memory storage)
-│   │   ├── backups/          Automatic backup files
+│   │   ├── backup/           Automatic backup files
 │   │   └── .api-token        Local API token (regenerated each run)
 │   │
 │   ├── node_modules/         Installed packages (created by npm install)
@@ -1388,8 +1447,8 @@ Injected into index.html              Saved to data/.api-token
 <td><strong>Most important</strong>: All memories stored here</td>
 </tr>
 <tr>
-<td><code>app/data/backups/</code></td>
-<td>Auto backup files (latest 10 kept)</td>
+<td><code>app/data/backup/</code></td>
+<td>Auto backup files (latest 7 kept)</td>
 </tr>
 <tr>
 <td><code>app/data/.api-token</code></td>
@@ -1412,7 +1471,7 @@ npm run backup
 </code></pre>
 <p><strong>Restore procedure</strong>:</p>
 <ol>
-<li>Find the desired <code>.db</code> file in <code>app/data/backups/</code></li>
+<li>Find the desired <code>.db</code> file in <code>app/data/backup/</code></li>
 <li>Copy <code>app/data/obrain.db</code> somewhere else (preserve current version)</li>
 <li>Copy the backup file to <code>app/data/obrain.db</code></li>
 </ol>
@@ -1615,7 +1674,7 @@ npm run backup
 <tr>
 <td>Undo button is gone (past 10 seconds)</td>
 <td>Auto-undo window expired</td>
-<td>Restore from the latest file in <code>app/data/backups/</code></td>
+<td>Restore from the latest file in <code>app/data/backup/</code></td>
 </tr>
 <tr>
 <td>Database file corrupted</td>
@@ -1646,7 +1705,7 @@ Claude Code is only needed for MCP tool or plugin integration.</p>
 <p>A. O-Brain itself is free. If you use Claude Code or the Anthropic API, those services&#39; fees may apply. AI extraction (<code>/o-brain:remember</code>) also reuses your installed host LLM directly, so there&#39;s no separate API key or charge.</p>
 <hr>
 <p><strong>Q. I accidentally deleted a memory. Can I recover it?</strong></p>
-<p>A. If it was a bulk delete, click &quot;Undo&quot; on screen <strong>within 10 seconds</strong> (a backup is also created automatically before deletion). If time has passed, restore from the latest <code>.db</code> file in <code>app/data/backups/</code>.
+<p>A. If it was a bulk delete, click &quot;Undo&quot; on screen <strong>within 10 seconds</strong> (a backup is also created automatically before deletion). If time has passed, restore from the latest <code>.db</code> file in <code>app/data/backup/</code>.
 (Note: no auto backup before single-item deletion — use <code>npm run backup</code> regularly for important memories)</p>
 <hr>
 <p><strong>Q. Can I change the port?</strong></p>
@@ -1859,6 +1918,13 @@ No major competing brand under this exact name has been identified, but a formal
 <hr>
 <h2 id="18-changelog">18. Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
+<details>
+<summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary><ul>
+<li><strong>Graph performance</strong>: In an isolated environment with 5,000 memories, graph generation took 9.8 seconds. Added a performance guard that auto-simplifies once memories exceed 1,500, cutting this to 8ms (~300x). No noticeable change at normal usage scale — this is a safety net for large collections.</li>
+<li><strong>Duplicate memory cleanup</strong>: New feature on the Overview tab that automatically finds similar memory pairs (never auto-deletes) and lets you resolve them with &quot;Keep A / Keep B / Combine both&quot; after review. Backed up before execution, with a 10-second undo (Section 7-13).</li>
+<li><strong>Security hardening</strong>: Fixed the local API token, which was issued but never actually verified — now every API request is checked. Fixed a gap where saving a new memory via the API could store an out-of-range importance/confidence value without correction (already fixed elsewhere, only this path was missing it).</li>
+<li><strong>Full functional verification</strong>: Directly executed and confirmed all 19 HTTP API routes, all 7 MCP tools (via a real protocol connection), both session hooks (auto-save/auto-recall, run against this actual conversation&#39;s transcript), and the live web browser (2D/3D graph, search, script-injection defense) — 90+ test cases in total. Real user data was never touched; all testing used an isolated data directory.</details></li>
+</ul>
 <details>
 <summary><b>2026-07-06 — New ⚙ Settings page + 2 bugs found and fixed during real-world testing</b></summary><ul>
 <li>List/Timeline/Overview page size is now adjustable (50/100/200/500/custom, 1–500), saved to this browser so it persists across visits.</li>

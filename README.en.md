@@ -46,6 +46,9 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Orphan Node Visual** | Memories with no user-defined relations shown with a dashed ring |
 | **Multi-select & Bulk Delete** | Select multiple memories and delete at once + 10-second undo |
 | **⚙ Settings Page** | Adjust list page size, graph node count, auto-refresh, theme, and intro banner directly in the app — saved to your browser so it persists |
+| **Duplicate Cleanup** | Auto-detects similar memory pairs and lets you review, merge, or delete (backed up + 10-second undo) |
+| **API Token Verification** | Every API request is checked against a local token; missing or wrong tokens are rejected |
+| **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing |
 
 ---
 
@@ -205,7 +208,7 @@ Full HTTP API endpoint list and MCP tool input/output table: **[GUIDE.en.md Sect
 | Item | Location |
 |------|----------|
 | Memory database | `app/data/obrain.db` |
-| Auto backups | `app/data/backups/` (keeps latest 10) |
+| Auto backups | `app/data/backup/` (keeps latest 7) |
 | API token file | `app/data/.api-token` (regenerated each run) |
 | Personal settings | `app/.env.local` (uses defaults if absent) |
 | These documents | Project root (`README.md`/`GUIDE.md`, English variants, and each `.html`) |
@@ -263,6 +266,15 @@ Full data flow diagram and security header list: **[GUIDE.en.md Section 12](./GU
 Most recent entries first. Click any entry to expand it.
 
 <details>
+<summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary>
+
+- **Graph performance**: Graph generation took 9.8s at 5,000 memories; added an auto-simplify guard past 1,500 memories, cutting this to 8ms (~300x).
+- **Duplicate memory cleanup**: New Overview-tab feature that auto-detects similar memory pairs for review, then lets you "Keep A / Keep B / Combine both" (backed up + 10-second undo).
+- **Security hardening**: The local API token was issued but never actually checked — now every request is verified. Fixed a gap where saving a memory via the API could accept out-of-range importance/confidence values.
+- **Full functional verification**: Directly executed all 19 HTTP API routes, all 7 MCP tools, both session hooks (run against a real conversation transcript), and the live web browser (2D/3D graph, search, script-injection defense) — 90+ test cases total.
+</details>
+
+<details>
 <summary><b>2026-07-06 — New ⚙ Settings page + 2 bugs found and fixed during real-world testing</b></summary>
 
 - List/Timeline/Overview page size is now adjustable (50/100/200/500/custom, 1–500), saved to your browser so it persists across visits.
@@ -317,7 +329,7 @@ The complete milestone-by-milestone history is in the project's `CHECKPOINT.md` 
 | Graph is empty | Run `npm run seed` to add sample data |
 | Browser won't connect | Confirm `npm start` is running → check address is `http://127.0.0.1:7740` |
 | Embedding download fails | Check internet connection · allow Node.js through firewall |
-| Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, restore from the latest `.db` file in `app/data/backups/` |
+| Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, restore from the latest `.db` file in `app/data/backup/` |
 | Changed a count in Settings but the graph didn't change | This is expected — the Graph tab uses a separate "node count" setting (different from the list page size) |
 
 More symptom-specific fixes: **[GUIDE.en.md Section 15](./GUIDE.en.md#15-troubleshooting)**.
