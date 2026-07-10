@@ -76,6 +76,45 @@ export function getSimilar(db, id, k = 6) {
   return out;
 }
 
+// 중복 후보 탐지(읽기 전용, 실행 없음) — PRD "코사인 0.92 병합"을 그대로 쓰지 않음:
+// search.mjs 실측 주석 기준 sqlite-vec의 distance는 코사인 유사도가 아니라 "낮을수록 유사"한 원시값이고
+// (진짜 일치≤0.83·무관≥0.99), 0.92는 "검색에 관련 있음" 수준의 느슨한 문턱이라 중복 판정엔 너무 헐겁다.
+// 오판(전혀 다른 기억을 중복으로 제안) 위험을 낮추려 그보다 훨씬 엄격한 값을 보수적으로 채택.
+// 그래도 이 함수는 "후보 제안"만 한다 — 실제 삭제·병합은 사람이 내용을 직접 보고 확인해야만 실행(자동 실행 없음, PRD 준수).
+const DUP_DISTANCE = 0.6;
+export function findDuplicateCandidates(db, { limit = 30 } = {}) {
+  const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
+  // graph.mjs와 동일한 성능가드 철학 — 노드당 개별 벡터쿼리라 DB가 크면 느려짐(2026-07-11 실측 교훈 재사용)
+  if (total > 1500) return { pairs: [], skipped: true, total, reason: '기억이 많아(1500건 초과) 안전을 위해 건너뜀' };
+  const mems = db.prepare('SELECT id, content, type, importance, created_at FROM memory ORDER BY id').all();
+  const byId = new Map(mems.map(m => [m.id, m]));
+  const knn = db.prepare(
+    `SELECT rowid AS id, distance FROM memory_vec
+     WHERE embedding MATCH (SELECT embedding FROM memory_vec WHERE rowid = ?) ORDER BY distance LIMIT 4`
+  );
+  const seen = new Set();
+  const pairs = [];
+  try {
+    for (const m of mems) {
+      for (const r of knn.all(m.id)) {
+        if (r.id === m.id || r.distance > DUP_DISTANCE) continue;
+        const key = m.id < r.id ? `${m.id}-${r.id}` : `${r.id}-${m.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const other = byId.get(r.id);
+        if (!other) continue;
+        pairs.push({
+          a: { id: m.id, content: m.content, type: m.type, importance: m.importance, created_at: m.created_at },
+          b: { id: other.id, content: other.content, type: other.type, importance: other.importance, created_at: other.created_at },
+          distance: r.distance,
+        });
+      }
+    }
+  } catch { return { pairs: [], skipped: true, total, reason: '벡터 검색 불가' }; }
+  pairs.sort((x, y) => x.distance - y.distance);
+  return { pairs: pairs.slice(0, limit), skipped: false, total, threshold: DUP_DISTANCE };
+}
+
 // 대시보드 개요용 집계 — DB 전체 기준(SQL COUNT/GROUP BY)이라 기억 수가 수천이어도 정확·빠름.
 export function getStats(db) {
   const get = (sql, ...a) => db.prepare(sql).get(...a);

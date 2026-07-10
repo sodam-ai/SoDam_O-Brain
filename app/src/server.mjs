@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
-import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay } from './store.mjs';
+import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce } from './backup.mjs';
@@ -35,6 +35,12 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
+// 로컬 API 토큰 검증(PRD 08 §2 Should) — 지금까지는 발급만 하고 검증을 안 해 장식이었음.
+// index.html이 이미 모든 /api/ 요청에 헤더를 자동 첨부하도록 되어 있어(541-549줄 fetch 몽키패치) 안전하게 켤 수 있음.
+app.use('/api', (req, res, next) => {
+  if (req.headers['x-obrain-token'] !== API_TOKEN) return res.status(403).json({ error: '허용되지 않은 요청' });
+  next();
+});
 
 // health + 가벼운 변경 신호(total·lastId) — 대시보드 자동 새로고침 폴링용(추가/삭제·신규 캡처 감지)
 app.get('/api/health', (req, res) => {
@@ -92,9 +98,47 @@ app.get('/api/search', async (req, res) => {
   try { res.json(await search(db, q, 10)); }
   catch (e) { res.status(500).json({ error: '검색 실패' }); }
 });
+// 그래프 캐시 — DB 지문(총건수+최대id+관계수)이 안 바뀌면 재계산 생략.
+// 훅이 별도 프로세스로 저장한 변경도 이 지문으로 잡힘(서버 자체 쓰기 경로에만 의존하는 무효화보다 안전).
+const graphCache = new Map();
+function graphFingerprint() {
+  const r = db.prepare(
+    'SELECT (SELECT COUNT(*) FROM memory) mc, (SELECT COALESCE(MAX(id),0) FROM memory) mid, (SELECT COUNT(*) FROM relation) rc'
+  ).get();
+  return `${r.mc}:${r.mid}:${r.rc}`;
+}
+// 중복 후보 조회(읽기 전용) — 실제 삭제·병합 엔드포인트는 아직 없음(사람 확인 UI 마련 후 별도 추가 예정, PRD의
+// "자동 삭제 금지·확인 게이트 필수" 원칙상 탐지와 실행을 분리해 위험을 낮춤).
+app.get('/api/duplicates', (req, res) => {
+  try { res.json(findDuplicateCandidates(db)); } catch (e) { res.status(500).json({ error: '중복 탐지 실패' }); }
+});
+// 중복 정리 실행 — 사람이 화면에서 내용을 보고 확인한 뒤에만 호출됨(자동 실행 없음, PRD 준수).
+// 삭제 전 자동 백업 필수(배치삭제와 동일 안전장치) + 되돌리기용 원본 스냅샷 반환.
+app.post('/api/duplicates/merge', async (req, res) => {
+  const keepId = Number((req.body || {}).keepId), dropId = Number((req.body || {}).dropId);
+  const mode = (req.body || {}).mode === 'combine' ? 'combine' : 'keep';
+  if (!Number.isInteger(keepId) || !Number.isInteger(dropId) || keepId === dropId)
+    return res.status(400).json({ error: '잘못된 대상' });
+  const keepMem = getMemory(db, keepId), dropMem = getMemory(db, dropId);
+  if (!keepMem || !dropMem) return res.status(404).json({ error: '없는 기억' });
+  try { await backupOnce({ tag: 'before-merge' }); }
+  catch (e) { return res.status(500).json({ error: '백업 실패로 정리 중단: ' + (e?.message || '') }); }
+  try {
+    const keepOriginalContent = keepMem.content; // 되돌리기용 원본(합치기 모드일 때만 의미 있음)
+    if (mode === 'combine') await updateMemory(db, keepId, { content: keepOriginalContent + '\n\n' + dropMem.content });
+    deleteMemory(db, dropId);
+    res.json({ ok: true, kept: keepId, dropped: dropId, mode, dropSnapshot: dropMem, keepOriginalContent });
+  } catch (e) { console.error('[duplicates/merge]', e); res.status(500).json({ error: e.message || '정리 실패' }); }
+});
 app.get('/api/graph', (req, res) => {
   const limit = Math.min(2000, Math.max(50, Number(req.query.limit) | 0 || 600)); // 노드 상한(대량 프리즈 방지) — 소수 입력 시 정수화(better-sqlite3 LIMIT 바인딩 방어)
-  try { res.json(buildGraph(db, { limit })); } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
+  try {
+    const fp = graphFingerprint();
+    const cached = graphCache.get(limit);
+    const data = (cached && cached.fp === fp) ? cached.data : buildGraph(db, { limit });
+    if (!cached || cached.fp !== fp) graphCache.set(limit, { fp, data });
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: '그래프 생성 실패' }); }
 });
 // 기억 삭제(사용자 요청) — id 검증 후 1건만 제거. 로컬 전용·파라미터 바인딩.
 app.delete('/api/memory/:id', (req, res) => {
@@ -129,10 +173,12 @@ app.post('/api/memory', async (req, res) => {
   if (!content || typeof content !== 'string' || !content.trim())
     return res.status(400).json({ error: '내용 필수' });
   try {
-    const result = await addMemory(db, { content, type, importance: Number(importance) || 3,
-      source, confidence: Number(confidence) ?? 1, project, scope: scope === 'project' ? 'project' : 'global' });
+    const confNum = Number(confidence);
+    const result = await addMemory(db, { content, type, importance: Math.min(5, Math.max(1, Number(importance) || 3)),
+      source, confidence: Number.isFinite(confNum) ? Math.min(1, Math.max(0, confNum)) : 1,
+      project, scope: scope === 'project' ? 'project' : 'global' });
     res.status(result.skipped ? 200 : 201).json({ ok: true, ...result });
-  } catch (e) { res.status(500).json({ error: e.message || '저장 실패' }); }
+  } catch (e) { console.error('[memory:create]', e); res.status(500).json({ error: e.message || '저장 실패' }); }
 });
 
 // 기억 편집(사용자) — 내용/유형/중요도. 내용 변경 시 저장 전 자동 redact + 재임베딩(store.updateMemory).
@@ -141,7 +187,7 @@ app.patch('/api/memory/:id', async (req, res) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
   const { content, type, importance } = req.body || {};
   try { res.json(await updateMemory(db, id, { content, type, importance })); }
-  catch (e) { res.status(400).json({ error: e.message || '수정 실패' }); }
+  catch (e) { console.error('[memory:update]', e); res.status(400).json({ error: e.message || '수정 실패' }); }
 });
 
 // 조회 기록(자주 본 기억 글로우) — 상세 열람 시 1회 증가.
@@ -159,7 +205,7 @@ app.get('/api/relations', (req, res) => {
 app.post('/api/relation', (req, res) => {
   const { from_id, to_id, type } = req.body || {};
   try { res.json({ ok: true, ...addRelation(db, { from_id, to_id, type }) }); }
-  catch (e) { res.status(400).json({ error: e.message || '관계 추가 실패' }); }
+  catch (e) { console.error('[relation:create]', e); res.status(400).json({ error: e.message || '관계 추가 실패' }); }
 });
 app.delete('/api/relation/:id', (req, res) => {
   const id = Number(req.params.id);

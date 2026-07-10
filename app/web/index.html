@@ -688,12 +688,70 @@
           <div class="ov-card"><h4>자주 본 기억</h4>${accHtml}</div>
         </div>
         ${projHtml}
+        <div class="ov-card" id="ov-dup"><h4>중복 후보</h4><div class="ov-mut">확인 중…</div></div>
         ${s.lowConf?`<div class="ov-card"><h4>검토하면 좋은 기억</h4><div class="ov-mut">자동 추출 신뢰도가 낮은(50% 미만) 기억이 <b style="color:var(--text)">${s.lowConf}개</b> 있어요. 내용이 맞는지 한 번 확인해 보세요.</div></div>`:''}`;
       host.querySelectorAll('.ov-hub[data-id]').forEach(el=>{ const open=async()=>{ const m=await getMemById(el.dataset.id); if(m) openDetail(m); };
         el.addEventListener('click',open); el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } }); });
       const orphanCard=host.querySelector('.ov-orphan');
       if(orphanCard){ const go=()=>{ orphanView=true; localFocus=null; showTab('graph'); };
         orphanCard.addEventListener('click',go); orphanCard.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); }
+      renderDupCandidates();
+    }
+    /* 중복 후보 — 탐지는 자동(읽기전용), 실제 정리는 사람이 내용을 보고 확인해야만 실행(PRD: 자동삭제 금지) */
+    async function renderDupCandidates(){
+      const host=document.getElementById('ov-dup'); if(!host) return;
+      let r; try{ r=await get('/api/duplicates'); }catch{ r=null; }
+      if(!r || r.skipped){ host.innerHTML=`<h4>중복 후보</h4><div class="ov-mut">${r&&r.reason?esc(r.reason):'확인할 수 없어요'}</div>`; return; }
+      if(!r.pairs.length){ host.innerHTML=`<h4>중복 후보</h4><div class="ov-mut">비슷한 기억이 발견되지 않았어요.</div>`; return; }
+      host.innerHTML=`<h4>중복 후보 (${r.pairs.length}쌍)</h4><div class="ov-mut" style="margin-bottom:6px">클릭해서 내용을 비교하고 정리 여부를 직접 확인하세요.</div>`
+        +r.pairs.slice(0,10).map((p,i)=>`<div class="ov-hub" data-i="${i}" role="button" tabindex="0" style="cursor:pointer">
+          <div style="font-size:13px">${esc(String(p.a.content).slice(0,50))}</div>
+          <div style="font-size:11px;color:var(--muted);margin:2px 0">유사도 매우 높음 ↕</div>
+          <div style="font-size:13px">${esc(String(p.b.content).slice(0,50))}</div>
+        </div>`).join('');
+      host.querySelectorAll('[data-i]').forEach(el=>{
+        const open=()=>openMergeConfirm(r.pairs[Number(el.dataset.i)]);
+        el.addEventListener('click',open); el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+      });
+    }
+    function openMergeConfirm(pair){
+      const ov=document.createElement('div');
+      ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200';
+      const btn=(act,label,extra)=>`<button data-act="${act}" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;${extra||''}">${label}</button>`;
+      ov.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;max-width:520px;width:92%;max-height:80vh;overflow:auto">
+        <h3 style="margin:0 0 10px;font-size:16px">이 두 기억을 정리할까요?</h3>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 12px">정리 전 자동 백업이 저장되고, 실행 후 10초 안에 되돌릴 수 있어요.</p>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px"><b>A (id ${pair.a.id})</b><br>${esc(pair.a.content)}</div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px"><b>B (id ${pair.b.id})</b><br>${esc(pair.b.content)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${btn('keepA','A만 남기기')}${btn('keepB','B만 남기기')}${btn('combine','둘 다 이어붙이기')}${btn('cancel','취소','margin-left:auto;border-color:var(--danger);color:var(--danger)')}
+        </div>
+      </div>`;
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+      ov.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click', async ()=>{
+        const act=b.dataset.act; ov.remove();
+        if(act==='cancel') return;
+        const keepId = act==='keepB' ? pair.b.id : pair.a.id;
+        const dropId = act==='keepB' ? pair.a.id : pair.b.id;
+        await doMerge(keepId, dropId, act==='combine' ? 'combine' : 'keep');
+      }));
+    }
+    async function doMerge(keepId, dropId, mode){
+      try{
+        const r=await fetch('/api/duplicates/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keepId,dropId,mode})});
+        const j=await r.json();
+        if(!r.ok||!j.ok){ toast(j.error||'정리 실패','err'); return; }
+        all=[]; await softRefresh(); renderDupCandidates();
+        toast('정리했어요', 'ok', async ()=>{
+          try{
+            await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:j.dropSnapshot.content,type:j.dropSnapshot.type,importance:j.dropSnapshot.importance,source:'user'})});
+            if(j.mode==='combine'){ await fetch('/api/memory/'+j.kept,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:j.keepOriginalContent})}); }
+            all=[]; await softRefresh(); renderDupCandidates();
+            toast('되돌렸어요','ok');
+          }catch{ toast('되돌리기 실패','err'); }
+        });
+      }catch{ toast('정리 실패','err'); }
     }
     function renderSubbar(){
       const base = searchResults !== null ? searchResults : all;
