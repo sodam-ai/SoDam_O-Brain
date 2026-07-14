@@ -47,10 +47,30 @@ export async function search(db, query, k = 10, projectFilter = null) {
      FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
   ).all(...ids);
   const byId = new Map(rows.map(r => [r.id, r]));
-  let out = ids.map(id => ({ ...byId.get(id), _score: score.get(id) }))
-               .sort((a, b) => b._score - a._score);
-  // 현재 프로젝트 우선 — 지정 시 현재 프로젝트 + 전역(NULL)만 남겨 타 프로젝트에 묻히지 않게
+  let out = ids.map(id => ({ ...byId.get(id), _score: score.get(id) }));   // _score = 순수 RRF 관련도(보존)
+  // 현재 프로젝트 우선 — 지정 시 현재 프로젝트 + 전역(NULL)만 남겨 타 프로젝트에 묻히지 않게(재랭크 전에 적용)
   if (projectFilter) out = out.filter(m => m.project === projectFilter || m.project == null);
+
+  // 재랭크(PRD 07 §5): 관련도×0.7 + 중요도×0.15 + 최신성×0.1 + 신뢰도×0.05.
+  // 목적 — 사람이 검증한 기억(conf 1.0)이 자동캡처 노이즈(conf 0.5)와 '비슷한 관련도'일 때 위로.
+  // RRF 점수는 랭크 기반이라 스케일이 압축돼 있어, 후보군 내 min-max 정규화로 [0,1] 관련도 축을 준다.
+  // 관련도에 0.7을 실어 '분명히 더 관련 있는 결과'는 품질(신뢰도·중요도)로 뒤집히지 않게 지배력 유지.
+  if (out.length > 1) {
+    const now = Date.now();
+    let lo = Infinity, hi = -Infinity;
+    for (const m of out) { if (m._score < lo) lo = m._score; if (m._score > hi) hi = m._score; }
+    const range = hi - lo;
+    for (const m of out) {
+      const rel = range > 0 ? (m._score - lo) / range : 1;                                  // 관련도 0~1(동점이면 1)
+      const conf = m.confidence != null ? Math.max(0, Math.min(1, m.confidence)) : 0.6;
+      const imp = Math.max(0, Math.min(5, m.importance || 0)) / 5;
+      const t = m.created_at ? new Date(String(m.created_at).replace(' ', 'T')).getTime() : 0;
+      const days = t ? (now - t) / 86400000 : 999;
+      const rec = Math.max(0, 1 - Math.min(days / 60, 1));                                    // 최신성(최근 60일)
+      m._final = 0.7 * rel + 0.15 * imp + 0.10 * rec + 0.05 * conf;
+    }
+    out.sort((a, b) => b._final - a._final);
+  }
   const sliced = out.slice(0, k);
   sliced.total = out.length; // 잘려나간 개수를 호출자가 알 수 있게(배열이라 JSON.stringify·기존 소비자는 영향 없음)
   return sliced;

@@ -56,7 +56,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const res = await search(db, String(args.query || '').slice(0, 200), Math.min(50, Math.max(1, Number(args.limit) || 8)), args.project ? String(args.project) : null);
     const slim = detail === 'full'
       ? res.map(m => ({ id: m.id, type: m.type, importance: m.importance, content: m.content }))
-      : res.map(m => ({ id: m.id, type: m.type, snippet: String(m.content).slice(0, 70) }));
+      : res.map(m => ({ id: m.id, type: m.type, importance: m.importance, snippet: String(m.content).slice(0, 70) }));
     // 관련 기억이 더 있는데 잘렸으면 그 사실을 감추지 않고 알린다(silent truncation 방지).
     const payload = res.total > slim.length
       ? { results: slim, shown: slim.length, total_matches: res.total,
