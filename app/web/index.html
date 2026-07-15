@@ -75,6 +75,10 @@
     color:var(--faint); cursor:pointer; padding:5px; border-radius:6px; display:none; line-height:0; }
   .search .clear:hover { color:var(--text); background:var(--surface2); }
   .search.has .clear { display:block; }
+  .search .s-spin { position:absolute; right:27px; top:50%; margin-top:-6px; width:12px; height:12px;
+    border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; display:none; }
+  .search.loading .s-spin { display:block; }
+  .search.loading .clear, .search.loading .kbd { display:none; }
   .search .kbd { position:absolute; right:8px; top:50%; transform:translateY(-50%); font:600 11px/1 inherit; color:var(--faint);
     border:1px solid var(--border2); border-bottom-width:2px; border-radius:5px; padding:3px 7px; background:var(--surface2); pointer-events:none; }
   .search.has .kbd { display:none; }
@@ -223,7 +227,7 @@
   .dedit .eact button { border-radius:9px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:filter var(--ease), background var(--ease); }
   .dedit .save { flex:1; background:var(--grad-accent); color:#fff; border:none; }
   .dedit .save:hover { filter:brightness(1.08); }
-  .dedit .save:disabled { opacity:.6; cursor:default; }
+  .dedit .save:disabled { opacity:.6; cursor:not-allowed; }
   .dedit .cancel { background:var(--surface2); color:var(--muted); border:1px solid var(--border2); }
   .dedit .cancel:hover { color:var(--text); }
 
@@ -234,6 +238,13 @@
   .empty p { margin:0; font-size:13px; line-height:1.6; }
   .spinner { width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin:60px auto; }
   @keyframes spin { to { transform:rotate(360deg); } }
+  /* 그래프 키보드 접근성(PRD §14) — 캔버스는 포커스 불가라 오프스크린 노드 목록으로 미러링 */
+  .ga11y-item { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+  .ga11y-item:focus { position:fixed; top:10px; left:10px; z-index:80; width:auto; height:auto; margin:0;
+    overflow:visible; clip:auto; white-space:normal; max-width:min(360px,90vw); padding:9px 13px;
+    border-radius:var(--r-sm); background:var(--surface); border:1px solid var(--border); color:var(--text);
+    font-size:var(--fs-sm); box-shadow:var(--shadow); }
   mark { background:rgba(232,163,61,.28); color:inherit; border-radius:3px; padding:0 1px; }
   :root[data-theme="light"] mark { background:rgba(232,163,61,.45); }
 
@@ -365,7 +376,7 @@
   #selBar .s-cancel:hover { color:var(--text); }
   #selBar .s-del { display:none; background:var(--danger); border:none; color:#fff;
     border-radius:9px; padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
-  #selBar .s-del:disabled { opacity:.45; cursor:default; }
+  #selBar .s-del:disabled { opacity:.45; cursor:not-allowed; }
   #selBar .s-del:not(:disabled):hover { filter:brightness(1.08); }
   .bd-scrim { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:70; display:none; place-items:center; }
   .bd-scrim.open { display:grid; }
@@ -389,6 +400,7 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="q" placeholder="기억 검색 (예: 포트, 결정…)" autocomplete="off" aria-label="기억 검색" />
       <kbd class="kbd" title="단축키: / 를 누르면 검색창으로 이동">/</kbd>
+      <span class="s-spin" id="qSpin" aria-hidden="true"></span>
       <button class="clear" id="qClear" aria-label="검색 지우기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="htools">
@@ -462,6 +474,7 @@
       </div>
       <div class="gpanel ghint">점에 올리면 연결된 기억 강조 · 클릭하면 내용 열림 · 기억끼리 직접 연결하면 색깔 관계선이 생겨요</div>
       <div id="graphHost"></div>
+      <div id="graphA11y" class="ga11y-wrap" role="group" aria-label="그래프 노드 키보드 목록 — Tab으로 이동, Enter로 열기"></div>
     </section>
 
     <section id="view-timeline" class="view" role="tabpanel" aria-labelledby="t-timeline" hidden><div class="tl" id="tl"></div></section>
@@ -505,7 +518,7 @@
   <div class="bd-scrim" id="bdScrim" aria-hidden="true">
     <div class="bd-box" role="dialog" aria-modal="true" aria-labelledby="bd-title">
       <h4 id="bd-title">기억 <span id="bdCount"></span>개 삭제</h4>
-      <p>선택한 기억을 삭제합니다. 삭제 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span></p>
+      <p id="bd-desc">선택한 기억을 삭제합니다. 삭제 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span></p>
       <div class="bd-acts">
         <button class="bd-cancel-btn" id="bdCancel">취소</button>
         <button class="bd-del-btn" id="bdDelConfirm">삭제</button>
@@ -1013,12 +1026,43 @@
         toast(j.redactedHits ? `저장했어요 · 민감정보 ${j.redactedHits}곳 자동 가림` : '기억을 수정했어요','ok');
       }catch(err){ toast('수정 실패'+(err.message?': '+err.message:''),'err'); btn.disabled=false; btn.textContent=prev; } }
 
-    async function delMemory(){ if(!curDetail) return; const m=curDetail;
-      if(!confirm(`이 기억을 삭제할까요?\n\n“${m.content.slice(0,80)}”\n\n※ 되돌릴 수 없습니다(서버 시작 시 백업본은 남아 있어요).`)) return;
-      try { const r=await fetch('/api/memory/'+m.id,{method:'DELETE'}); if(!r.ok) throw 0;
-        all=all.filter(x=>x.id!==m.id); if(searchResults!==null) searchResults=searchResults.filter(x=>x.id!==m.id); if(statTotal>0) statTotal--;
-        gData=null; closeDetail(); renderAll(); toast('기억을 삭제했어요','ok');
-      } catch { toast('삭제하지 못했어요(서버 확인)','err'); } }
+    /* 단건 삭제 — 배치삭제와 같은 확인모달+undo 경로로 통일(native confirm 제거, 사용자 확인 게이트는 유지) */
+    let _bdMode='batch', _bdSingleId=null;
+    function delMemory(){ if(!curDetail) return; openSingleDelModal(curDetail.id); }
+    function openSingleDelModal(id){
+      _bdMode='single'; _bdSingleId=id;
+      document.getElementById('bd-title').textContent='이 기억 삭제';
+      document.getElementById('bd-desc').innerHTML='이 기억을 삭제합니다. 삭제 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span>';
+      const scrim=document.getElementById('bdScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden');
+      setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20);
+    }
+    async function execSingleDelete(){
+      closeBatchDelModal();
+      const id=_bdSingleId; if(!id) return;
+      const m=all.find(x=>x.id===id) || (curDetail&&curDetail.id===id?curDetail:null);
+      if(!m){ toast('삭제 대상을 찾을 수 없어요','err'); return; }
+      const snap={ content:m.content, type:m.type||'지식', importance:m.importance||3, source:'user', confidence:m.confidence??1, project:m.project||null,
+        relations:rels.filter(r=>r.from_id===id||r.to_id===id) };
+      try{ const r=await fetch('/api/memory/'+id,{method:'DELETE'}); if(!r.ok) throw 0; }
+      catch{ toast('삭제하지 못했어요(서버 확인)','err'); return; }
+      all=all.filter(x=>x.id!==id); if(searchResults!==null) searchResults=searchResults.filter(x=>x.id!==id);
+      rels=rels.filter(r=>r.from_id!==id&&r.to_id!==id);
+      if(statTotal>0) statTotal--;
+      gData=null; closeDetail(); renderAll();
+      toast('기억을 삭제했어요','ok', async()=>{
+        try{
+          const r=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({content:snap.content,type:snap.type,importance:snap.importance,source:snap.source,confidence:snap.confidence,project:snap.project})});
+          const j=await r.json().catch(()=>({})); if(!r.ok) throw 0;
+          const nid=j.id;
+          for(const rel of snap.relations){
+            try{ await fetch('/api/relation',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({from_id:rel.from_id===id?nid:rel.from_id,to_id:rel.to_id===id?nid:rel.to_id,type:rel.type})}); }catch{}
+          }
+          await softRefresh(); toast('되돌렸어요','ok');
+        }catch{ toast('되돌리기 실패','err'); }
+      }, 10000);
+    }
     /* ── 일괄삭제 선택 모드 ── */
     function updateSelToolbar(){
       const n=selectedIds.size;
@@ -1027,6 +1071,7 @@
       countEl.style.display=selMode?'inline':'none'; countEl.textContent=n+'개 선택됨';
       cancelEl.style.display=selMode?'inline-block':'none';
       delEl.style.display=selMode?'inline-block':'none'; delEl.disabled=n===0;
+      delEl.title = n===0 ? '삭제할 기억을 먼저 선택하세요' : '선택한 기억 삭제';
       if(toggleEl) toggleEl.style.display=selMode?'none':'';
     }
     function toggleSelMode(){
@@ -1038,11 +1083,14 @@
       document.getElementById('view-list').classList.remove('sel-mode');
       updateSelToolbar(); renderList(currentSet()); }
     function openBatchDelModal(){ if(!selectedIds.size) return;
-      document.getElementById('bdCount').textContent=selectedIds.size;
+      _bdMode='batch';
+      document.getElementById('bd-title').innerHTML=`기억 <span id="bdCount">${selectedIds.size}</span>개 삭제`;
+      document.getElementById('bd-desc').innerHTML='선택한 기억을 삭제합니다. 삭제 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span>';
       const scrim=document.getElementById('bdScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden');
       setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20); }
     function closeBatchDelModal(){
-      const scrim=document.getElementById('bdScrim'); if(scrim.contains(document.activeElement)) document.getElementById('selDel').focus();
+      const scrim=document.getElementById('bdScrim');
+      if(scrim.contains(document.activeElement)){ const back=_bdMode==='single'?document.getElementById('d-del'):document.getElementById('selDel'); if(back) back.focus(); }
       scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
     async function execBatchDelete(){
       closeBatchDelModal();
@@ -1142,7 +1190,9 @@
       document.getElementById('searchWrap').classList.toggle('has', !!q);
       timer=setTimeout(async ()=>{ curQuery=q;
         if(!q){ searchResults=null; searchHits=null; renderLists(); if(tab==='graph') _reapply(); return; }
+        const wrap=document.getElementById('searchWrap'); wrap.classList.add('loading');
         try { searchResults=await get('/api/search?q='+encodeURIComponent(q)); } catch { searchResults=[]; }
+        finally { wrap.classList.remove('loading'); }
         searchHits=new Set((searchResults||[]).map(m=>m.id));   // 그래프 강조 대상
         renderLists(); if(tab==='graph') _reapply();            // 그래프면 일치 점 강조(목록으로 튕기지 않음). 목록/타임라인이면 이미 갱신됨
       },240); });
@@ -1210,7 +1260,7 @@
     document.getElementById('selCancel').addEventListener('click', exitSelMode);
     document.getElementById('selDel').addEventListener('click', openBatchDelModal);
     document.getElementById('bdCancel').addEventListener('click', closeBatchDelModal);
-    document.getElementById('bdDelConfirm').addEventListener('click', execBatchDelete);
+    document.getElementById('bdDelConfirm').addEventListener('click', ()=>{ if(_bdMode==='single') execSingleDelete(); else execBatchDelete(); });
     document.getElementById('bdScrim').addEventListener('click', e=>{ if(e.target===document.getElementById('bdScrim')) closeBatchDelModal(); });
 
     /* 단축키 */
@@ -1321,8 +1371,46 @@
       } else { return gData; }                                                // 필터/포커스 없음 → 기존 그대로
       return { nodes, links, edgeMode:gData.edgeMode };
     }
+    function openGraphNode(n){ getMemById(n.id).then(m=>openDetail(m||{id:n.id,type:n.type,importance:n.importance||Math.round(n.val||1),content:n.name,category:n.category,access_count:n.access,created_at:n.created_at,project:n.project,confidence:n.confidence,source:'-'})); }
+    function setGraphHighlight(nodeId){ // hover(마우스)·a11y 포커스(키보드) 공용 강조 로직 — PRD §14 키보드 동등 기능
+      highlightNodes.clear(); highlightLinks.clear();
+      if(nodeId!=null && G){ highlightNodes.add(nodeId);
+        for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
+          if(s===nodeId||t===nodeId){ highlightLinks.add(l); highlightNodes.add(s); highlightNodes.add(t); } } }
+      _reapply();
+      if(gMode==='2d'){ const el=document.getElementById('graphHost'); if(el) el.style.cursor = nodeId!=null?'pointer':''; }
+    }
+    function renderGraphA11yList(nodes){ // 캔버스는 포커스 불가 → 오프스크린 버튼 목록으로 동일 조작(열기) 제공
+      const wrap=document.getElementById('graphA11y'); if(!wrap) return;
+      wrap.innerHTML = nodes.map(n=>{
+        const m=all.find(x=>x.id===n.id)||{};
+        const imp=Math.max(1,Math.min(5,m.importance||Math.round(n.val||1)));
+        const label=`${n.type||''}${n.category?' · '+n.category:''} · ${String(n.name||'').slice(0,60)} · 중요도 ${imp}`;
+        return `<button type="button" class="ga11y-item" data-id="${n.id}">${esc(label)}</button>`;
+      }).join('');
+    }
+    document.getElementById('graphA11y').addEventListener('click', e=>{
+      const b=e.target.closest('.ga11y-item'); if(!b||!gData) return;
+      const n=gData.nodes.find(x=>String(x.id)===b.dataset.id); if(n) openGraphNode(n); });
+    document.getElementById('graphA11y').addEventListener('focusin', e=>{
+      const b=e.target.closest('.ga11y-item'); if(b) setGraphHighlight(Number(b.dataset.id)); });
+    document.getElementById('graphA11y').addEventListener('focusout', e=>{
+      const b=e.target.closest('.ga11y-item'); if(b) setGraphHighlight(null); });
+
     async function initGraph(){
-      if(!gData){ try{ const d=await get('/api/graph?limit='+graphLimit); if(d && Array.isArray(d.nodes)) gData=d; }catch{} }
+      if(!gData){
+        const el=document.getElementById('graphHost');
+        if(el) el.innerHTML='<div class="spinner"></div>';
+        let d=null, ok=false;
+        try{ const r=await fetch('/api/graph?limit='+graphLimit); d=await r.json(); ok = r.ok && d && Array.isArray(d.nodes); }catch(e){ ok=false; }
+        if(ok){ gData=d; }
+        else if(el){
+          el.innerHTML='<div class="empty"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><h4>그래프를 불러오지 못했어요</h4><p>서버 연결을 확인하고 다시 시도해 보세요.</p><button class="loadmore" id="graphRetry" style="max-width:160px;margin:14px auto 0">다시 시도</button></div>';
+          const rb=document.getElementById('graphRetry'); if(rb) rb.addEventListener('click', ()=>{ gData=null; initGraph(); });
+          renderGraphA11yList([]);
+          return;
+        }
+      }
       if(gData) drawGraph();
     }
     function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph(); }
@@ -1336,6 +1424,7 @@
       { const _ga=document.getElementById('gAll'); if(_ga){ _ga.style.display = (localFocus!=null||orphanView) ? '' : 'none'; _ga.textContent = orphanView ? '전체 보기' : '전체 보기'; } }
       const th=gTheme(); el.style.background=th.host;          // 그래프 배경도 테마 따라감
       const data=graphSet();
+      renderGraphA11yList(data.nodes);
       const capNote = (gData.total>gData.shown) ? ` · 전체 ${gData.total}개 중 상위 ${gData.shown}개` : '';
       const modeNote = orphanView ? '고립 기억만 · ' : '';
       document.getElementById('gcount').textContent = data.nodes.length ? `${modeNote}노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}${capNote}` : (orphanView?'고립된 기억이 없어요 🎉':'');
@@ -1353,7 +1442,7 @@
             +`<div style="font-weight:700;margin-bottom:3px">${esc(n.type)}${n.category?` <span style="opacity:.6">· ${esc(n.category)}</span>`:''}</div>`
             +`<div style="opacity:.86;margin-bottom:6px">${esc(String(n.name).slice(0,96))}</div>`
             +`<div style="color:#F0B046;font-size:11px;letter-spacing:1px">${'★'.repeat(imp)}<span style="opacity:.5;letter-spacing:0"> · 조회 ${n.access||0}회</span></div></div>`; })
-        .onNodeClick(n=>getMemById(n.id).then(m=>openDetail(m||{id:n.id,type:n.type,importance:n.importance||Math.round(n.val||1),content:n.name,category:n.category,access_count:n.access,created_at:n.created_at,project:n.project,confidence:n.confidence,source:'-'})));
+        .onNodeClick(openGraphNode);
 
       if(gMode==='3d'){
         const nc3=n=>dim(n)?th.dim3d:nodeColorOf(n);
@@ -1363,11 +1452,8 @@
           .linkColor(linkColorFn).linkWidth(lw3).linkOpacity(.55)
           .linkDirectionalArrowLength(l=>l.rel?3:0).linkDirectionalArrowRelPos(1)
           .linkDirectionalParticles(lp3).linkDirectionalParticleWidth(2).linkDirectionalParticleColor(()=>th.hi)
-          .onNodeHover(node=>{ highlightNodes.clear(); highlightLinks.clear();
-            if(node){ highlightNodes.add(node.id); for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
-              if(s===node.id||t===node.id){ highlightLinks.add(l); highlightNodes.add(s); highlightNodes.add(t); } } }
-            _reapply(); });
-        _reapply=()=>{ try{ G.nodeColor(nc3).linkColor(linkColorFn).linkWidth(lw3).linkDirectionalParticles(lp3); }catch(e){} }; // 3D 자동리렌더X→재적용(hover·검색 공용)
+          .onNodeHover(node=>setGraphHighlight(node?node.id:null));
+        _reapply=()=>{ try{ G.nodeColor(nc3).linkColor(linkColorFn).linkWidth(lw3).linkDirectionalParticles(lp3); }catch(e){} }; // 3D 자동리렌더X→재적용(hover·검색·a11y 포커스 공용)
       } else {
         G=base(ForceGraph()(el)).autoPauseRedraw(false)
           .linkColor(linkColorFn)
@@ -1387,12 +1473,9 @@
             if(hot||(searchHits&&searchHits.has(n.id))||(isNarrow?(scale>2.2):(scale>1.35||(n.val||0)>=6))){ ctx.fillStyle=faded?th.labelDim:th.label;
               ctx.font=`${(n.val||0)>=6?600:400} ${Math.max(3.2,11/scale)}px -apple-system,system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
               ctx.fillText(String(n.name).slice(0, hot?28:16), n.x, n.y+r+3/scale+1.5); } })
-          .onNodeHover(node=>{ highlightNodes.clear(); highlightLinks.clear();
-            if(node){ highlightNodes.add(node.id); for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
-              if(s===node.id||t===node.id){ highlightLinks.add(l); highlightNodes.add(s); highlightNodes.add(t); } } }
-            el.style.cursor=node?'pointer':''; })
-          .onBackgroundClick(()=>{ highlightNodes.clear(); highlightLinks.clear(); });
-        _reapply=()=>{}; // 2D는 autoPauseRedraw=false → 매 프레임 자동 반영(검색/hover 즉시 보임)
+          .onNodeHover(node=>setGraphHighlight(node?node.id:null))
+          .onBackgroundClick(()=>setGraphHighlight(null));
+        _reapply=()=>{}; // 2D는 autoPauseRedraw=false → 매 프레임 자동 반영(검색/hover/a11y 포커스 즉시 보임)
       }
       if(gMode==='2d' && typeof G.linkLineDash==='function'){ G.linkLineDash(l=>l.rel==='CONTRADICTS'?[4,3]:null); } // 충돌=점선
       try { G.d3Force('charge').strength(-330); G.d3Force('link').distance(72); } catch(e){}
