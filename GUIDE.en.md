@@ -58,8 +58,13 @@
 | **Auto Backup** | Snapshots saved automatically on server start and before bulk delete. |
 | **MCP Integration** | 7 tools for saving, searching, and managing memory relations directly from Claude Code. |
 | **Orphan Node Visual** | Memories with no user-defined relations are shown with a dashed ring border. |
-| **Multi-select & Bulk Delete** | Select multiple memories, delete them at once, and undo within 10 seconds. |
+| **Multi-select & Bulk Delete** | Select multiple memories, delete them at once, and undo within 10 seconds (deleting a single memory offers the same undo). |
 | **⚙ Settings Page** | Adjust list page size, graph node count, auto-refresh, theme, and intro banner directly in the app. Values are saved to this browser and persist across visits. |
+| **Duplicate Cleanup** | Auto-detects similar memory pairs and lets you review, then merge or delete (backed up + 10-second undo). |
+| **API Token Verification** | A local token, reissued every server start, is checked on every API request; missing or wrong tokens are rejected. |
+| **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500, preventing freezes or slowdowns. |
+| **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise (an exact match still always ranks first). |
+| **Graph Reliability & Keyboard Access** | Shows an error message with a retry button if the graph fails to load, and every memory in the graph can be navigated and opened in order using only Tab/Enter, no mouse required. |
 
 ---
 
@@ -299,6 +304,8 @@ Open `http://127.0.0.1:7740` in your browser to see the dashboard.
 - **Zoom**: Mouse wheel or buttons at the bottom right
 - **Dashed border**: Shown on "orphan memories" with no user-defined relations
 - **As memories grow**: the graph shows *the most important ones first* and tells you "**top M of N total**" (to avoid slowing down). You can adjust how many are shown in ⚙ Settings (Section 7-12).
+- **If loading fails**: instead of silently staying blank, the graph shows an error message and a "Retry" button when the server connection has a problem.
+- **Keyboard-only navigation**: even without a mouse, you can Tab through the graph's memories one at a time (the focused memory pops up in a small card in the top-left corner) and open one with Enter or a click.
 
 **Color meaning:**
 - Dot size = importance + connection count (larger = more important)
@@ -322,7 +329,7 @@ Click a memory in the list or graph — a detail panel opens on the right:
 From the detail panel:
 
 - **Edit (✏️)**: Modify content, type, or importance. Secrets are auto-removed again on save.
-- **Delete**: Permanently removes the memory. Recommend backing up first.
+- **Delete**: Opens a confirm dialog, then **shows a 10-second "Undo"** after deleting (same mechanism as bulk delete — see Section 7-11). An automatic backup is also taken before deletion.
 - **Copy**: Copies content to clipboard
 
 ### 7-5. Adding a Memory (Directly in UI)
@@ -1231,6 +1238,18 @@ No major competing brand under this exact name has been identified, but a formal
 ## 18. Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary>
+
+- **Search ranking improved**: Search and MCP `search_memory` result ordering changed from "relevance only" to a blend of relevance (70%), importance (15%), recency (10%), and confidence (5%). Fixes memories a human directly verified (confidence 1.0) getting outranked by AI auto-extracted memories of similar relevance but lower confidence (0.5). **An exact keyword match still always ranks first** — relevance keeps the dominant weight so quality scoring never buries the result you were actually looking for.
+- **Graph load-failure display**: Previously, if the server connection had a problem, the graph tab silently stayed blank. It now shows an error message and a "Retry" button (Section 7-2).
+- **Single delete now supports undo too**: Deleting just one memory used to show a plain browser confirm dialog with no way to undo. It now uses the exact same confirm-dialog + 10-second-undo flow as bulk delete (Section 7-4).
+- **Disabled-button reasons**: Hovering a button that currently can't be clicked (e.g., the delete button when nothing is selected) now shows why.
+- **Search loading indicator**: A small spinner now appears during the brief moment between typing a search and getting results, so it's clear a search is in progress.
+- **Graph keyboard accessibility**: The graph used to be clickable only with a mouse. Now, without any mouse, you can Tab through every memory shown in the graph in order and open one with Enter (Section 7-2).
+- Verification: all of the above was confirmed against the real running server and real data (automated self-test passed, zero on-screen error messages).
+</details>
 
 <details>
 <summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary>

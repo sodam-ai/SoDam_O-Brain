@@ -126,6 +126,14 @@ O-Brain is the <strong>auto-notepad</strong> you keep next to that AI — it wri
 <td><strong>Performance Guard</strong></td>
 <td>Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing</td>
 </tr>
+<tr>
+<td><strong>Trustworthy Search Ranking</strong></td>
+<td>Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise</td>
+</tr>
+<tr>
+<td><strong>Graph Reliability &amp; Keyboard Access</strong></td>
+<td>Shows an error message with a retry button if the graph fails to load; every memory in the graph can be navigated and opened using only Tab/Enter, no mouse required</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="prerequisites">Prerequisites</h2>
@@ -378,6 +386,15 @@ npm run seed       # Add sample data (for testing)
 <hr>
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
+<details>
+<summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary><ul>
+<li><strong>Search ranking improved</strong>: Search and MCP <code>search_memory</code> results now blend relevance (70%), importance (15%), recency (10%), and confidence (5%) instead of relevance alone. Human-verified memories no longer get buried by auto-extracted noise of similar relevance (an exact keyword match still always ranks first — relevance keeps the dominant weight).</li>
+<li><strong>Graph load-failure display</strong>: If the server connection fails, the graph tab now shows an error message with a &quot;Retry&quot; button instead of silently staying blank.</li>
+<li><strong>Single delete now supports undo too</strong>: Deleting a single memory now uses the same confirm dialog + 10-second undo as bulk delete (previously it used a plain, non-undoable browser confirm).</li>
+<li><strong>Disabled-button reasons</strong>: Hovering a currently-disabled button (e.g. the delete button with nothing selected) now shows why it&#39;s disabled.</li>
+<li><strong>Search loading indicator</strong>: A small spinner now appears during the brief moment while search results are loading.</li>
+<li><strong>Graph keyboard accessibility</strong>: Every memory shown in the graph can now be tabbed to and opened with Enter, with no mouse required.</details></li>
+</ul>
 <details>
 <summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary><ul>
 <li><strong>Graph performance</strong>: Graph generation took 9.8s at 5,000 memories; added an auto-simplify guard past 1,500 memories, cutting this to 8ms (~300x).</li>

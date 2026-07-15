@@ -49,6 +49,8 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Duplicate Cleanup** | Auto-detects similar memory pairs and lets you review, merge, or delete (backed up + 10-second undo) |
 | **API Token Verification** | Every API request is checked against a local token; missing or wrong tokens are rejected |
 | **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing |
+| **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise |
+| **Graph Reliability & Keyboard Access** | Shows an error message with a retry button if the graph fails to load; every memory in the graph can be navigated and opened using only Tab/Enter, no mouse required |
 
 ---
 
@@ -264,6 +266,17 @@ Full data flow diagram and security header list: **[GUIDE.en.md Section 12](./GU
 ## Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary>
+
+- **Search ranking improved**: Search and MCP `search_memory` results now blend relevance (70%), importance (15%), recency (10%), and confidence (5%) instead of relevance alone. Human-verified memories no longer get buried by auto-extracted noise of similar relevance (an exact keyword match still always ranks first — relevance keeps the dominant weight).
+- **Graph load-failure display**: If the server connection fails, the graph tab now shows an error message with a "Retry" button instead of silently staying blank.
+- **Single delete now supports undo too**: Deleting a single memory now uses the same confirm dialog + 10-second undo as bulk delete (previously it used a plain, non-undoable browser confirm).
+- **Disabled-button reasons**: Hovering a currently-disabled button (e.g. the delete button with nothing selected) now shows why it's disabled.
+- **Search loading indicator**: A small spinner now appears during the brief moment while search results are loading.
+- **Graph keyboard accessibility**: Every memory shown in the graph can now be tabbed to and opened with Enter, with no mouse required.
+</details>
 
 <details>
 <summary><b>2026-07-11 — 300x graph performance improvement, duplicate memory cleanup, security hardening, full functional verification</b></summary>
