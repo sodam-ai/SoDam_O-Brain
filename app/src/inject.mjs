@@ -4,7 +4,10 @@ import { listMemories } from './store.mjs';
 import { search } from './search.mjs';
 
 // 세션 시작(검색어 없음) 주입용 합성 랭킹 — 중요도만으론 매번 같은 옛 기억만 떠서,
-// 최신성·신뢰도를 함께 반영(PRD 07). 검색어가 있으면 search()가 관련도를 처리하므로 그대로 둠.
+// 최신성·신뢰도를 함께 반영(PRD 07 §5). 검색어가 있으면 search()가 관련도를 처리하므로 그대로 둠.
+// 가중치(2026-07-16 정정): PRD 07 §5 "의미유사도0.7+중요도0.15+최신성0.1+신뢰도0.05"에서 관련도 항을 뺀
+// 나머지 비율(중요도:최신성:신뢰도 = 0.15:0.1:0.05 → 정규화 0.5:0.33:0.17)로 맞춤. 기존 0.4/0.4/0.2(최신성=중요도 동률)는
+// 60일 창 경계 근처에서 저가치 신규 노이즈가 검증된 고가치 기억을 역전시키는 경계 버그 확인(격리 DB 실측, _inject_verify.mjs).
 function rankNoQuery(rows, max) {
   const now = Date.now();
   const scoreOf = m => {
@@ -13,7 +16,7 @@ function rankNoQuery(rows, max) {
     const days = d ? (now - d) / 86400000 : 999;
     const rec = Math.max(0, 1 - Math.min(days / 60, 1));                          // 최신성(최근 60일 윈도우)
     const conf = m.confidence != null ? Math.max(0, Math.min(1, m.confidence)) : 0.6;
-    return imp * 0.4 + rec * 0.4 + conf * 0.2;
+    return imp * 0.5 + rec * 0.33 + conf * 0.17;
   };
   return rows.slice().sort((a, b) => scoreOf(b) - scoreOf(a)).slice(0, max);
 }
