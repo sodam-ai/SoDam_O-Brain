@@ -115,6 +115,35 @@ export function findDuplicateCandidates(db, { limit = 30 } = {}) {
   return { pairs: pairs.slice(0, limit), skipped: false, total, threshold: DUP_DISTANCE };
 }
 
+// 연결된 소집단(컴포넌트) 감지 — PRD 05 §6 "그래프 분석 알고리즘"을 Cytoscape 없이 축소 구현.
+// 확정된 관계(relation)만 기준(유사도선 제외 — 자동연결이라 항상 하나로 뭉쳐 보여 "떨어짐" 자체가 무의미해짐).
+// 가장 큰 덩어리(메인 그래프)는 제외하고, 그와 분리된 나머지 소집단만 반환 — 해석("중요/무의미")은 하지 않고 구조적 사실만 전달.
+export function findIsolatedClusters(db, { maxClusters = 5, maxMembers = 6 } = {}) {
+  const relations = db.prepare('SELECT from_id, to_id FROM relation').all();
+  if (!relations.length) return [];
+  const parent = new Map();
+  const find = x => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb); };
+  for (const r of relations) {
+    if (!parent.has(r.from_id)) parent.set(r.from_id, r.from_id);
+    if (!parent.has(r.to_id)) parent.set(r.to_id, r.to_id);
+    union(r.from_id, r.to_id);
+  }
+  const groups = new Map();
+  for (const id of parent.keys()) { const root = find(id); if (!groups.has(root)) groups.set(root, []); groups.get(root).push(id); }
+  const comps = [...groups.values()].sort((a, b) => b.length - a.length);
+  if (comps.length < 2) return []; // 컴포넌트가 1개뿐(전부 연결됨) → 보여줄 "떨어진" 소집단 없음
+  const islands = comps.slice(1, 1 + maxClusters); // 가장 큰 덩어리(메인 그래프) 제외
+  const ids = islands.flat().slice(0, maxClusters * maxMembers);
+  if (!ids.length) return [];
+  const rows = db.prepare(`SELECT id, content, type FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`).all(...ids);
+  const byId = new Map(rows.map(r => [r.id, r]));
+  return islands.map(members => ({
+    size: members.length,
+    members: members.slice(0, maxMembers).map(id => byId.get(id)).filter(Boolean)
+  })).filter(c => c.members.length);
+}
+
 // 대시보드 개요용 집계 — DB 전체 기준(SQL COUNT/GROUP BY)이라 기억 수가 수천이어도 정확·빠름.
 export function getStats(db) {
   const get = (sql, ...a) => db.prepare(sql).get(...a);
@@ -125,16 +154,17 @@ export function getStats(db) {
   const byType = {}; for (const r of rows('SELECT type, COUNT(*) c FROM memory GROUP BY type')) byType[r.type || '기타'] = r.c;
   const byCategory = {}; for (const r of rows("SELECT COALESCE(category,'기타') cat, COUNT(*) c FROM memory GROUP BY cat")) byCategory[r.cat] = r.c;
   const byProject = rows("SELECT project, COUNT(*) c FROM memory WHERE project IS NOT NULL AND project <> '' GROUP BY project ORDER BY c DESC");
-  let relCount = 0, orphans = total, hubs = [], topAccessed = [];
+  let relCount = 0, orphans = total, hubs = [], topAccessed = [], islands = [];
   try {
     relCount = get('SELECT COUNT(*) n FROM relation').n;
     orphans = get('SELECT COUNT(*) n FROM memory WHERE id NOT IN (SELECT from_id FROM relation UNION SELECT to_id FROM relation)').n;
     hubs = rows(`SELECT m.id, m.content, m.type, COUNT(*) d
       FROM (SELECT from_id id FROM relation UNION ALL SELECT to_id id FROM relation) r
       JOIN memory m ON m.id = r.id GROUP BY m.id ORDER BY d DESC LIMIT 3`);
+    islands = findIsolatedClusters(db);
   } catch {}
   topAccessed = rows('SELECT id, content, type, access_count FROM memory WHERE access_count > 0 ORDER BY access_count DESC LIMIT 3');
-  return { total, recent7, lowConf, byType, byCategory, byProject, relCount, orphans, hubs, topAccessed };
+  return { total, recent7, lowConf, byType, byCategory, byProject, relCount, orphans, hubs, topAccessed, islands };
 }
 
 const MEM_TYPES = ['결정', '제약', '선호', '패턴', '지식'];

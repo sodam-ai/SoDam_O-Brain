@@ -15,20 +15,19 @@
   :root {
     --bg:#0A0C10; --bg2:#0D1015; --surface:#13161D; --surface2:#191D26;
     --border:#21262F; --border2:#2D3340; --text:#EAEEF5; --muted:#8E97A6; --faint:#69727F;
-    --accent:#5B8CFF; --accent2:#7B6BFF; --accent-weak:rgba(91,140,255,.14); --star:#F0B046;
+    --accent:#5B8CFF; --accent-weak:rgba(91,140,255,.14); --star:#F0B046;
     --ok:#2DD4A7; --danger:#F2555A;
     --r:11px; --r-sm:8px; --r-lg:16px;
     --fs-xs:11px; --fs-sm:12.5px; --fs-md:14px; --fs-lg:16px;
     --shadow-sm:0 1px 2px rgba(0,0,0,.4);
     --shadow:0 16px 48px -12px rgba(0,0,0,.6), 0 4px 12px rgba(0,0,0,.32), 0 0 0 1px rgba(255,255,255,.03) inset;
-    --grad-accent:linear-gradient(135deg,var(--accent),var(--accent2));
     --ease:.18s cubic-bezier(.4,0,.2,1);
     --ease-spring:.42s cubic-bezier(.34,1.4,.64,1);
   }
   :root[data-theme="light"] {
     --bg:#EBEEF4; --bg2:#FFFFFF; --surface:#FFFFFF; --surface2:#F3F6FA;
     --border:#E4E9F1; --border2:#D2DAE5; --text:#0E1726; --muted:#4A5568; --faint:#7A8699;
-    --accent:#3A6BF5; --accent2:#6D5BF0; --accent-weak:rgba(58,107,245,.09); --star:#D9942A;
+    --accent:#3A6BF5; --accent-weak:rgba(58,107,245,.09); --star:#D9942A;
     --shadow-sm:0 1px 2px rgba(15,23,42,.08);
     --shadow:0 16px 44px -14px rgba(15,23,42,.22), 0 4px 12px rgba(15,23,42,.08), 0 0 0 1px rgba(15,23,42,.04) inset;
   }
@@ -60,8 +59,8 @@
     backdrop-filter:saturate(1.3) blur(14px); -webkit-backdrop-filter:saturate(1.3) blur(14px);
     flex:none; position:relative; z-index:30; }
   .logo { width:27px; height:27px; border-radius:9px; flex:none;
-    background:linear-gradient(135deg,#5B8CFF,#7B6BFF 58%,#2DD4A7);
-    box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 4px 16px rgba(91,140,255,.45);
+    background:var(--accent);
+    box-shadow:0 0 0 1px rgba(255,255,255,.10);
     display:grid; place-items:center; color:#fff; font-weight:800; font-size:15px; }
   .brand { font-weight:700; font-size:15px; letter-spacing:.2px; }
   .brand small { color:var(--muted); font-weight:500; font-size:12px; margin-left:6px; }
@@ -92,7 +91,7 @@
   .segmented button { display:flex; align-items:center; gap:6px; background:none; border:none; color:var(--muted);
     border-radius:7px; padding:6px 12px; cursor:pointer; font-size:12.5px; font-weight:500; transition:color var(--ease), background var(--ease); }
   .segmented button:hover { color:var(--text); }
-  .segmented button.on { background:var(--grad-accent); color:#fff; box-shadow:0 4px 14px -2px rgba(91,140,255,.5); }
+  .segmented button.on { background:var(--accent); color:#fff; }
   .segmented svg { width:15px; height:15px; }
 
   /* 내보내기 메뉴 */
@@ -140,7 +139,7 @@
     animation:cardIn .42s cubic-bezier(.22,1,.36,1) both; }
   .row::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent);
     transform:scaleY(0); transform-origin:50% 50%; transition:transform var(--ease); border-radius:0 3px 3px 0; }
-  .row:hover { background:var(--surface2); border-color:var(--border2); transform:translateY(-2px); box-shadow:0 8px 24px -6px rgba(0,0,0,.28); }
+  .row:hover { background:var(--surface2); border-color:var(--border2); }
   .row:hover::before { transform:scaleY(.62); }
   .row:focus-visible { outline:2px solid var(--accent); outline-offset:-1px; }
   .list .row:nth-child(1){animation-delay:.02s} .list .row:nth-child(2){animation-delay:.05s}
@@ -171,7 +170,7 @@
   .gbar { top:14px; left:14px; display:flex; gap:6px; align-items:center; padding:5px; }
   .gbtn { background:none; border:none; color:#8B93A3; border-radius:7px; padding:6px 12px; cursor:pointer; font-size:12.5px; font-weight:500; transition:all var(--ease); }
   .gbtn:hover { color:#E7EBF2; }
-  .gbtn.on { background:var(--grad-accent); color:#fff; box-shadow:0 3px 12px -2px rgba(91,140,255,.5); }
+  .gbtn.on { background:var(--accent); color:#fff; }
   .gcount { color:#8B93A3; font-size:11.5px; margin:0 8px; }
   .legend { top:14px; right:18px; display:flex; flex-wrap:wrap; gap:6px 13px; justify-content:flex-end; padding:9px 13px; font-size:11px; color:#8B93A3; max-width:60vw; pointer-events:none; }
   .legend span { display:inline-flex; align-items:center; }
@@ -225,7 +224,7 @@
   .dedit .redactnote svg { flex:none; margin-top:1px; color:var(--ok); }
   .dedit .eact { display:flex; gap:8px; margin-top:14px; }
   .dedit .eact button { border-radius:9px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:filter var(--ease), background var(--ease); }
-  .dedit .save { flex:1; background:var(--grad-accent); color:#fff; border:none; }
+  .dedit .save { flex:1; background:var(--accent); color:#fff; border:none; }
   .dedit .save:hover { filter:brightness(1.08); }
   .dedit .save:disabled { opacity:.6; cursor:not-allowed; }
   .dedit .cancel { background:var(--surface2); color:var(--muted); border:1px solid var(--border2); }
@@ -281,7 +280,7 @@
   .cmdk-foot b { color:var(--muted); font-weight:600; border:1px solid var(--border2); border-radius:4px; padding:1px 5px; font-family:inherit; }
 
   /* ── 첫 사용자 안내 배너 ── */
-  .introbar { display:flex; align-items:center; gap:10px; padding:10px 18px; background:linear-gradient(90deg,var(--accent-weak),transparent);
+  .introbar { display:flex; align-items:center; gap:10px; padding:10px 18px; background:var(--accent-weak);
     border-bottom:1px solid var(--border); flex:none; font-size:12.5px; color:var(--text); }
   .introbar .ib-ico { color:var(--accent); flex:none; line-height:0; }
   .introbar .ib-txt { flex:1; color:var(--muted); }
@@ -314,13 +313,13 @@
   .ov-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   .ov-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 17px; position:relative; overflow:hidden;
     animation:cardIn .42s cubic-bezier(.22,1,.36,1) both; }
-  .ov-stat::after { content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--grad-accent); opacity:.85; }
+  .ov-stat::after { content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--accent); opacity:.85; }
   .ov-stat .n { font-size:30px; font-weight:800; letter-spacing:-.6px; font-variant-numeric:tabular-nums; line-height:1.1; }
   .ov-stat .l { color:var(--muted); font-size:12px; margin-top:5px; }
   .ov-stat .ic { position:absolute; right:13px; top:13px; color:var(--faint); opacity:.45; line-height:0; }
-  .ov-stat:nth-child(2)::after{background:linear-gradient(135deg,#2DD4A7,#48C7E0)} .ov-stat:nth-child(2){animation-delay:.05s}
-  .ov-stat:nth-child(3)::after{background:linear-gradient(135deg,#E8A33D,#F0B046)} .ov-stat:nth-child(3){animation-delay:.1s}
-  .ov-stat:nth-child(4)::after{background:linear-gradient(135deg,#B57BEE,#F2555A)} .ov-stat:nth-child(4){animation-delay:.15s}
+  .ov-stat:nth-child(2){animation-delay:.05s}
+  .ov-stat:nth-child(3){animation-delay:.1s}
+  .ov-stat:nth-child(4){animation-delay:.15s}
   .ov-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; }
   .ov-card h4 { margin:0 0 13px; font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px; }
   .ov-row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -332,13 +331,13 @@
   .ov-bar .bf { display:block; height:100%; min-width:3px; border-radius:6px; transition:width .6s var(--ease-spring); }
   .ov-bar .bn { width:30px; text-align:right; color:var(--faint); font-variant-numeric:tabular-nums; flex:none; }
   .ov-hub { display:flex; gap:11px; align-items:flex-start; cursor:pointer; padding:11px 12px; border-radius:9px; background:var(--surface2); border:1px solid var(--border); transition:border-color var(--ease), transform var(--ease); }
-  .ov-hub:hover { border-color:var(--border2); transform:translateY(-1px); }
+  .ov-hub:hover { border-color:var(--border2); }
   .ov-hub:last-child { margin-bottom:0; }
   .ov-hub .hubt { flex:1; min-width:0; font-size:13px; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .ov-hub .hubn { flex:none; color:var(--accent); font-size:11.5px; font-weight:700; }
   .ov-mut { color:var(--faint); font-size:12px; }
   .ov-stat.ov-orphan { cursor:pointer; transition:border-color var(--ease), transform var(--ease); }
-  .ov-stat.ov-orphan:hover { border-color:var(--border2); transform:translateY(-2px); }
+  .ov-stat.ov-orphan:hover { border-color:var(--border2); }
   .ov-stat.ov-orphan:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .loadmore { width:100%; max-width:880px; margin:2px auto 0; display:block; background:var(--surface); border:1px solid var(--border); color:var(--muted);
     border-radius:var(--r); padding:12px; font-size:13px; font-weight:600; cursor:pointer; transition:all var(--ease); font-variant-numeric:tabular-nums; }
@@ -682,6 +681,10 @@
         : `<div class="ov-mut">아직 기억끼리 연결된 관계가 없어요. 그래프나 상세 패널에서 연결해 보세요.</div>`;
       const accHtml=(s.topAccessed&&s.topAccessed.length) ? s.topAccessed.map(h=>ovHub(h.id,h.type,h.content,(h.access_count)+'회')).join('')
         : `<div class="ov-mut">아직 자주 본 기억이 없어요. 기억을 열어보면 여기에 쌓여요.</div>`;
+      // 떨어진 소집단(연결된 컴포넌트 분석, 확정된 관계 기준 — 유사도선 제외) — 해석 없이 구조만 보여줌
+      const islandsHtml=(s.islands&&s.islands.length)
+        ? s.islands.map((c,i)=>`<div class="ov-mut" style="margin:${i?'12px':'0'} 0 4px">소집단 ${i+1} · ${c.size}개</div>`+c.members.map(m=>ovHub(m.id,m.type,m.content,'')).join('')).join('')
+        : `<div class="ov-mut">${s.relCount?'확정된 관계가 하나로 이어져 있어요 — 따로 떨어진 소집단이 없어요.':'아직 기억끼리 연결된 관계가 없어요.'}</div>`;
       let projHtml='';
       if(s.byProject && s.byProject.length>1){ const pm=Math.max(1,...s.byProject.map(p=>p.c));
         projHtml=`<div class="ov-card"><h4 title="이 기억을 저장할 당시 작업 중이던 폴더 기준이에요 — 기억 내용과 다를 수 있어요">프로젝트별 기억</h4>${s.byProject.slice(0,8).map(p=>ovBar('#5B8CFF', baseName(p.project), p.c, pm)).join('')}</div>`; }
@@ -700,6 +703,7 @@
           <div class="ov-card"><h4>가장 많이 연결된 기억</h4>${hubHtml}</div>
           <div class="ov-card"><h4>자주 본 기억</h4>${accHtml}</div>
         </div>
+        <div class="ov-card" title="확정된 관계로 이었을 때, 메인 그래프와 따로 떨어져 서로끼리만 연결된 무리가 있는지 보여줘요"><h4>떨어진 소집단</h4>${islandsHtml}</div>
         ${projHtml}
         <div class="ov-card" id="ov-dup"><h4>중복 후보</h4><div class="ov-mut">확인 중…</div></div>
         ${s.lowConf?`<div class="ov-card"><h4>검토하면 좋은 기억</h4><div class="ov-mut">자동 추출 신뢰도가 낮은(50% 미만) 기억이 <b style="color:var(--text)">${s.lowConf}개</b> 있어요. 내용이 맞는지 한 번 확인해 보세요.</div></div>`:''}`;
