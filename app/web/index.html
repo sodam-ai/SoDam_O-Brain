@@ -1349,11 +1349,13 @@
         ? { host:'radial-gradient(circle at 50% 35%, #ffffff 0%, #e9edf4 78%)', hi:'rgba(47,107,255,.95)',
             label:'#243042', labelDim:'rgba(36,48,66,.30)', stroke:'rgba(15,23,42,.22)', strokeDim:'rgba(15,23,42,.06)',
             linkBase:'rgba(90,105,130,.34)', linkDim:'rgba(90,105,130,.10)', dim3d:'#c4ccd8',
-            tip:'background:#ffffff;border:1px solid #d3dae3;color:#0f172a' }
+            tip:'background:#ffffff;border:1px solid #d3dae3;color:#0f172a',
+            tipShadow:'0 14px 32px -14px rgba(15,23,42,.20), 0 4px 10px rgba(15,23,42,.08)' }
         : { host:'radial-gradient(circle at 50% 38%, #11161f 0%, #0B0D11 70%)', hi:'rgba(150,180,255,.95)',
             label:'#D7DEEA', labelDim:'rgba(231,235,242,.32)', stroke:'rgba(255,255,255,.28)', strokeDim:'rgba(255,255,255,.05)',
             linkBase:'rgba(120,135,160,.3)', linkDim:'rgba(110,122,145,.08)', dim3d:'#39414f',
-            tip:'background:#11151c;border:1px solid #2C3340;color:#E7EBF2' };
+            tip:'background:#11151c;border:1px solid #2C3340;color:#E7EBF2',
+            tipShadow:'0 16px 40px -14px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.30)' };
     }
     function graphSet(){
       if(!gData) return {nodes:[],links:[],edgeMode:''};
@@ -1442,7 +1444,7 @@
       const base = fg => fg.graphData(JSON.parse(JSON.stringify(data))).backgroundColor('rgba(0,0,0,0)')
         .nodeRelSize(3.7).nodeVal(n=>Math.max(1,n.val||1)).linkCurvature(0.13)
         .nodeLabel(n=>{ const m=all.find(x=>x.id===n.id)||{}; const imp=Math.max(1,Math.min(5,m.importance||Math.round(n.val||1)));
-          return `<div style="${th.tip};padding:10px 13px;border-radius:11px;box-shadow:0 12px 34px rgba(0,0,0,.42);max-width:290px;font:12px/1.55 system-ui">`
+          return `<div style="${th.tip};padding:10px 13px;border-radius:11px;box-shadow:${th.tipShadow};max-width:290px;font:12px/1.55 system-ui">`
             +`<div style="font-weight:700;margin-bottom:3px">${esc(n.type)}${n.category?` <span style="opacity:.6">· ${esc(n.category)}</span>`:''}</div>`
             +`<div style="opacity:.86;margin-bottom:6px">${esc(String(n.name).slice(0,96))}</div>`
             +`<div style="color:#F0B046;font-size:11px;letter-spacing:1px">${'★'.repeat(imp)}<span style="opacity:.5;letter-spacing:0"> · 조회 ${n.access||0}회</span></div></div>`; })
