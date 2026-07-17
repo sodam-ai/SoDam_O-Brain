@@ -51,6 +51,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing |
 | **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise |
 | **Graph Reliability & Keyboard Access** | Shows an error message with a retry button if the graph fails to load; every memory in the graph can be navigated and opened using only Tab/Enter, no mouse required |
+| **Low-Confidence Filter** | On the List tab, filter to show only memories with low auto-extraction confidence (below 50%) for review |
 
 ---
 
@@ -88,9 +89,11 @@ cd [folder name]
 **Step 1: Install dependencies (in a terminal)**
 
 ```bash
-cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+cd <folder where you downloaded the repo>\app
 npm install
 ```
+
+> Example: if you downloaded the repo to `C:\Tools\O-Brain`, run `cd C:\Tools\O-Brain\app`
 
 **Step 2: Start the server**
 
@@ -115,9 +118,11 @@ http://127.0.0.1:7740
 If you use Claude Code, you can also install it as a plugin. **You must run this in two separate steps** (attempting both at once causes a "Marketplace not found" error):
 
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+/plugin marketplace add <folder where you downloaded the repo>\plugin
 /plugin install o-brain@o-brain-local
 ```
+
+> Example: `/plugin marketplace add C:\Tools\O-Brain\plugin`
 
 Restart Claude Code after installation → slash commands become available:
 
@@ -266,6 +271,16 @@ Full data flow diagram and security header list: **[GUIDE.en.md Section 12](./GU
 ## Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-18 — Backup screen completed, low-confidence filter, plugin install path portability fix</b></summary>
+
+- **Backup list + manual restore guide**: The ⚙ Settings page now shows the accumulated backups (date/size), a "Create backup now" button, and step-by-step manual restore instructions.
+- **Low-confidence memory filter**: Added a filter on the List tab to show only memories with low auto-extraction confidence (below 50%) for review.
+- **`save_memory` category parameter**: Claude Code can now specify a category directly when saving a memory via the MCP tool (omit it to keep the existing auto-classification behavior).
+- **Plugin install path fix**: Earlier versions had the developer's own folder path hardcoded into the plugin config, so installing on any other computer broke the MCP tools and slash commands. Fixed so the plugin finds its own location automatically wherever it's installed.
+- **Error message cleanup**: Unexpected server errors now show a friendly message instead of internal details (full details are still recorded in the local server log for debugging).
+</details>
 
 <details>
 <summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary>

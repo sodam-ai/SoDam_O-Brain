@@ -95,8 +95,8 @@ O-Brain은 그 AI 옆에 두는 <strong>자동 메모 노트</strong>예요. 중
 <td>API 키·비밀번호 자동 제거 후 저장 (<code>[REDACTED]</code>)</td>
 </tr>
 <tr>
-<td><strong>자동 백업</strong></td>
-<td>서버 시작 시·일괄 삭제 전 스냅샷 자동 생성</td>
+<td><strong>자동 백업 + 백업 목록 화면</strong></td>
+<td>서버 시작 시·일괄 삭제 전 스냅샷 자동 생성. ⚙ 설정에서 백업 목록(날짜·용량) 확인 + &quot;지금 백업 만들기&quot; + 수동 복원 방법 안내</td>
 </tr>
 <tr>
 <td><strong>MCP 연동</strong></td>
@@ -129,6 +129,10 @@ O-Brain은 그 AI 옆에 두는 <strong>자동 메모 노트</strong>예요. 중
 <tr>
 <td><strong>믿을 수 있는 검색 순위</strong></td>
 <td>사람이 확인한 기억이 자동추출 노이즈보다 검색 결과 위쪽에 오도록 관련도·중요도·최신성·신뢰도를 함께 반영</td>
+</tr>
+<tr>
+<td><strong>저신뢰 기억 필터</strong></td>
+<td>목록 탭에서 자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라 검토 가능</td>
 </tr>
 <tr>
 <td><strong>그래프 안정성·키보드 접근성</strong></td>
@@ -181,9 +185,12 @@ cd [폴더명]
 <hr>
 <h2 id="설치-2단계">설치 (2단계)</h2>
 <p><strong>1단계: 의존성 설치 (터미널에서)</strong></p>
-<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+<pre><code class="language-bash">cd &lt;저장소를 내려받은 폴더&gt;\app
 npm install
 </code></pre>
+<blockquote>
+<p>예시: 저장소를 <code>C:\Tools\O-Brain</code>에 내려받았다면 <code>cd C:\Tools\O-Brain\app</code></p>
+</blockquote>
 <p><strong>2단계: 서버 시작</strong></p>
 <pre><code class="language-bash">npm start
 </code></pre>
@@ -197,9 +204,12 @@ npm install
 <hr>
 <h2 id="claude-code-플러그인-방식-선택">Claude Code 플러그인 방식 (선택)</h2>
 <p>Claude Code를 사용 중이라면 플러그인으로도 설치 가능합니다. <strong>반드시 2단계로 나눠서</strong> 실행하세요(한 번에 설치 시도 시 &quot;Marketplace not found&quot; 오류):</p>
-<pre><code>/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+<pre><code>/plugin marketplace add &lt;저장소를 내려받은 폴더&gt;\plugin
 /plugin install o-brain@o-brain-local
 </code></pre>
+<blockquote>
+<p>예시: <code>/plugin marketplace add C:\Tools\O-Brain\plugin</code></p>
+</blockquote>
 <p>설치 후 Claude Code 재시작 → 슬래시 명령어 사용 가능:</p>
 <table>
 <thead>
@@ -386,6 +396,14 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <hr>
 <h2 id="업데이트-내용-요약">업데이트 내용 요약</h2>
 <p>최신 항목이 위에 오도록 정리했습니다. 각 항목을 눌러 펼쳐 보세요.</p>
+<details>
+<summary><b>2026-07-18 — 백업 화면 완성, 저신뢰 필터, 플러그인 설치 이식성 수정</b></summary><ul>
+<li><strong>백업 목록 + 수동 복원 안내</strong>: ⚙ 설정 화면에서 그동안 쌓인 백업(날짜·용량)을 확인하고, &quot;지금 백업 만들기&quot; 버튼으로 즉시 추가 백업 생성. 문제 발생 시 되돌리는 방법도 화면에 단계별로 안내.</li>
+<li><strong>저신뢰 기억 필터</strong>: 목록 탭에서 자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라볼 수 있는 필터 추가.</li>
+<li><strong><code>save_memory</code> 카테고리 지정</strong>: Claude Code가 기억을 저장할 때 분류(카테고리)를 직접 지정할 수 있도록 MCP 도구 확장(생략 시 기존처럼 자동 분류).</li>
+<li><strong>플러그인 설치 경로 문제 수정</strong>: 이전 버전은 개발 PC의 폴더 경로가 설정 파일에 고정돼 있어 다른 컴퓨터에 설치하면 MCP·명령어가 작동하지 않았음 — 어느 컴퓨터에 내려받아도 스스로 경로를 찾도록 수정.</li>
+<li><strong>에러 메시지 정리</strong>: 예상치 못한 서버 오류 시 내부 상세 정보 대신 안내 메시지만 보이도록 수정(문제 진단용 상세 기록은 서버 로그에만 남김).</details></li>
+</ul>
 <details>
 <summary><b>2026-07-15~16 — 검색 결과 신뢰도 반영, 대시보드 안정성·키보드 접근성 강화</b></summary><ul>
 <li><strong>검색 순위 개선</strong>: 검색·MCP <code>search_memory</code> 결과 정렬에 관련도(70%)·중요도(15%)·최신성(10%)·신뢰도(5%)를 함께 반영. 사람이 확인한 기억이 자동추출 노이즈에 밀려나지 않게 함(정확히 일치하는 결과는 여전히 최우선 — 순위가 뒤집히지 않음).</li>

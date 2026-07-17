@@ -107,8 +107,8 @@ img { max-width: 100%; }</style>
 <td>저장 전 API 키·비밀번호·토큰을 자동으로 제거합니다(REDACTED 처리).</td>
 </tr>
 <tr>
-<td><strong>자동 백업</strong></td>
-<td>서버 시작 시·일괄 삭제 전 자동으로 스냅샷을 저장합니다.</td>
+<td><strong>자동 백업 + 백업 목록 화면</strong></td>
+<td>서버 시작 시·일괄 삭제 전 자동으로 스냅샷을 저장합니다. ⚙ 설정에서 목록 확인·수동 생성·복원 안내까지 가능합니다(7-14 참고).</td>
 </tr>
 <tr>
 <td><strong>MCP 연동</strong></td>
@@ -145,6 +145,10 @@ img { max-width: 100%; }</style>
 <tr>
 <td><strong>그래프 안정성·키보드 접근성</strong></td>
 <td>그래프를 못 불러오면 오류 안내+다시 시도 버튼을 표시하고, 마우스 없이 Tab·Enter만으로 그래프의 모든 기억을 순서대로 탐색·조회할 수 있습니다.</td>
+</tr>
+<tr>
+<td><strong>저신뢰 기억 필터</strong></td>
+<td>목록 탭에서 자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라 검토할 수 있습니다.</td>
 </tr>
 </tbody></table>
 <hr>
@@ -217,10 +221,10 @@ img { max-width: 100%; }</style>
 <h2 id="3-다운로드-방법">3. 다운로드 방법</h2>
 <h3 id="이미-파일이-있는-경우">이미 파일이 있는 경우</h3>
 <p>이 가이드를 읽고 있다면 O-Brain 파일이 이미 내 컴퓨터에 있습니다.
-프로젝트 폴더 위치를 확인하세요:</p>
-<pre><code>D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\
+저장소를 내려받은(또는 복사한) 폴더 위치를 확인하세요. 예시:</p>
+<pre><code>C:\Tools\O-Brain\
 </code></pre>
-<p>또는 파일을 받은 폴더를 확인하면 됩니다.</p>
+<p>실제 경로는 사람마다 다릅니다 — 파일을 받은/복사한 폴더가 곧 그 경로입니다.</p>
 <h3 id="git으로-받는-경우-개발자용">Git으로 받는 경우 (개발자용)</h3>
 <pre><code class="language-bash">git clone [저장소 주소]
 cd [폴더명]
@@ -264,8 +268,9 @@ O-Brain은 JavaScript로 만들어졌기 때문에 이 엔진이 반드시 필�
 인터넷에서 자동으로 다운로드됩니다.</p>
 <ol>
 <li><p>터미널에서 <code>app</code> 폴더로 이동:</p>
-<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+<pre><code class="language-bash">cd &lt;저장소를 내려받은 폴더&gt;\app
 </code></pre>
+<p>(예시: <code>cd C:\Tools\O-Brain\app</code>)</p>
 <blockquote>
 <p><strong>팁</strong>: 폴더 경로를 복사해서 붙여넣기 하면 편합니다.
 경로에 한글이 있으면 오류가 날 수 있으니 경로를 영문으로 유지하세요.</p>
@@ -288,8 +293,9 @@ O-Brain은 JavaScript로 만들어졌기 때문에 이 엔진이 반드시 필�
 <p>아래 두 줄은 <strong>클로드코드 입력칸</strong>(프롬프트)에 칩니다. Windows 탐색기가 아니라 <strong>클로드코드 안</strong>입니다.</p>
 </blockquote>
 <p><strong>① 목록 등록</strong> — 플러그인이 있는 폴더를 알려줍니다.</p>
-<pre><code>/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+<pre><code>/plugin marketplace add &lt;저장소를 내려받은 폴더&gt;\plugin
 </code></pre>
+<p>(예시: <code>/plugin marketplace add C:\Tools\O-Brain\plugin</code>)</p>
 <p><strong>② 설치</strong> — 그 목록에서 O-Brain을 깝니다.</p>
 <pre><code>/plugin install o-brain@o-brain-local
 </code></pre>
@@ -306,7 +312,7 @@ O-Brain은 JavaScript로 만들어졌기 때문에 이 엔진이 반드시 필�
 <h2 id="5-빠른-시작">5. 빠른 시작</h2>
 <h3 id="5-a-웹-대시보드만-쓰는-경우">5-A. 웹 대시보드만 쓰는 경우</h3>
 <p><strong>1. 터미널에서 서버 시작:</strong></p>
-<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+<pre><code class="language-bash">cd &lt;저장소를 내려받은 폴더&gt;\app
 npm start
 </code></pre>
 <p><strong>2. 첫 실행 시 안내:</strong></p>
@@ -333,7 +339,7 @@ npm start
 <h2 id="6-실행-방법">6. 실행 방법</h2>
 <h3 id="기본-실행">기본 실행</h3>
 <pre><code class="language-bash"># app 폴더에서 실행
-cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+cd &lt;저장소를 내려받은 폴더&gt;\app
 npm start
 </code></pre>
 <h3 id="포트-변경-기본-포트-7740이-사용-중일-때">포트 변경 (기본 포트 7740이 사용 중일 때)</h3>
@@ -484,7 +490,7 @@ $env:OBRAIN_PORT=7741; npm start
 <p><strong>주의</strong>: 10초가 지나면 되돌리기 버튼이 사라집니다. 그 후 복구하려면 <code>app/data/backup/</code> 폴더의 최신 백업 파일을 사용하세요.</p>
 </blockquote>
 <h3 id="7-12--설정-페이지">7-12. ⚙ 설정 페이지</h3>
-<p>헤더의 톱니바퀴(⚙) 아이콘을 누르면 전용 설정 페이지로 이동합니다(그래프/개요/목록/타임라인과 같은 급의 5번째 화면). 총 5개 항목을 조절할 수 있고, 전부 <strong>이 브라우저에 저장</strong>돼 다음에 열어도 값이 유지됩니다.</p>
+<p>헤더의 톱니바퀴(⚙) 아이콘을 누르면 전용 설정 페이지로 이동합니다(그래프/개요/목록/타임라인과 같은 급의 5번째 화면). 총 6개 항목을 조절할 수 있고, 목록·그래프·새로고침·화면·안내 5개 값은 <strong>이 브라우저에 저장</strong>돼 다음에 열어도 유지됩니다(백업 목록은 서버의 실제 파일 목록이라 매번 새로 불러옴).</p>
 <table>
 <thead>
 <tr>
@@ -518,6 +524,11 @@ $env:OBRAIN_PORT=7741; npm start
 <td>안내 배너 표시</td>
 <td>상단의 &quot;클로드코드 대화에서 자동으로 모은 기억이에요&quot; 안내문을 다시 보이거나 숨깁니다.</td>
 </tr>
+<tr>
+<td><strong>백업</strong></td>
+<td>백업 목록·지금 백업 만들기</td>
+<td>그동안 자동으로 쌓인 백업(날짜·용량)을 목록으로 확인하고, 버튼 한 번으로 지금 즉시 백업을 추가로 만들 수 있습니다. 자세한 내용은 7-14 참고.</td>
+</tr>
 </tbody></table>
 <p>각 드롭다운에서 &quot;직접 입력…&quot;을 고르면 숫자 입력칸이 나타납니다. 범위를 벗어난 값(예: 그래프 노드에 99999)이나 소수점 값을 넣어도 서버·화면 양쪽에서 안전한 값으로 자동 보정됩니다.</p>
 <h3 id="7-13-중복-기억-정리">7-13. 중복 기억 정리</h3>
@@ -538,6 +549,14 @@ $env:OBRAIN_PORT=7741; npm start
 <blockquote>
 <p><strong>비교 기준이 검색과 다릅니다.</strong> 검색은 &quot;관련 있어 보이면&quot; 걸리도록 느슨하게 잡혀 있지만, 중복 정리는 &quot;정말 같은 내용에 가까운 경우&quot;만 후보로 올라오도록 훨씬 엄격하게 잡혀 있습니다. 그래서 검색에서는 여러 건이 나와도 중복 후보에는 안 뜰 수 있습니다 — 정상입니다.</p>
 </blockquote>
+<h3 id="7-14-백업-목록수동-복원">7-14. 백업 목록·수동 복원</h3>
+<p>⚙ 설정 페이지 하단의 &quot;백업&quot; 항목에서 확인할 수 있습니다.</p>
+<ol>
+<li><strong>백업 목록</strong>: 서버가 시작될 때마다 자동으로 만들어진 백업 파일들이 날짜·용량과 함께 표시됩니다(최신 7개까지 보관, 그 이전 것은 자동 정리됨).</li>
+<li><strong>지금 백업 만들기</strong>: 버튼을 누르면 현재 상태를 즉시 스냅샷으로 저장합니다(기존 기억은 전혀 건드리지 않는 순수 추가 동작이라 안전합니다).</li>
+<li><strong>문제가 생겼을 때 되돌리기(수동)</strong>: 화면에 표시되는 폴더 경로를 열어 원하는 날짜의 백업 파일을 복사한 뒤, <code>data</code> 폴더의 <code>obrain.db</code>를 그 파일로 교체하고 서버를 다시 시작하면 됩니다(정확한 단계는 화면 안내문에 그대로 나와 있습니다).</li>
+<li><strong>자동으로 눌러서 되돌리기(자동 복원) 기능은 아직 없습니다</strong> — 기존 데이터를 덮어쓰는 유일한 동작이라 신중하게 별도로 준비 중입니다. 지금은 위 3번 방법으로만 되돌릴 수 있습니다.</li>
+</ol>
 <hr>
 <h2 id="8-사용-방법--mcp-도구--claude-code-플러그인">8. 사용 방법 — MCP 도구 · Claude Code 플러그인</h2>
 <h3 id="8-1-mcp-서버-등록-settingsjson-방식">8-1. MCP 서버 등록 (settings.json 방식)</h3>
@@ -1937,6 +1956,14 @@ SUPERSEDES로 무효화된 기억은 무효화 날짜 이후 표시되지 않습
 <hr>
 <h2 id="18-업데이트-내용-요약">18. 업데이트 내용 요약</h2>
 <p>최신 항목이 위에 오도록 정리했습니다. 각 항목을 눌러 펼쳐 보세요.</p>
+<details>
+<summary><b>2026-07-18 — 백업 화면 완성, 저신뢰 필터, 플러그인 설치 이식성 수정</b></summary><ul>
+<li><strong>백업 목록 + 수동 복원 안내(7-14 참고)</strong>: ⚙ 설정 화면에서 그동안 쌓인 백업(날짜·용량)을 확인하고, &quot;지금 백업 만들기&quot; 버튼으로 즉시 추가 백업 생성. 문제 발생 시 되돌리는 방법도 화면에 단계별로 안내.</li>
+<li><strong>저신뢰 기억 필터</strong>: 목록 탭에서 자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라볼 수 있는 필터 추가.</li>
+<li><strong><code>save_memory</code> 카테고리 지정</strong>: Claude Code가 기억을 저장할 때 분류(카테고리)를 직접 지정할 수 있도록 MCP 도구 확장(생략 시 기존처럼 자동 분류).</li>
+<li><strong>플러그인 설치 경로 문제 수정</strong>: 이전 버전은 개발 PC의 폴더 경로가 설정 파일에 고정돼 있어 다른 컴퓨터에 설치하면 MCP·명령어가 작동하지 않았음 — 어느 컴퓨터에 내려받아도 스스로 경로를 찾도록 수정. 이 가이드의 설치 경로 예시도 특정 PC 경로 대신 일반 예시로 정정.</li>
+<li><strong>에러 메시지 정리</strong>: 예상치 못한 서버 오류 시 내부 상세 정보 대신 안내 메시지만 보이도록 수정(문제 진단용 상세 기록은 서버 로그에만 남김).</details></li>
+</ul>
 <details>
 <summary><b>2026-07-15~16 — 검색 결과 신뢰도 반영, 대시보드 안정성·키보드 접근성 강화</b></summary><ul>
 <li><strong>검색 순위 개선</strong>: 검색·MCP <code>search_memory</code> 결과 정렬 방식을 &quot;관련도 순서만&quot; 보던 것에서, 관련도(70%)·중요도(15%)·최신성(10%)·신뢰도(5%)를 함께 반영하는 방식으로 바꿈. 사람이 직접 확인한 기억(신뢰도 1.0)이 AI가 자동으로 뽑아낸 비슷한 관련도의 기억(신뢰도 0.5)에 밀려 아래로 가던 문제 해소. <strong>단, 정확히 일치하는 검색어는 여전히 최우선 순위</strong> — 품질 점수 때문에 진짜 원하던 결과가 밀려나지 않도록 관련도의 비중을 가장 크게 둠.</li>

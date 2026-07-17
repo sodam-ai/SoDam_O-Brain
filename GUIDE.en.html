@@ -107,8 +107,8 @@ and brings them back up next time.</p>
 <td>API keys and passwords are automatically removed before saving (replaced with REDACTED).</td>
 </tr>
 <tr>
-<td><strong>Auto Backup</strong></td>
-<td>Snapshots saved automatically on server start and before bulk delete.</td>
+<td><strong>Auto Backup + Backup List View</strong></td>
+<td>Snapshots saved automatically on server start and before bulk delete. The ⚙ Settings page lets you view the list, create one manually, and see restore instructions (see 7-14).</td>
 </tr>
 <tr>
 <td><strong>MCP Integration</strong></td>
@@ -145,6 +145,10 @@ and brings them back up next time.</p>
 <tr>
 <td><strong>Graph Reliability &amp; Keyboard Access</strong></td>
 <td>Shows an error message with a retry button if the graph fails to load, and every memory in the graph can be navigated and opened in order using only Tab/Enter, no mouse required.</td>
+</tr>
+<tr>
+<td><strong>Low-Confidence Filter</strong></td>
+<td>On the List tab, filter to show only memories with low auto-extraction confidence (below 50%) for review.</td>
 </tr>
 </tbody></table>
 <hr>
@@ -217,10 +221,10 @@ and brings them back up next time.</p>
 <h2 id="3-how-to-download">3. How to Download</h2>
 <h3 id="if-you-already-have-the-files">If You Already Have the Files</h3>
 <p>If you&#39;re reading this guide, the O-Brain files are already on your computer.
-Check the project folder location:</p>
-<pre><code>D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\
+Check the folder where you downloaded (or copied) the repo — for example:</p>
+<pre><code>C:\Tools\O-Brain\
 </code></pre>
-<p>Or find the folder where you received the files.</p>
+<p>The actual path differs per person — it&#39;s simply wherever you downloaded or copied the files.</p>
 <h3 id="if-using-git-for-developers">If Using Git (For Developers)</h3>
 <pre><code class="language-bash">git clone [repository URL]
 cd [folder name]
@@ -264,8 +268,9 @@ Or: Windows key → search &quot;PowerShell&quot; → click</p>
 They are downloaded automatically from the internet.</p>
 <ol>
 <li><p>In the terminal, navigate to the <code>app</code> folder:</p>
-<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+<pre><code class="language-bash">cd &lt;folder where you downloaded the repo&gt;\app
 </code></pre>
+<p>(Example: <code>cd C:\Tools\O-Brain\app</code>)</p>
 <blockquote>
 <p><strong>Tip</strong>: Copy and paste the path to save time.
 Avoid Korean characters in the path — they may cause errors.</p>
@@ -288,8 +293,9 @@ Avoid Korean characters in the path — they may cause errors.</p>
 <p>Type the two lines below into <strong>Claude Code&#39;s input box</strong> (the prompt), not into Windows Explorer.</p>
 </blockquote>
 <p><strong>① Register the marketplace</strong> — tells Claude Code where the plugin folder is.</p>
-<pre><code>/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+<pre><code>/plugin marketplace add &lt;folder where you downloaded the repo&gt;\plugin
 </code></pre>
+<p>(Example: <code>/plugin marketplace add C:\Tools\O-Brain\plugin</code>)</p>
 <p><strong>② Install</strong> — installs O-Brain from that marketplace.</p>
 <pre><code>/plugin install o-brain@o-brain-local
 </code></pre>
@@ -306,7 +312,7 @@ Avoid Korean characters in the path — they may cause errors.</p>
 <h2 id="5-quick-start">5. Quick Start</h2>
 <h3 id="5-a-web-dashboard-only">5-A. Web Dashboard Only</h3>
 <p><strong>1. Start the server from the terminal:</strong></p>
-<pre><code class="language-bash">cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+<pre><code class="language-bash">cd &lt;folder where you downloaded the repo&gt;\app
 npm start
 </code></pre>
 <p><strong>2. You&#39;ll see something like this:</strong></p>
@@ -333,7 +339,7 @@ Takes 1–3 minutes the first time. All subsequent runs start instantly.</p>
 <h2 id="6-how-to-run">6. How to Run</h2>
 <h3 id="basic-start">Basic Start</h3>
 <pre><code class="language-bash"># Run from the app/ folder
-cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+cd &lt;folder where you downloaded the repo&gt;\app
 npm start
 </code></pre>
 <h3 id="change-port-if-port-7740-is-already-in-use">Change Port (If Port 7740 Is Already in Use)</h3>
@@ -484,7 +490,7 @@ $env:OBRAIN_PORT=7741; npm start
 <p><strong>Note</strong>: The undo button disappears after 10 seconds. After that, restore from the latest backup file in <code>app/data/backup/</code>.</p>
 </blockquote>
 <h3 id="7-12--settings-page">7-12. ⚙ Settings Page</h3>
-<p>Click the gear (⚙) icon in the header to open the dedicated settings page — a full 5th screen alongside Graph/Overview/List/Timeline. There are 5 adjustable groups, all <strong>saved to this browser</strong> so they persist across visits.</p>
+<p>Click the gear (⚙) icon in the header to open the dedicated settings page — a full 5th screen alongside Graph/Overview/List/Timeline. There are 6 adjustable groups; the first 5 (list, graph, refresh, screen, banner) are <strong>saved to this browser</strong> so they persist across visits (the backup list is the server&#39;s actual file list, so it&#39;s always freshly loaded).</p>
 <table>
 <thead>
 <tr>
@@ -518,6 +524,11 @@ $env:OBRAIN_PORT=7741; npm start
 <td>Intro banner visible</td>
 <td>Show or hide the &quot;auto-collected from your Claude Code conversations&quot; banner at the top.</td>
 </tr>
+<tr>
+<td><strong>Backup</strong></td>
+<td>Backup list · Create backup now</td>
+<td>View the auto-created backups (date/size) and create an extra one on demand with one click. See 7-14 for details.</td>
+</tr>
 </tbody></table>
 <p>Selecting &quot;Custom…&quot; in any dropdown reveals a number input. Out-of-range values (e.g. 99999 for graph nodes) or decimals are automatically clamped to a safe value on both the client and server.</p>
 <h3 id="7-13-cleaning-up-duplicate-memories">7-13. Cleaning Up Duplicate Memories</h3>
@@ -538,6 +549,14 @@ $env:OBRAIN_PORT=7741; npm start
 <blockquote>
 <p><strong>The comparison threshold differs from search.</strong> Search is deliberately loose (&quot;might be relevant&quot;), while duplicate detection is much stricter (&quot;genuinely close to identical&quot;). So search may return several hits for a topic while none of them appear as duplicate candidates — that&#39;s expected behavior.</p>
 </blockquote>
+<h3 id="7-14-backup-list--manual-restore">7-14. Backup List · Manual Restore</h3>
+<p>Available at the bottom of the ⚙ Settings page, under &quot;Backup&quot;.</p>
+<ol>
+<li><strong>Backup list</strong>: Shows the backup files automatically created every time the server starts, with date and size (the latest 7 are kept; older ones are cleaned up automatically).</li>
+<li><strong>Create backup now</strong>: Click the button to save the current state as a snapshot immediately (a pure add-only action that never touches existing memories, so it&#39;s safe).</li>
+<li><strong>Restoring manually if something goes wrong</strong>: Open the folder path shown on screen, copy the backup file for the date you want, then replace <code>obrain.db</code> in the <code>data</code> folder with it and restart the server (the exact steps are shown right there in the on-screen instructions).</li>
+<li><strong>One-click automatic restore does not exist yet</strong> — since it&#39;s the only action that would overwrite existing data, it&#39;s being built carefully as a separate step. For now, use the manual method in step 3.</li>
+</ol>
 <hr>
 <h2 id="8-how-to-use--mcp-tools--claude-code-plugin">8. How to Use — MCP Tools · Claude Code Plugin</h2>
 <h3 id="8-1-register-the-mcp-server-settingsjson-method">8-1. Register the MCP Server (settings.json method)</h3>
@@ -1940,6 +1959,14 @@ No major competing brand under this exact name has been identified, but a formal
 <hr>
 <h2 id="18-changelog">18. Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
+<details>
+<summary><b>2026-07-18 — Backup screen completed, low-confidence filter, plugin install path portability fix</b></summary><ul>
+<li><strong>Backup list + manual restore guide (see 7-14)</strong>: The ⚙ Settings page now shows the accumulated backups (date/size), a &quot;Create backup now&quot; button, and step-by-step manual restore instructions.</li>
+<li><strong>Low-confidence memory filter</strong>: Added a filter on the List tab to show only memories with low auto-extraction confidence (below 50%) for review.</li>
+<li><strong><code>save_memory</code> category parameter</strong>: Claude Code can now specify a category directly when saving a memory via the MCP tool (omit it to keep the existing auto-classification behavior).</li>
+<li><strong>Plugin install path fix</strong>: Earlier versions had the developer&#39;s own folder path hardcoded into the plugin config, so installing on any other computer broke the MCP tools and slash commands. Fixed so the plugin finds its own location automatically wherever it&#39;s installed. This guide&#39;s install-path examples were also updated from a specific PC path to generic examples.</li>
+<li><strong>Error message cleanup</strong>: Unexpected server errors now show a friendly message instead of internal details (full details are still recorded in the local server log for debugging).</details></li>
+</ul>
 <details>
 <summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary><ul>
 <li><strong>Search ranking improved</strong>: Search and MCP <code>search_memory</code> result ordering changed from &quot;relevance only&quot; to a blend of relevance (70%), importance (15%), recency (10%), and confidence (5%). Fixes memories a human directly verified (confidence 1.0) getting outranked by AI auto-extracted memories of similar relevance but lower confidence (0.5). <strong>An exact keyword match still always ranks first</strong> — relevance keeps the dominant weight so quality scoring never buries the result you were actually looking for.</li>

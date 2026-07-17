@@ -55,7 +55,7 @@
 | **Time Travel** | Select a date to see only memories that were "alive" at that point in time. |
 | **Confidence Decay** | AI-extracted memories automatically lose confidence over time (30-day half-life). |
 | **Security Filter** | API keys and passwords are automatically removed before saving (replaced with REDACTED). |
-| **Auto Backup** | Snapshots saved automatically on server start and before bulk delete. |
+| **Auto Backup + Backup List View** | Snapshots saved automatically on server start and before bulk delete. The ⚙ Settings page lets you view the list, create one manually, and see restore instructions (see 7-14). |
 | **MCP Integration** | 7 tools for saving, searching, and managing memory relations directly from Claude Code. |
 | **Orphan Node Visual** | Memories with no user-defined relations are shown with a dashed ring border. |
 | **Multi-select & Bulk Delete** | Select multiple memories, delete them at once, and undo within 10 seconds (deleting a single memory offers the same undo). |
@@ -65,6 +65,7 @@
 | **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500, preventing freezes or slowdowns. |
 | **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise (an exact match still always ranks first). |
 | **Graph Reliability & Keyboard Access** | Shows an error message with a retry button if the graph fails to load, and every memory in the graph can be navigated and opened in order using only Tab/Enter, no mouse required. |
+| **Low-Confidence Filter** | On the List tab, filter to show only memories with low auto-extraction confidence (below 50%) for review. |
 
 ---
 
@@ -102,13 +103,13 @@
 ### If You Already Have the Files
 
 If you're reading this guide, the O-Brain files are already on your computer.
-Check the project folder location:
+Check the folder where you downloaded (or copied) the repo — for example:
 
 ```
-D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\
+C:\Tools\O-Brain\
 ```
 
-Or find the folder where you received the files.
+The actual path differs per person — it's simply wherever you downloaded or copied the files.
 
 ### If Using Git (For Developers)
 
@@ -163,8 +164,9 @@ They are downloaded automatically from the internet.
 1. In the terminal, navigate to the `app` folder:
 
    ```bash
-   cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+   cd <folder where you downloaded the repo>\app
    ```
+   (Example: `cd C:\Tools\O-Brain\app`)
 
    > **Tip**: Copy and paste the path to save time.
    > Avoid Korean characters in the path — they may cause errors.
@@ -187,8 +189,9 @@ They are downloaded automatically from the internet.
 
 **① Register the marketplace** — tells Claude Code where the plugin folder is.
 ```
-/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin
+/plugin marketplace add <folder where you downloaded the repo>\plugin
 ```
+(Example: `/plugin marketplace add C:\Tools\O-Brain\plugin`)
 
 **② Install** — installs O-Brain from that marketplace.
 ```
@@ -212,7 +215,7 @@ They are downloaded automatically from the internet.
 **1. Start the server from the terminal:**
 
 ```bash
-cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+cd <folder where you downloaded the repo>\app
 npm start
 ```
 
@@ -251,7 +254,7 @@ If the O-Brain dashboard opens, you're all set.
 
 ```bash
 # Run from the app/ folder
-cd D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app
+cd <folder where you downloaded the repo>\app
 npm start
 ```
 
@@ -401,7 +404,7 @@ In the List tab, click the "Select" button to select and delete multiple memorie
 
 ### 7-12. ⚙ Settings Page
 
-Click the gear (⚙) icon in the header to open the dedicated settings page — a full 5th screen alongside Graph/Overview/List/Timeline. There are 5 adjustable groups, all **saved to this browser** so they persist across visits.
+Click the gear (⚙) icon in the header to open the dedicated settings page — a full 5th screen alongside Graph/Overview/List/Timeline. There are 6 adjustable groups; the first 5 (list, graph, refresh, screen, banner) are **saved to this browser** so they persist across visits (the backup list is the server's actual file list, so it's always freshly loaded).
 
 | Group | Setting | Description |
 |-------|---------|--------------|
@@ -410,6 +413,7 @@ Click the gear (⚙) icon in the header to open the dedicated settings page — 
 | **Refresh** | Auto-refresh on | When on, periodically (default 45s, adjustable 10–300s) quietly checks for new memories and updates the screen. |
 | **Screen** | Theme | Light/dark toggle. Shares state with the sun/moon icon button in the header. |
 | **Banner** | Intro banner visible | Show or hide the "auto-collected from your Claude Code conversations" banner at the top. |
+| **Backup** | Backup list · Create backup now | View the auto-created backups (date/size) and create an extra one on demand with one click. See 7-14 for details. |
 
 Selecting "Custom…" in any dropdown reveals a number input. Out-of-range values (e.g. 99999 for graph nodes) or decimals are automatically clamped to a safe value on both the client and server.
 
@@ -428,6 +432,15 @@ If similar memories are found, a card appears at the bottom of the **Overview** 
 5. **If memories exceed 1500**, this feature is automatically disabled for safety (shown as a "skipped — too many memories" message).
 
 > **The comparison threshold differs from search.** Search is deliberately loose ("might be relevant"), while duplicate detection is much stricter ("genuinely close to identical"). So search may return several hits for a topic while none of them appear as duplicate candidates — that's expected behavior.
+
+### 7-14. Backup List · Manual Restore
+
+Available at the bottom of the ⚙ Settings page, under "Backup".
+
+1. **Backup list**: Shows the backup files automatically created every time the server starts, with date and size (the latest 7 are kept; older ones are cleaned up automatically).
+2. **Create backup now**: Click the button to save the current state as a snapshot immediately (a pure add-only action that never touches existing memories, so it's safe).
+3. **Restoring manually if something goes wrong**: Open the folder path shown on screen, copy the backup file for the date you want, then replace `obrain.db` in the `data` folder with it and restart the server (the exact steps are shown right there in the on-screen instructions).
+4. **One-click automatic restore does not exist yet** — since it's the only action that would overwrite existing data, it's being built carefully as a separate step. For now, use the manual method in step 3.
 
 ---
 
@@ -1238,6 +1251,16 @@ No major competing brand under this exact name has been identified, but a formal
 ## 18. Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-18 — Backup screen completed, low-confidence filter, plugin install path portability fix</b></summary>
+
+- **Backup list + manual restore guide (see 7-14)**: The ⚙ Settings page now shows the accumulated backups (date/size), a "Create backup now" button, and step-by-step manual restore instructions.
+- **Low-confidence memory filter**: Added a filter on the List tab to show only memories with low auto-extraction confidence (below 50%) for review.
+- **`save_memory` category parameter**: Claude Code can now specify a category directly when saving a memory via the MCP tool (omit it to keep the existing auto-classification behavior).
+- **Plugin install path fix**: Earlier versions had the developer's own folder path hardcoded into the plugin config, so installing on any other computer broke the MCP tools and slash commands. Fixed so the plugin finds its own location automatically wherever it's installed. This guide's install-path examples were also updated from a specific PC path to generic examples.
+- **Error message cleanup**: Unexpected server errors now show a friendly message instead of internal details (full details are still recorded in the local server log for debugging).
+</details>
 
 <details>
 <summary><b>2026-07-15~16 — Confidence-aware search ranking, dashboard reliability & keyboard accessibility</b></summary>
