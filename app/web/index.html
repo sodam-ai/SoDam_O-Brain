@@ -569,7 +569,7 @@
 
     let all = [], searchResults = null, activeType = '', tab = 'graph', curQuery = '', sortMode = 'new';
     let selMode = false, selectedIds = new Set(); // 일괄삭제 선택 모드
-    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = ''; // 중요도/기간/프로젝트/범위 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
+    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = '', lowConfOnly = false; // 중요도/기간/프로젝트/범위/신뢰도 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
     let statTotal = 0, listLoading = false; const _memCache = {}; // 대량 대비: 전체 총계 + 목록 더보기 + 단건 캐시
     let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 브라우저에 저장돼 다음에 열어도 유지됨). 그래프 탭은 /api/graph 별도 사용, 영향 없음.
     try { const _ps = Number(localStorage.getItem('obrain-pagesize')); if (_ps >= 1 && _ps <= 500) pageSize = _ps; } catch (e) {}
@@ -621,6 +621,7 @@
       if(minImp && (m.importance||0) < minImp) return false;
       if(projectFilter && (m.project||'')!==projectFilter) return false;
       if(scopeFilter && (m.scope||'global')!==scopeFilter) return false;
+      if(lowConfOnly && !(m.confidence!=null && m.confidence<0.5)) return false; // 개요 카드 "검토하면 좋은 기억"과 동일 문턱(0.5)
       if(period!=='all'){ const d=parseDate(m.created_at); if(!d) return false; if((Date.now()-d.getTime())/86400000 > Number(period)) return false; }
       return true;
     }
@@ -791,6 +792,9 @@
         <option value="all"${period==='all'?' selected':''}>기간 전체</option>
         <option value="7"${period==='7'?' selected':''}>최근 7일</option>
         <option value="30"${period==='30'?' selected':''}>최근 30일</option></select>`;
+      html+=`<select class="sortsel" id="confSel" aria-label="신뢰도 필터" title="자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라 보기 — 개요 탭 '검토하면 좋은 기억' 카드와 같은 기준">
+        <option value="0"${!lowConfOnly?' selected':''}>신뢰도 전체</option>
+        <option value="1"${lowConfOnly?' selected':''}>검토 필요만(50% 미만)</option></select>`;
       // 프로젝트별 마지막 활동 시점 → 최근 활동순 정렬(활성=맨 위, 파기한 옛것은 시점으로 구분)
       const projInfo={};
       for(const m of (all||[])){ const p=m.project||''; if(!p) continue; const d=parseDate(m.created_at); const t=d?d.getTime():0;
@@ -808,13 +812,14 @@
         <option value="project"${scopeFilter==='project'?' selected':''}>프로젝트(project)</option></select>
       <input type="date" id="travelDate" class="sortsel" title="시간여행: 이 날짜 기준으로 살아있던 기억만 표시" value="${travelDate}" max="${new Date().toISOString().slice(0,10)}">`;
       const shown=currentSet().length;
-      const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all');
+      const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all' || lowConfOnly);
       const info = searchResults!==null ? `검색 “${esc(curQuery)}” · ${shown}개`
         : (filtered ? `${shown}개 표시 · 총 ${all.length}개` : `총 ${all.length}개의 기억`);
       const sb=document.getElementById('subbar'); sb.innerHTML = html + `<span class="countinfo">${info}</span>`;
       sb.querySelector('#sortSel').addEventListener('change', e=>{ sortMode=e.target.value; renderAll(); });
       sb.querySelector('#impSel').addEventListener('change', e=>{ minImp=Number(e.target.value); renderAll(); });
       sb.querySelector('#perSel').addEventListener('change', e=>{ period=e.target.value; renderAll(); });
+      sb.querySelector('#confSel').addEventListener('change', e=>{ lowConfOnly=e.target.value==='1'; renderAll(); });
       const _ps=sb.querySelector('#projSel'); if(_ps) _ps.addEventListener('change', e=>{ projectFilter=e.target.value; renderAll(); });
       const _ss=sb.querySelector('#scopeSel'); if(_ss) _ss.addEventListener('change', e=>{ scopeFilter=e.target.value; renderAll(); });
       const _td=sb.querySelector('#travelDate'); if(_td) _td.addEventListener('change', async e=>{ travelDate=e.target.value; all=[]; await softRefresh(); });
