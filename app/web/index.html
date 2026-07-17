@@ -945,6 +945,39 @@
       body.querySelector('#themeSel').addEventListener('change', e=>{ setTheme(e.target.value); });
 
       body.querySelector('#introChk').addEventListener('change', e=>{ setIntroVisible(e.target.checked); });
+
+      body.querySelector('#backupNowBtn').addEventListener('click', async e=>{
+        const btn=e.target; btn.disabled=true; btn.textContent='만드는 중…';
+        try{ const r=await fetch('/api/backups',{method:'POST'}); const j=await r.json();
+          if(!r.ok||!j.ok) throw new Error(j.error||'실패');
+          toast('백업을 만들었어요','ok'); await renderBackupList();
+        }catch{ toast('백업 만들기 실패','err'); }
+        finally{ btn.disabled=false; btn.textContent='지금 백업 만들기'; }
+      });
+      renderBackupList();
+    }
+
+    // 백업 목록 + 수동 복원 안내 — 읽기 전용(기존 데이터 무변경). PRD 05 §4 최소 요건.
+    async function renderBackupList(){
+      const list=document.getElementById('backupList'), help=document.getElementById('backupRestoreHelp');
+      if(!list) return;
+      let r; try{ r=await get('/api/backups'); }catch{ r=null; }
+      if(!r || !Array.isArray(r.items)){ list.textContent='불러오지 못했어요.'; if(help) help.textContent=''; return; }
+      if(!r.items.length){ list.textContent='아직 백업이 없어요(서버를 한 번 더 시작하면 생겨요).'; }
+      else {
+        const fmtSize = n => n<1024*1024 ? Math.round(n/1024)+'KB' : (n/1024/1024).toFixed(1)+'MB';
+        list.innerHTML = '보관된 백업 '+r.items.length+'개:<br>' + r.items.map(it =>
+          esc(new Date(it.mtime).toLocaleString('ko-KR')) + ' · ' + fmtSize(it.size) + ' · <code>'+esc(it.file)+'</code>'
+        ).join('<br>');
+      }
+      if(help) help.innerHTML =
+        '1) 오브레인 서버를 끕니다(터미널 창에서 Ctrl+C 또는 창 닫기).<br>'+
+        '2) 위 목록에서 되돌리고 싶은 날짜의 파일 이름을 확인합니다.<br>'+
+        '3) 이 폴더를 엽니다: <code>'+esc(r.dir||'')+'</code><br>'+
+        '4) 그 안의 되돌릴 파일을 복사해 둡니다.<br>'+
+        '5) <code>data</code> 폴더 안 <code>obrain.db</code> 이름을 <code>obrain.db.old</code>로 바꿔 남겨둡니다(만약을 위해).<br>'+
+        '6) 복사해 둔 백업 파일 이름을 <code>obrain.db</code>로 바꿔 <code>data</code> 폴더에 넣습니다.<br>'+
+        '7) 서버를 다시 시작합니다(<code>npm start</code>).';
     }
 
     /* 관계(사용자 수동 연결) */
