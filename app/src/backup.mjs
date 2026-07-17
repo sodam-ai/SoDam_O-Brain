@@ -3,6 +3,16 @@ import { mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { openDb, DATA_DIR } from './db.mjs';
 
+// 백업 목록 조회(읽기 전용) — 화면에 시각·용량을 보여주기 위함. 삭제·이동 없음(PRD 05 §4 "DB 파일 복사 안내"의 최소 요건).
+export function listBackups() {
+  const dir = join(DATA_DIR, 'backup');
+  mkdirSync(dir, { recursive: true });
+  return readdirSync(dir)
+    .filter(f => f.endsWith('.db'))
+    .map(f => { const st = statSync(join(dir, f)); return { file: f, size: st.size, mtime: st.mtimeMs }; })
+    .sort((a, b) => b.mtime - a.mtime);
+}
+
 export async function backupOnce({ keep = 7, tag = '' } = {}) {
   const dir = join(DATA_DIR, 'backup');
   mkdirSync(dir, { recursive: true });

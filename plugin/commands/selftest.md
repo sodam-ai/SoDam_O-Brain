@@ -5,7 +5,7 @@ description: O-Brain이 정상 작동하는지 한 방에 테스트합니다
 사용자가 O-Brain이 제대로 작동하는지 빠르게 테스트하려고 합니다. 아래 명령을 실행하고, ✅/❌ 결과를 **쉬운 한국어**로 설명하세요(통과면 "두뇌 정상", 실패면 어떤 항목이 ❌인지).
 
 ```
-node "D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app\src\selftest.mjs"
+node "${CLAUDE_PLUGIN_ROOT}/../app/src/selftest.mjs"
 ```
 
 이건 저장·시크릿 가림·검색을 임시 데이터로 검사하며, 실제 기억은 건드리지 않습니다.

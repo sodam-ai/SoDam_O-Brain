@@ -895,6 +895,19 @@
       </div>
 
       <div class="set-group">
+        <h3>백업</h3>
+        <div class="set-row">
+          <div class="set-desc">기억이 실수로 사라지는 걸 막기 위해, 서버를 시작할 때마다 자동으로 사본(스냅샷)을 남겨요. 최근 7개만 보관돼요.</div>
+          <div id="backupList" class="set-desc" style="margin-top:8px">불러오는 중…</div>
+          <button id="backupNowBtn" style="margin-top:8px">지금 백업 만들기</button>
+        </div>
+        <div class="set-row">
+          <div class="menu-label" style="padding:0 0 6px">문제가 생겼을 때 되돌리는 방법 (수동)</div>
+          <div class="set-desc" id="backupRestoreHelp">불러오는 중…</div>
+        </div>
+      </div>
+
+      <div class="set-group">
         <h3>안내</h3>
         <div class="set-row">
           <label class="set-check"><input type="checkbox" id="introChk"${introShown?' checked':''}> 안내 배너 표시</label>

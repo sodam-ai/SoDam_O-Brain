@@ -10,7 +10,7 @@ description: O-Brain 대시보드를 브라우저로 띄웁니다 (서버 자동
 try {
   Invoke-RestMethod "http://127.0.0.1:7740/api/health" -TimeoutSec 3 | Out-Null
 } catch {
-  Start-Process node -ArgumentList "src/server.mjs" -WorkingDirectory "D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\app" -WindowStyle Hidden
+  Start-Process node -ArgumentList "src/server.mjs" -WorkingDirectory "${CLAUDE_PLUGIN_ROOT}/../app" -WindowStyle Hidden
   Start-Sleep -Seconds 5
 }
 Start-Process "http://127.0.0.1:7740/"

@@ -9,7 +9,7 @@ import { search } from './search.mjs';
 import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
-import { backupOnce } from './backup.mjs';
+import { backupOnce, listBackups } from './backup.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.OBRAIN_PORT || 7740);
@@ -107,6 +107,16 @@ function graphFingerprint() {
   ).get();
   return `${r.mc}:${r.mid}:${r.rc}`;
 }
+// 백업 목록(읽기 전용) — PRD 05 §4 "Phase 1에도 DB 파일 복사 안내 제공" 요건의 최소 구현.
+// 자동 복원(기존 DB 덮어쓰기)은 아직 없음 — 데이터를 덮어쓰는 유일한 항목이라 별도 승인 뒤 단계적으로 추가 예정.
+app.get('/api/backups', (req, res) => {
+  try { res.json({ dir: join(DATA_DIR, 'backup'), items: listBackups() }); } catch (e) { res.status(500).json({ error: '백업 목록 조회 실패' }); }
+});
+// 지금 백업 만들기 — 기존 데이터를 전혀 건드리지 않는 순수 추가 동작(새 스냅샷 파일만 생성).
+app.post('/api/backups', async (req, res) => {
+  try { const r = await backupOnce({ tag: 'manual' }); res.json({ ok: true, ...r }); }
+  catch (e) { res.status(500).json({ error: '백업 생성 실패' }); }
+});
 // 중복 후보 조회(읽기 전용) — 실제 삭제·병합 엔드포인트는 아직 없음(사람 확인 UI 마련 후 별도 추가 예정, PRD의
 // "자동 삭제 금지·확인 게이트 필수" 원칙상 탐지와 실행을 분리해 위험을 낮춤).
 app.get('/api/duplicates', (req, res) => {
@@ -128,7 +138,7 @@ app.post('/api/duplicates/merge', async (req, res) => {
     if (mode === 'combine') await updateMemory(db, keepId, { content: keepOriginalContent + '\n\n' + dropMem.content });
     deleteMemory(db, dropId);
     res.json({ ok: true, kept: keepId, dropped: dropId, mode, dropSnapshot: dropMem, keepOriginalContent });
-  } catch (e) { console.error('[duplicates/merge]', e); res.status(500).json({ error: e.message || '정리 실패' }); }
+  } catch (e) { console.error('[duplicates/merge]', e); res.status(500).json({ error: '정리 실패' }); } // 08 §7: 상세 원인은 로컬 로그(console.error)에만, 화면엔 일반 메시지만
 });
 app.get('/api/graph', (req, res) => {
   const limit = Math.min(2000, Math.max(50, Number(req.query.limit) | 0 || 600)); // 노드 상한(대량 프리즈 방지) — 소수 입력 시 정수화(better-sqlite3 LIMIT 바인딩 방어)
@@ -178,7 +188,7 @@ app.post('/api/memory', async (req, res) => {
       source, confidence: Number.isFinite(confNum) ? Math.min(1, Math.max(0, confNum)) : 1,
       project, scope: scope === 'project' ? 'project' : 'global' });
     res.status(result.skipped ? 200 : 201).json({ ok: true, ...result });
-  } catch (e) { console.error('[memory:create]', e); res.status(500).json({ error: e.message || '저장 실패' }); }
+  } catch (e) { console.error('[memory:create]', e); res.status(500).json({ error: '저장 실패' }); } // 08 §7: 동일 원칙
 });
 
 // 기억 편집(사용자) — 내용/유형/중요도. 내용 변경 시 저장 전 자동 redact + 재임베딩(store.updateMemory).

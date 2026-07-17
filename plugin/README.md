@@ -3,11 +3,11 @@
 클로드코드 대화에서 기억을 **자동 저장**(SessionEnd)하고, 새 세션에 **자동 주입**(SessionStart)하며, AI가 직접 검색할 **MCP 도구**(`search_memory`·`get_memory`)를 제공합니다.
 
 > 무거운 코드·의존성은 모두 `../app`에 있습니다. 이 폴더는 얇은 선언·런처입니다.
-> 코어를 절대경로로 찾습니다. 프로젝트 폴더를 옮기면 환경변수 `OBRAIN_ROOT`를 새 경로로 설정하세요.
+> 코어는 이 폴더 기준 상대경로(`../app`)로 자동으로 찾습니다(plugin/과 app/이 항상 형제 폴더인 한 어느 컴퓨터에서도 동작). 두 폴더를 따로 떨어뜨려 둔 경우에만 환경변수 `OBRAIN_ROOT`를 새 경로로 설정하세요.
 
 ## 설치(로컬) — 2단계
 1. (한 번만) 앱 의존성: `cd ../app && npm install`
-2. 클로드코드에서 **목록 등록**: `/plugin marketplace add D:\AI_Dev_Work\2026y\26y_06m_21d_SoDam_O-Brain\plugin`
+2. 클로드코드에서 **목록 등록**: `/plugin marketplace add <이 저장소를 내려받은 경로>\plugin` (예: 이 저장소를 `C:\Tools\O-Brain`에 내려받았다면 `/plugin marketplace add C:\Tools\O-Brain\plugin`)
 3. 클로드코드에서 **설치**: `/plugin install o-brain@o-brain-local`
 4. **클로드코드 새로 시작** → 훅·MCP 등록 완료.
 

@@ -9,7 +9,7 @@
   "mcpServers": {
     "o-brain": {
       "command": "node",
-      "args": ["D:\\AI_Dev_Work\\2026y\\26y_06m_21d_SoDam_O-Brain\\app\\src\\mcp-server.mjs"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/../app/src/mcp-server.mjs"]
     }
   }
 }
