@@ -1513,7 +1513,7 @@
         for(const l of gData.links){ const s=lid(l.source),t=lid(l.target); if(s===localFocus) keep.add(t); if(t===localFocus) keep.add(s); }
         nodes=gData.nodes.filter(n=>keep.has(n.id));
         links=gData.links.filter(l=>keep.has(lid(l.source))&&keep.has(lid(l.target)));
-      } else if(activeType || minImp || period!=='all' || projectFilter){      // 필터: 노드 자체 필드로(대량 대비, all 의존 X)
+      } else if(activeType || minImp || period!=='all' || projectFilter || scopeFilter || lowConfOnly || noiseOnly){      // 필터: 노드 자체 필드로(대량 대비, all 의존 X)
         nodes=gData.nodes.filter(passesFilter);
         const keep=new Set(nodes.map(n=>n.id));
         links=gData.links.filter(l=>keep.has(lid(l.source))&&keep.has(lid(l.target)));
