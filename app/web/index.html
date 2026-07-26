@@ -569,7 +569,10 @@
 
     let all = [], searchResults = null, activeType = '', tab = 'graph', curQuery = '', sortMode = 'new';
     let selMode = false, selectedIds = new Set(); // 일괄삭제 선택 모드
-    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = '', lowConfOnly = false; // 중요도/기간/프로젝트/범위/신뢰도 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
+    let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = '', lowConfOnly = false, noiseOnly = false; // 중요도/기간/프로젝트/범위/신뢰도/노이즈 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
+    // 노이즈 의심 판정(M12-① 추출 게이트와 동일 기준) — 2026-07-26 이전 저장분에 섞인 세션요약 인용/표/헤더를 사람이 골라보기 위함.
+    const NOISE_RE = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
+    function isNoisy(m){ return NOISE_RE.test(String(m.content||'').trim()); }
     let statTotal = 0, listLoading = false; const _memCache = {}; // 대량 대비: 전체 총계 + 목록 더보기 + 단건 캐시
     let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 브라우저에 저장돼 다음에 열어도 유지됨). 그래프 탭은 /api/graph 별도 사용, 영향 없음.
     try { const _ps = Number(localStorage.getItem('obrain-pagesize')); if (_ps >= 1 && _ps <= 500) pageSize = _ps; } catch (e) {}
@@ -622,6 +625,7 @@
       if(projectFilter && (m.project||'')!==projectFilter) return false;
       if(scopeFilter && (m.scope||'global')!==scopeFilter) return false;
       if(lowConfOnly && !(m.confidence!=null && m.confidence<0.5)) return false; // 개요 카드 "검토하면 좋은 기억"과 동일 문턱(0.5)
+      if(noiseOnly && !isNoisy(m)) return false;
       if(period!=='all'){ const d=parseDate(m.created_at); if(!d) return false; if((Date.now()-d.getTime())/86400000 > Number(period)) return false; }
       return true;
     }
@@ -707,6 +711,7 @@
         <div class="ov-card" title="확정된 관계로 이었을 때, 메인 그래프와 따로 떨어져 서로끼리만 연결된 무리가 있는지 보여줘요"><h4>떨어진 소집단</h4>${islandsHtml}</div>
         ${projHtml}
         <div class="ov-card" id="ov-dup"><h4>중복 후보</h4><div class="ov-mut">확인 중…</div></div>
+        <div class="ov-card" id="ov-relq"><h4>관계 제안</h4><div class="ov-mut">확인 중…</div></div>
         ${s.lowConf?`<div class="ov-card"><h4>검토하면 좋은 기억</h4><div class="ov-mut">자동 추출 신뢰도가 낮은(50% 미만) 기억이 <b style="color:var(--text)">${s.lowConf}개</b> 있어요. 내용이 맞는지 한 번 확인해 보세요.</div></div>`:''}`;
       host.querySelectorAll('.ov-hub[data-id]').forEach(el=>{ const open=async()=>{ const m=await getMemById(el.dataset.id); if(m) openDetail(m); };
         el.addEventListener('click',open); el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } }); });
@@ -714,6 +719,53 @@
       if(orphanCard){ const go=()=>{ orphanView=true; localFocus=null; showTab('graph'); };
         orphanCard.addEventListener('click',go); orphanCard.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); }
       renderDupCandidates();
+      renderRelQueue();
+    }
+    // 관계 제안 큐(M12-④) — 새 서버 API 없이 기존 /api/memory/:id/similar(단건 KNN, 대량에도 동작)와
+    // /api/relation(수동 연결)만 재사용. 연결 없는 기억을 1건씩 순회하며 사람이 종류를 확정(자동판정 금지, PRD 원칙).
+    // 범위는 '지금 불러온 기억'까지만(전수 아님) — 과대표시 방지, 설정 페이지에서 불러오기 개수를 늘리면 범위도 늘어남.
+    let relQueueIds=[], relQueueIdx=0;
+    function computeOrphanQueue(){
+      const linked=new Set(); for(const r of rels){ linked.add(r.from_id); linked.add(r.to_id); }
+      return (all||[]).filter(m=>!linked.has(m.id)).map(m=>m.id);
+    }
+    async function renderRelQueue(){
+      const host=document.getElementById('ov-relq'); if(!host) return;
+      try{ await refreshRels(); }catch{}
+      relQueueIds=computeOrphanQueue(); relQueueIdx=0;
+      if(!relQueueIds.length){ host.innerHTML=`<h4>관계 제안</h4><div class="ov-mut">지금 불러온 기억(${(all||[]).length}개) 안에서는 연결 없는 기억이 없어요.</div>`; return; }
+      await showNextRelSuggestion(host);
+    }
+    async function showNextRelSuggestion(host){
+      host = host || document.getElementById('ov-relq'); if(!host) return;
+      if(relQueueIdx>=relQueueIds.length){ host.innerHTML=`<h4>관계 제안</h4><div class="ov-mut">지금 불러온 범위의 고립 기억을 모두 확인했어요.</div>`; return; }
+      const id=relQueueIds[relQueueIdx];
+      const base=(all||[]).find(m=>m.id===id);
+      if(!base){ relQueueIdx++; return showNextRelSuggestion(host); }
+      let sug=[]; try{ sug=await get('/api/memory/'+id+'/similar'); }catch{ sug=[]; }
+      if(!Array.isArray(sug) || !sug.length){ relQueueIdx++; return showNextRelSuggestion(host); }
+      const top=sug[0];
+      const typeOpts=Object.keys(REL).map(k=>`<option value="${k}">${esc(REL[k].ko)}</option>`).join('');
+      host.innerHTML=`<h4>관계 제안 (${relQueueIdx+1}/${relQueueIds.length} 고립 기억)</h4>
+        <div class="ov-mut" style="margin-bottom:6px">연결 없는 기억과 비슷한 기억을 찾았어요. 정말 관계가 있으면 종류를 고르고 연결하세요.</div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px"><b>고립 기억</b><br>${esc(String(base.content).slice(0,90))}</div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px"><b>[${esc(top.type)}]</b> ${esc(String(top.content).slice(0,90))}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="relqType" aria-label="관계 유형">${typeOpts}</select>
+          <button id="relqConnect" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;font-size:13px">연결</button>
+          <button id="relqSkip" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px">건너뛰기</button>
+        </div>`;
+      host.querySelector('#relqSkip').addEventListener('click', ()=>{ relQueueIdx++; showNextRelSuggestion(host); });
+      host.querySelector('#relqConnect').addEventListener('click', async ()=>{
+        const type=host.querySelector('#relqType').value;
+        try{
+          const r=await fetch('/api/relation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_id:id,to_id:top.id,type})});
+          const j=await r.json();
+          if(!r.ok || !j.ok){ toast(j.error||'연결 실패','err'); return; }
+          await refreshRels(); toast('연결했어요','ok');
+          relQueueIdx++; showNextRelSuggestion(host);
+        }catch{ toast('연결 실패','err'); }
+      });
     }
     /* 중복 후보 — 탐지는 자동(읽기전용), 실제 정리는 사람이 내용을 보고 확인해야만 실행(PRD: 자동삭제 금지) */
     async function renderDupCandidates(){
@@ -795,6 +847,9 @@
       html+=`<select class="sortsel" id="confSel" aria-label="신뢰도 필터" title="자동 추출 신뢰도가 낮은(50% 미만) 기억만 골라 보기 — 개요 탭 '검토하면 좋은 기억' 카드와 같은 기준">
         <option value="0"${!lowConfOnly?' selected':''}>신뢰도 전체</option>
         <option value="1"${lowConfOnly?' selected':''}>검토 필요만(50% 미만)</option></select>`;
+      html+=`<select class="sortsel" id="noiseSel" aria-label="노이즈 필터" title="세션요약 인용(Claude:/User:)·표·헤더가 섞여 잘못 저장된 것으로 의심되는 기억만 골라 보기(2026-07-26 이전 저장분에 존재 — 추출 게이트는 이후 수정됨)">
+        <option value="0"${!noiseOnly?' selected':''}>노이즈 필터 끔</option>
+        <option value="1"${noiseOnly?' selected':''}>노이즈 의심만</option></select>`;
       // 프로젝트별 마지막 활동 시점 → 최근 활동순 정렬(활성=맨 위, 파기한 옛것은 시점으로 구분)
       const projInfo={};
       for(const m of (all||[])){ const p=m.project||''; if(!p) continue; const d=parseDate(m.created_at); const t=d?d.getTime():0;
@@ -812,7 +867,7 @@
         <option value="project"${scopeFilter==='project'?' selected':''}>프로젝트(project)</option></select>
       <input type="date" id="travelDate" class="sortsel" title="시간여행: 이 날짜 기준으로 살아있던 기억만 표시" value="${travelDate}" max="${new Date().toISOString().slice(0,10)}">`;
       const shown=currentSet().length;
-      const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all' || lowConfOnly);
+      const filtered = !!(activeType || minImp || projectFilter || scopeFilter || period!=='all' || lowConfOnly || noiseOnly);
       const info = searchResults!==null ? `검색 “${esc(curQuery)}” · ${shown}개`
         : (filtered ? `${shown}개 표시 · 총 ${all.length}개` : `총 ${all.length}개의 기억`);
       const sb=document.getElementById('subbar'); sb.innerHTML = html + `<span class="countinfo">${info}</span>`;
@@ -820,6 +875,7 @@
       sb.querySelector('#impSel').addEventListener('change', e=>{ minImp=Number(e.target.value); renderAll(); });
       sb.querySelector('#perSel').addEventListener('change', e=>{ period=e.target.value; renderAll(); });
       sb.querySelector('#confSel').addEventListener('change', e=>{ lowConfOnly=e.target.value==='1'; renderAll(); });
+      sb.querySelector('#noiseSel').addEventListener('change', e=>{ noiseOnly=e.target.value==='1'; renderAll(); });
       const _ps=sb.querySelector('#projSel'); if(_ps) _ps.addEventListener('change', e=>{ projectFilter=e.target.value; renderAll(); });
       const _ss=sb.querySelector('#scopeSel'); if(_ss) _ss.addEventListener('change', e=>{ scopeFilter=e.target.value; renderAll(); });
       const _td=sb.querySelector('#travelDate'); if(_td) _td.addEventListener('change', async e=>{ travelDate=e.target.value; all=[]; await softRefresh(); });
