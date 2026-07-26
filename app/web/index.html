@@ -408,8 +408,10 @@
       <div style="position:relative">
         <button class="icontop" id="exportBtn" aria-label="내보내기" title="내보내기" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></button>
         <div class="menu" id="exportMenu" role="menu">
-          <button data-fmt="json" role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>JSON으로 저장</button>
-          <button data-fmt="md" role="menuitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>마크다운으로 저장</button>
+          <button data-fmt="json" role="menuitem" title="지금 화면에 불러온 기억만(최대 500건, 관계 미포함)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>JSON으로 저장(화면 것만)</button>
+          <button data-fmt="md" role="menuitem" title="지금 화면에 불러온 기억만(최대 500건, 관계 미포함)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>마크다운으로 저장(화면 것만)</button>
+          <button data-full="json" role="menuitem" title="지금까지 모은 기억 전체(관계 포함) — data/export 폴더에 파일로 저장. ⚠️ project 항목에 로컬 경로가 포함될 수 있어요"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>JSON 전체 백업(서버 저장)</button>
+          <button data-full="md" role="menuitem" title="지금까지 모은 기억 전체(관계 포함) — data/export 폴더에 파일로 저장. ⚠️ project 항목에 로컬 경로가 포함될 수 있어요"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>마크다운 전체 백업(서버 저장)</button>
         </div>
       </div>
       <button class="icontop" id="settingsBtn" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -1281,6 +1283,19 @@
       document.getElementById('exportBtn').setAttribute('aria-expanded','false');
     }
 
+    // 전체 백업 내보내기(서버) — 위 exportData()는 화면에 불러온 것만(최대 500건, 관계 미포함) 내보내는 반면,
+    // 이건 DB 전체(관계 포함)를 서버가 data/export/ 폴더에 파일로 직접 써서 큰 응답을 브라우저로 보내지 않음(프리징 방지).
+    async function exportFull(fmt){
+      try {
+        const r=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({format:fmt})});
+        const j=await r.json();
+        if(!r.ok||!j.ok) throw new Error(j.error||'실패');
+        toast('전체 백업 저장됨('+j.count+'건): '+j.file,'ok');
+      } catch(e){ toast('전체 백업 실패','err'); }
+      document.getElementById('exportMenu').classList.remove('open');
+      document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+    }
+
     /* 테마 */
     const sunIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 1v2.5M12 20.5V23M4.2 4.2l1.8 1.8M18 18l1.8 1.8M1 12h2.5M20.5 12H23M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>';
     const moonIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
@@ -1382,6 +1397,7 @@
     const exBtn=document.getElementById('exportBtn'), exMenu=document.getElementById('exportMenu');
     exBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=exMenu.classList.toggle('open'); exBtn.setAttribute('aria-expanded', open?'true':'false'); });
     exMenu.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>exportData(b.dataset.fmt)));
+    exMenu.querySelectorAll('[data-full]').forEach(b=>b.addEventListener('click',()=>exportFull(b.dataset.full)));
     document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
     document.getElementById('settingsBtn').addEventListener('click', ()=>showTab('settings'));
     document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
@@ -1410,6 +1426,8 @@
         {t:'밝게 / 어둡게 전환', ico:'◐', hint:'테마', run:()=>toggleTheme()},
         {t:'JSON으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('json')},
         {t:'마크다운으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('md')},
+        {t:'JSON 전체 백업(서버 저장)', ico:'⤓', hint:'내보내기', run:()=>exportFull('json')},
+        {t:'마크다운 전체 백업(서버 저장)', ico:'⤓', hint:'내보내기', run:()=>exportFull('md')},
       ];
       function render(q){
         q=(q||'').trim().toLowerCase();

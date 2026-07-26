@@ -10,6 +10,7 @@ import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce, listBackups } from './backup.mjs';
+import { exportMemories } from './export.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.OBRAIN_PORT || 7740);
@@ -139,6 +140,13 @@ app.post('/api/duplicates/merge', async (req, res) => {
     deleteMemory(db, dropId);
     res.json({ ok: true, kept: keepId, dropped: dropId, mode, dropSnapshot: dropMem, keepOriginalContent });
   } catch (e) { console.error('[duplicates/merge]', e); res.status(500).json({ error: '정리 실패' }); } // 08 §7: 상세 원인은 로컬 로그(console.error)에만, 화면엔 일반 메시지만
+});
+// 내보내기(Markdown/JSON) — 읽기 전용 스냅샷. 경로는 항상 data/export/ 고정(사용자 지정 경로 없음, 08 §3/§4 경로조작 방지).
+// 응답엔 파일 경로·건수만 담고 본문 전체는 담지 않음(대량 내보내기 시 프리징 방지 — 서버가 파일로 직접 씀).
+app.post('/api/export', (req, res) => {
+  const format = (req.body || {}).format === 'md' ? 'md' : 'json';
+  try { res.json({ ok: true, ...exportMemories(db, { format }) }); }
+  catch (e) { console.error('[export]', e); res.status(500).json({ error: '내보내기 실패' }); } // 08 §7: 상세는 로컬 로그만
 });
 app.get('/api/graph', (req, res) => {
   const limit = Math.min(2000, Math.max(50, Number(req.query.limit) | 0 || 600)); // 노드 상한(대량 프리즈 방지) — 소수 입력 시 정수화(better-sqlite3 LIMIT 바인딩 방어)
