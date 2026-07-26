@@ -90,7 +90,15 @@ export function stripInjected(text) {
   t = t.replace(/```[\s\S]*?```/g, ' ');                                 // 코드펜스(설정·로그 등)
   t = t.replace(/<command-[\s\S]*?<\/command-[a-z]*>/gi, ' ');           // 슬래시명령 래퍼
   const drop = /(📌|O-Brain 자동 주입|O-Brain 로컬 기억|페르소나 v5|\[페르소나|persona_core|MANDATORY SKILL|hookSpecificOutput|additionalContext|UserPromptSubmit hook|SessionStart hook|SessionEnd hook|Skill\()/i;
-  t = t.split('\n').filter(line => !drop.test(line)).join('\n');         // 주입 마커 든 줄 제거
+  // 대화 인용·문서구조 노이즈(2026-07-26 실DB 감사: 노이즈 표본 20/20이 이 형태) — 압축요약/전사에 박힌
+  // "**Claude:**"/"Assistant:"/"User:" 인용, 마크다운 표(| |)·헤더(#)는 '지금 사용자가 한 말'이 아니라
+  // 세션 요약·문서 조각이 user 턴에 섞여 들어온 것. 실제 사용자 발화는 이 형태로 시작하지 않으므로 과필터 위험 낮음.
+  const dropQuoteOrDoc = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s/i;
+  const dropTableRow = /\|.*\|/;
+  t = t.split('\n').filter(line => {
+    const trimmed = line.trim();
+    return !drop.test(line) && !dropQuoteOrDoc.test(trimmed) && !dropTableRow.test(trimmed);
+  }).join('\n');         // 주입 마커·인용·문서구조 든 줄 제거
   return t.replace(/[ \t]{2,}/g, ' ').trim();
 }
 

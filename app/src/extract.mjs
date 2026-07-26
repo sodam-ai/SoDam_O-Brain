@@ -10,6 +10,10 @@ const CUES = [
   { type: '지식', importance: 2, re: /(경로는|위치는|버전은|때문에|이유는|구조는)/ },
 ];
 
+// 대화/문서 인용 백스톱 — stripInjected가 줄 단위로 거르고 남은 조각이 문장분리 후에도
+// 인용/표/헤더 형태면 2차 방어(2026-07-26 실측: 노이즈 20/20 일치, 이중 방어로 누락 방지).
+const QUOTE_RE = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
+
 // 대화 텍스트(주로 사용자 발화)에서 기억 후보를 뽑는다.
 export function ruleExtract(exchanges, { max = 8 } = {}) {
   const out = [];
@@ -19,7 +23,7 @@ export function ruleExtract(exchanges, { max = 8 } = {}) {
     const parts = String(ex.text)
       .split(/[.!?。\n·]|(?<=다)\s|(?<=요)\s/)
       .map(s => s.trim())
-      .filter(s => s.length >= 6 && s.length <= 160);
+      .filter(s => s.length >= 6 && s.length <= 160 && !QUOTE_RE.test(s));
     for (const s of parts) {
       const hit = CUES.find(c => c.re.test(s));
       if (!hit) continue;
