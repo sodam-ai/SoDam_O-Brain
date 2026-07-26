@@ -52,6 +52,9 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise |
 | **Graph Reliability & Keyboard Access** | Shows an error message with a retry button if the graph fails to load; every memory in the graph can be navigated and opened using only Tab/Enter, no mouse required |
 | **Low-Confidence Filter** | On the List tab, filter to show only memories with low auto-extraction confidence (below 50%) for review |
+| **Noise Memory Filter** | On the List tab, filter out memories that look like conversation summaries or quotes accidentally saved as memories, then bulk-clean them with "Select All" |
+| **Relation Suggestion Queue** | On the Overview tab, review memories with no relations one at a time and decide whether to link them to a similar memory (never auto-linked) |
+| **Full Backup Export** | From the header's export menu, save your entire memory set (including relations) to a JSON or Markdown file — separate from the existing "visible items only" export |
 
 ---
 
@@ -271,6 +274,16 @@ Full data flow diagram and security header list: **[GUIDE.en.md Section 12](./GU
 ## Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-26 — Noise memory cleanup tools, full backup export, scope filter defect fix</b></summary>
+
+- **Noise memory filter + bulk cleanup**: Added a List-tab filter to catch cases where a Claude Code session summary or conversation quote (e.g. "Claude:", tables, headers) was accidentally saved as a memory. A "Select All" button lets you select every filtered result at once for cleanup (never auto-deleted — you confirm before deleting, with a 10-second undo).
+- **Save/inject defenses**: Tightened the extraction rules so future saves pick up less of this noise, and added a defense so noise already saved before this fix doesn't get pulled back into the memories auto-loaded at the start of your next conversation.
+- **Relation suggestion queue**: On the Overview tab, memories with no relations are shown one at a time with a similar-memory suggestion — you decide whether to link or skip (the AI never guesses the relation type on its own).
+- **Full backup export**: Added "Full JSON Backup" / "Full Markdown Backup" to the header's export menu. Unlike the existing export (visible items only, up to 500), this saves your entire memory set — including relations — to a file.
+- **Scope (global/project) filter defect fix**: Found and fixed a bug where the "global"/"project" scope filter didn't actually work anywhere — List, Search, or Graph — so "global" showed project memories mixed in, and "project" often showed nothing at all.
+</details>
 
 <details>
 <summary><b>2026-07-18 — Backup screen completed, low-confidence filter, plugin install path portability fix</b></summary>
