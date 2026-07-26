@@ -436,6 +436,7 @@
     <section id="view-list" class="view" role="tabpanel" aria-labelledby="t-list" hidden>
       <div id="selBar">
         <span class="s-count" id="selCount"></span>
+        <button class="s-cancel" id="selAll">전체 선택</button>
         <button class="s-cancel" id="selCancel">취소</button>
         <button class="s-del" id="selDel" disabled>삭제</button>
         <button class="chip" id="selModeBtn" style="margin-left:auto"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="4" height="4" rx="1"/><rect x="3" y="11" width="4" height="4" rx="1"/><rect x="3" y="17" width="4" height="4" rx="1"/><path d="M11 7h10M11 13h10M11 19h10"/></svg> 선택</button>
@@ -1178,12 +1179,28 @@
     function updateSelToolbar(){
       const n=selectedIds.size;
       const countEl=document.getElementById('selCount'), cancelEl=document.getElementById('selCancel'),
-            delEl=document.getElementById('selDel'), toggleEl=document.getElementById('selModeBtn');
+            delEl=document.getElementById('selDel'), toggleEl=document.getElementById('selModeBtn'),
+            allEl=document.getElementById('selAll');
       countEl.style.display=selMode?'inline':'none'; countEl.textContent=n+'개 선택됨';
       cancelEl.style.display=selMode?'inline-block':'none';
       delEl.style.display=selMode?'inline-block':'none'; delEl.disabled=n===0;
       delEl.title = n===0 ? '삭제할 기억을 먼저 선택하세요' : '선택한 기억 삭제';
       if(toggleEl) toggleEl.style.display=selMode?'none':'';
+      if(allEl){
+        allEl.style.display=selMode?'inline-block':'none';
+        const visible=currentSet(); const allSelected=visible.length>0 && visible.every(m=>selectedIds.has(m.id));
+        allEl.textContent=allSelected?'전체 해제':'전체 선택';
+        allEl.title=`지금 필터에 보이는 ${visible.length}개를 한번에 ${allSelected?'선택 해제':'선택'}`;
+      }
+    }
+    // 필터된 것 전체 선택 — 노이즈/저신뢰 필터로 걸러낸 다수 기억을 손으로 한 개씩 안 눌러도 되게(M12 후속).
+    // 선택만 할 뿐 삭제는 기존 확인모달+10초 undo를 그대로 거침(자동삭제 아님, PRD 원칙 그대로 유지).
+    function toggleSelectAllVisible(){
+      const visible=currentSet();
+      const allSelected=visible.length>0 && visible.every(m=>selectedIds.has(m.id));
+      if(allSelected) visible.forEach(m=>selectedIds.delete(m.id));
+      else visible.forEach(m=>selectedIds.add(m.id));
+      renderList(currentSet()); updateSelToolbar();
     }
     function toggleSelMode(){
       selMode=!selMode; if(!selMode) selectedIds.clear();
@@ -1368,6 +1385,7 @@
     document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
     document.getElementById('settingsBtn').addEventListener('click', ()=>showTab('settings'));
     document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
+    document.getElementById('selAll').addEventListener('click', toggleSelectAllVisible);
     document.getElementById('selCancel').addEventListener('click', exitSelMode);
     document.getElementById('selDel').addEventListener('click', openBatchDelModal);
     document.getElementById('bdCancel').addEventListener('click', closeBatchDelModal);
