@@ -3,6 +3,13 @@ import { openDb } from './db.mjs';
 import { listMemories } from './store.mjs';
 import { search } from './search.mjs';
 
+// 노이즈 방어(2026-07-26, M12 후속) — extract.mjs/index.html과 동일 기준(대화인용·표·헤더).
+// M12-①은 '앞으로 저장될' 노이즈만 막았고, 2026-07-26 이전 저장분(실측 383건)은 아직 DB에 남아있음.
+// 그 기존 노이즈가 중요도/최신성 점수로 다음 세션 컨텍스트에 다시 새어들지 않도록 주입 직전에 한 번 더 거른다.
+// (삭제 아님 — 주입 후보에서만 제외. 실데이터는 그대로 두고, 정리는 목록 탭 노이즈 필터+전체선택으로 사람이 확인 후 수행)
+const NOISE_RE = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
+const isNoisy = m => NOISE_RE.test(String(m.content || '').trim());
+
 // 세션 시작(검색어 없음) 주입용 합성 랭킹 — 중요도만으론 매번 같은 옛 기억만 떠서,
 // 최신성·신뢰도를 함께 반영(PRD 07 §5). 검색어가 있으면 search()가 관련도를 처리하므로 그대로 둠.
 // 가중치(2026-07-16 정정): PRD 07 §5 "의미유사도0.7+중요도0.15+최신성0.1+신뢰도0.05"에서 관련도 항을 뺀
@@ -46,7 +53,8 @@ export async function buildInjection({ query = '', project = '', max = 8 } = {})
           db.prepare("SELECT DISTINCT to_id FROM relation WHERE type='SUPERSEDES'").all().map(r => r.to_id)
         );
       } catch { invalidated = new Set(); }
-      const valid = invalidated.size ? pool.filter(m => !invalidated.has(m.id)) : pool;
+      const notInvalidated = invalidated.size ? pool.filter(m => !invalidated.has(m.id)) : pool;
+      const valid = notInvalidated.filter(m => !isNoisy(m)); // 노이즈 방어(위 주석 참고)
       mems = rankNoQuery(valid, max);
     }
   } catch (e) {
@@ -54,6 +62,8 @@ export async function buildInjection({ query = '', project = '', max = 8 } = {})
   } finally {
     db.close();
   }
+  // 안전망 — query 경로(search 결과)·fallback 경로(listMemories)는 위 pool 필터를 안 거치므로 여기서 한 번 더 방어.
+  if (mems) mems = mems.filter(m => !isNoisy(m));
   if (!mems || !mems.length) return null;
   // 라벨 명확화 — 다른 메모리 도구와 섞여도 'O-Brain 기억'임을 구분(충돌 완화)
   const lines = mems.map(m => `- 📌[O-Brain·${m.type}] ${m.content}`);
