@@ -34,7 +34,7 @@ summary { cursor: pointer; font-weight: 600; }
 img { max-width: 100%; }</style>
 </head>
 <body>
-<!-- 한국어: 이 파일 · English: README.en.md · 상세 가이드: GUIDE.md · (이 문서와 README.html 내용 동일) --><h1 id="소담-오브레인-sodam-o-brain--ai-기억-시스템">소담 오브레인 (SoDam O-Brain) — AI 기억 시스템</h1>
+<!-- 한국어: 이 파일 · English: README.en.md · (이 문서와 README.html 내용 동일) --><h1 id="소담-오브레인-sodam-o-brain--ai-기억-시스템">소담 오브레인 (SoDam O-Brain) — AI 기억 시스템</h1>
 <blockquote>
 <p><strong>AI와 나눈 대화에서 중요한 결정·약속을 자동으로 저장하고, 지식 그래프로 시각화하는 완전 로컬 기억 도구.</strong></p>
 </blockquote>
@@ -279,7 +279,6 @@ npm install
 <li>(Claude Code 사용자) 평소처럼 대화 중 또렷한 결정 문장을 말하고 <code>/clear</code> → 자동 저장</li>
 <li>화면 우측 상단 <strong>⚙ 설정</strong>에서 목록 개수·그래프 노드 개수 등을 취향대로 조절</li>
 </ol>
-<p>상세 스텝바이스텝: <strong><a href="./GUIDE.md">GUIDE.md</a></strong></p>
 <hr>
 <h2 id="실행--사용-방법">실행 · 사용 방법</h2>
 <h3 id="실행">실행</h3>
@@ -317,7 +316,6 @@ $env:OBRAIN_PORT=7741; npm start       # 포트를 바꿔서 시작 (PowerShell)
 <td>목록/타임라인/개요 불러오기 개수, 그래프 표시 노드 개수, 자동 새로고침 켜짐·주기, 테마, 안내 배너 표시 여부 — 5개 항목을 이 화면에서 직접 조절. 값은 브라우저(localStorage)에 저장돼 다음에 열어도 유지됨</td>
 </tr>
 </tbody></table>
-<p>자세한 사용법(그래프 조작·관계 연결·검색·시간여행·일괄삭제 등)은 <strong><a href="./GUIDE.md">GUIDE.md</a></strong> 7장 참고.</p>
 <hr>
 <h2 id="주요-명령어">주요 명령어</h2>
 <pre><code class="language-bash"># app/ 폴더에서 실행
@@ -327,7 +325,6 @@ npm run backup     # 수동 백업
 npm run status     # DB 상태 조회
 npm run seed       # 예제 데이터 입력 (테스트용)
 </code></pre>
-<p>전체 HTTP API 엔드포인트·MCP 도구 입출력 표는 <strong><a href="./GUIDE.md#10-%EB%AA%85%EB%A0%B9%EC%96%B4-%EC%A0%84%EC%B2%B4-%EB%AA%A9%EB%A1%9D">GUIDE.md 10장</a></strong> 참고.</p>
 <hr>
 <h2 id="파일데이터-위치">파일·데이터 위치</h2>
 <table>
@@ -354,8 +351,8 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <td><code>app/.env.local</code> (없으면 기본값 사용)</td>
 </tr>
 <tr>
-<td>이 문서들</td>
-<td>프로젝트 최상위(<code>README.md</code>/<code>GUIDE.md</code>/영문판/각 <code>.html</code>)</td>
+<td>이 문서</td>
+<td>프로젝트 최상위(<code>README.md</code>/<code>README.en.md</code>/각 <code>.html</code>)</td>
 </tr>
 </tbody></table>
 <h3 id="환경-변수-appenvlocal">환경 변수 (<code>app/.env.local</code>)</h3>
@@ -382,7 +379,6 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <h2 id="워크플로우">워크플로우</h2>
 <p><strong>일반 사용자(웹 UI 중심):</strong> 아침에 <code>npm start</code> → 어제 기억 확인 → 작업 중 중요 결정 직접 입력 → 저녁에 관계 연결·정리.</p>
 <p><strong>Claude Code 사용자(MCP/플러그인):</strong> 대화 중 결정을 말하고 <code>/clear</code>로 세션 종료 → 자동 저장 → 가끔 <code>/o-brain:open</code>으로 화면 확인 → <code>/o-brain:backup</code>으로 주기적 백업.</p>
-<p>상세 흐름은 <strong><a href="./GUIDE.md#11-%EC%9B%8C%ED%81%AC%ED%94%8C%EB%A1%9C%EC%9A%B0-%EC%9D%BC%EB%B0%98%EC%A0%81%EC%9D%B8-%ED%95%98%EB%A3%A8-%EC%82%AC%EC%9A%A9-%ED%8C%A8%ED%84%B4">GUIDE.md 11장</a></strong> 참고.</p>
 <hr>
 <h2 id="아키텍처-요약">아키텍처 요약</h2>
 <pre><code>[Claude Code / 브라우저]
@@ -403,11 +399,18 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <li><code>data/</code>, <code>.env.local</code>, <code>*.sqlite</code>는 <code>.gitignore</code>에 포함 — Git에 절대 올라가지 않음</li>
 <li>외부 클라우드 통신 없음. 임베딩 모델도 완전 로컬 실행</li>
 <li>입력값 검증: 잘못된 id·범위 밖 숫자·CORS 미허용 출처는 서버가 400/403/404로 안전하게 거부(실측 확인됨)</li>
+<li>예상치 못한 서버 오류(예: 깨진 형식의 요청)가 나도 내부 파일 경로·오류 스택 정보는 절대 화면에 노출되지 않음 — 안전한 안내 문구만 표시, 상세 기록은 서버 로그에만 남음(2026-07-27 전역 에러 핸들러 추가)</li>
 </ul>
-<p>데이터 흐름 다이어그램·보안 헤더 전체 목록은 <strong><a href="./GUIDE.md#12-%EB%B3%B4%EC%95%88--%EB%8D%B0%EC%9D%B4%ED%84%B0-%ED%9D%90%EB%A6%84">GUIDE.md 12장</a></strong> 참고.</p>
+<p>적용되는 보안 헤더: <code>Content-Security-Policy</code>(같은 출처 리소스만 허용) · <code>X-Content-Type-Options: nosniff</code> · <code>X-Frame-Options: DENY</code>(iframe 삽입 차단) · <code>Referrer-Policy: no-referrer</code>.</p>
 <hr>
 <h2 id="업데이트-내용-요약">업데이트 내용 요약</h2>
 <p>최신 항목이 위에 오도록 정리했습니다. 각 항목을 눌러 펼쳐 보세요.</p>
+<details>
+<summary><b>2026-07-27 — 백업 선택 화면 개선 + 보안 점검(오류 노출 차단·의존성 취약점 감소)</b></summary><ul>
+<li><strong>백업 목록에서 원하는 백업 고르기</strong>: ⚙ 설정 화면의 백업 목록에서 되돌리고 싶은 백업을 클릭해 선택하면, 아래 수동 복원 안내가 그 백업 파일 이름으로 정확히 채워지고 &quot;파일 이름 복사&quot; 버튼도 함께 나타나 여러 단계를 옮겨 적다 실수할 위험을 줄였습니다. (버튼 한 번으로 자동 복원하는 기능은 데이터 안전을 위해 만들지 않았습니다 — 파일 교체는 여전히 안내를 따라 직접 하는 방식입니다.)</li>
+<li><strong>오류 메시지 보안 점검</strong>: 형식이 깨진 요청(예: 손상된 데이터 전송)을 서버에 보내는 극히 드문 상황을 실제로 재현해 점검한 결과, 서버 내부의 파일 경로나 오류 상세 정보가 응답에 노출될 수 있는 지점을 발견해 즉시 차단했습니다. 이제 이런 상황에서도 사용자에게는 안전한 안내 문구만 전달되고, 문제 진단에 필요한 상세 기록은 서버 로그 파일에만 남습니다.</li>
+<li><strong>의존성(부품 라이브러리) 보안 점검</strong>: 프로젝트가 사용하는 외부 라이브러리의 알려진 보안 취약점을 점검(<code>npm audit</code>)해 9건 중 3건을 해결했습니다(위험도 &quot;높음&quot; 5건→4건, &quot;중간&quot; 4건→2건으로 감소, 기존 코드와 호환되는 안전한 범위 내에서만 자동 업데이트). 남은 6건(높음 4·중간 2)은 이 프로젝트가 실제로 그 코드 경로를 쓰지 않는다는 것을 직접 코드로 확인했습니다. 검색·저장에 쓰이는 SQL 처리, 화면 표시 시 악성 스크립트 방어 코드도 함께 재점검했습니다.</details></li>
+</ul>
 <details>
 <summary><b>2026-07-26 — 노이즈 기억 자동정리 도구, 전체 백업 내보내기, 범위 필터 결함 수정</b></summary><ul>
 <li><strong>노이즈 기억 필터 + 일괄 정리</strong>: 클로드코드 세션 요약이나 대화 인용문(예: &quot;Claude:&quot;, 표, 헤더)이 실수로 기억으로 잘못 저장되는 경우를 목록 탭에서 골라 확인할 수 있는 필터 추가. &quot;전체 선택&quot; 버튼으로 필터링된 것을 한 번에 선택해 정리(자동 삭제 아님 — 사람이 확인 후 삭제, 10초 되돌리기 지원).</li>
@@ -511,7 +514,6 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <td>정상입니다 — 그래프 탭은 &quot;표시할 노드 개수&quot;라는 별도 설정을 씁니다(목록 개수와 다름)</td>
 </tr>
 </tbody></table>
-<p>더 많은 증상별 대처는 <strong><a href="./GUIDE.md#15-%EB%AC%B8%EC%A0%9C--%EC%98%A4%EB%A5%98-%EB%8C%80%EC%B2%98-%EB%B0%A9%EB%B2%95">GUIDE.md 15장</a></strong> 참고.</p>
 <hr>
 <h2 id="faq-자주-묻는-질문">FAQ (자주 묻는 질문)</h2>
 <p><strong>Q. 데이터는 어디에 저장되나요?</strong>
@@ -520,7 +522,6 @@ A. <code>app/data/obrain.db</code>(SQLite 파일)에만 저장됩니다. 외부�
 A. O-Brain 자체는 무료입니다. Claude Code/Anthropic API를 쓰는 경우 그 서비스의 요금이 별도로 적용될 수 있습니다.</p>
 <p><strong>Q. 그래프 탭 노드 개수와 목록 개수 설정은 같은 건가요?</strong>
 A. 아닙니다. ⚙ 설정 페이지의 &quot;한 번에 불러올 개수&quot;는 목록/타임라인/개요에만, &quot;표시할 노드 개수&quot;는 그래프 탭에만 각각 따로 적용됩니다.</p>
-<p>더 많은 FAQ는 <strong><a href="./GUIDE.md#16-faq-%EC%9E%90%EC%A3%BC-%EB%AC%BB%EB%8A%94-%EC%A7%88%EB%AC%B8">GUIDE.md 16장</a></strong> 참고.</p>
 <hr>
 <h2 id="라이선스--저작권--상업적-용도">라이선스 · 저작권 · 상업적 용도</h2>
 <p><strong>Apache License 2.0 © SoDam AI Studio, 2026</strong></p>
@@ -556,11 +557,10 @@ A. 아닙니다. ⚙ 설정 페이지의 &quot;한 번에 불러올 개수&quot;
 <li>내장 오픈소스 라이브러리(better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph 등)는 <strong>각자의 라이선스</strong>(MIT/Apache-2.0)를 따릅니다</li>
 <li>&quot;Claude&quot;, &quot;Anthropic&quot;은 해당 회사의 상표입니다. O-Brain은 이들과 공식 제휴 관계가 없습니다</li>
 <li>라이선스 전문: <code>LICENSE</code> 파일 · 의존성 고지 전문: <code>NOTICE</code> 파일</li>
-<li>법률·저작권·상업 조건의 상세 항목(허용/의무/책임제한/상표/개인정보 등 12개 세부 조항)은 <strong><a href="./GUIDE.md#17-%EB%B2%95%EB%A5%A0--%EC%A0%80%EC%9E%91%EA%B6%8C--%EB%9D%BC%EC%9D%B4%EC%84%A0%EC%8A%A4--%EC%83%81%EC%97%85%EC%A0%81-%EC%9A%A9%EB%8F%84">GUIDE.md 17장</a></strong> 참고</li>
 </ul>
 <hr>
 <p><em>이 문서와 README.html의 내용은 동일합니다.</em>
-<em>상세 가이드: <a href="./GUIDE.md">GUIDE.md</a> (한국어) · <a href="./GUIDE.en.md">GUIDE.en.md</a> (영문)</em></p>
+<em>영문판: <a href="./README.en.md">README.en.md</a></em></p>
 
 </body>
 </html>

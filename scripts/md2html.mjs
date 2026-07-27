@@ -1,4 +1,4 @@
-// README/GUIDE(한/영) 4개 마크다운을 "내용 100% 동일한" HTML로 변환합니다.
+// README(한/영) 2개 마크다운을 "내용 100% 동일한" HTML로 변환합니다.
 // 사용법: cd app && npm install --no-save marked (한 번만) → node ../scripts/md2html.mjs (프로젝트 루트에서 실행)
 // marked는 여기서만 쓰는 문서 생성 도구라 package.json에는 저장하지 않습니다(--no-save).
 //
@@ -95,8 +95,6 @@ ${bodyHtml}
 const files = [
   { md: 'README.md', html: 'README.html', title: '소담 오브레인 (SoDam O-Brain) — README' },
   { md: 'README.en.md', html: 'README.en.html', title: 'SoDam O-Brain — README' },
-  { md: 'GUIDE.md', html: 'GUIDE.html', title: '소담 오브레인 (SoDam O-Brain) — 완전 가이드' },
-  { md: 'GUIDE.en.md', html: 'GUIDE.en.html', title: 'SoDam O-Brain — Complete Guide' },
 ];
 
 for (const f of files) {

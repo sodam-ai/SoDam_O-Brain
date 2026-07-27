@@ -1,4 +1,4 @@
-<!-- English: this file · 한국어: README.md · Full guide: GUIDE.en.md · (This document and README.en.html have identical content) -->
+<!-- English: this file · 한국어: README.md · (This document and README.en.html have identical content) -->
 
 # SoDam O-Brain — AI Memory System
 
@@ -168,8 +168,6 @@ Available MCP tools: `save_memory`, `search_memory`, `get_memory`, `get_related`
 3. (Claude Code users) Speak a clear decision during a normal conversation, then run `/clear` → it's saved automatically
 4. Use **⚙ Settings** in the top right to adjust list size, graph node count, and more to your taste
 
-Full step-by-step guide: **[GUIDE.en.md](./GUIDE.en.md)**
-
 ---
 
 ## Running · Usage
@@ -194,8 +192,6 @@ Stop the server: `Ctrl + C` in the terminal.
 | **Timeline** | Memories in chronological order |
 | **⚙ Settings** | Adjust page size for List/Timeline/Overview, graph node count, auto-refresh on/off and interval, theme, and intro banner visibility — 5 controls in one page. Values are saved to your browser (localStorage) and persist across visits |
 
-For detailed usage (graph interaction, linking relations, search, time travel, bulk delete, etc.), see **[GUIDE.en.md](./GUIDE.en.md)** Section 7.
-
 ---
 
 ## Key Commands
@@ -209,8 +205,6 @@ npm run status     # View DB stats
 npm run seed       # Add sample data (for testing)
 ```
 
-Full HTTP API endpoint list and MCP tool input/output table: **[GUIDE.en.md Section 10](./GUIDE.en.md#10-complete-command-reference)**.
-
 ---
 
 ## File & Data Locations
@@ -221,7 +215,7 @@ Full HTTP API endpoint list and MCP tool input/output table: **[GUIDE.en.md Sect
 | Auto backups | `app/data/backup/` (keeps latest 7) |
 | API token file | `app/data/.api-token` (regenerated each run) |
 | Personal settings | `app/.env.local` (uses defaults if absent) |
-| These documents | Project root (`README.md`/`GUIDE.md`, English variants, and each `.html`) |
+| This document | Project root (`README.md`/`README.en.md` and each `.html`) |
 
 ### Environment Variables (`app/.env.local`)
 
@@ -237,8 +231,6 @@ Full HTTP API endpoint list and MCP tool input/output table: **[GUIDE.en.md Sect
 **General user (web UI focused):** Start with `npm start` in the morning → review yesterday's memories → add important decisions directly during work → link related memories and clean up in the evening.
 
 **Claude Code user (MCP/plugin):** Speak decisions during chat, end the session with `/clear` → auto-saved → occasionally open the dashboard with `/o-brain:open` → back up regularly with `/o-brain:backup`.
-
-Full workflow details: **[GUIDE.en.md Section 11](./GUIDE.en.md#11-workflow-typical-daily-usage)**.
 
 ---
 
@@ -266,14 +258,23 @@ Tech stack: Node.js ES Modules · Express.js v5 · SQLite (better-sqlite3) · sq
 - `data/`, `.env.local`, `*.sqlite` are in `.gitignore` — never committed to Git
 - No external cloud communication. Embedding model runs entirely locally
 - Input validation: invalid IDs, out-of-range numbers, and disallowed CORS origins are all safely rejected by the server with 400/403/404 (verified by testing)
+- Even on an unexpected server error (e.g. a malformed request), internal file paths and error stack details are never exposed on screen — only a safe generic message is shown; full details go to the server log only (global error handler added 2026-07-27)
 
-Full data flow diagram and security header list: **[GUIDE.en.md Section 12](./GUIDE.en.md#12-security--data-flow)**.
+Security headers applied: `Content-Security-Policy` (same-origin resources only) · `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` (blocks iframe embedding) · `Referrer-Policy: no-referrer`.
 
 ---
 
 ## Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details>
+<summary><b>2026-07-27 — Backup selection screen improvement + security review (error-exposure fix, dependency vulnerabilities reduced)</b></summary>
+
+- **Pick the backup you want from the list**: In the ⚙ Settings tab's backup list, clicking a backup now selects it — the manual restore steps below fill in with that exact backup's file name, and a "Copy file name" button appears, cutting down the risk of mistyping the name across several manual steps. (A one-click automatic restore was deliberately not built, for data-safety reasons — replacing the file still follows the manual steps.)
+- **Error message security review**: While testing a rare edge case — sending the server a malformed request (e.g. corrupted data) — we found a spot where the response could leak internal file paths or error details, and closed it immediately. Now, even in this situation, users only see a safe generic message; the detailed diagnostic record stays in the server log only.
+- **Dependency security review**: Ran a vulnerability scan (`npm audit`) on the external libraries this project uses and fixed 3 of 9 findings (high severity 5→4, moderate 4→2; auto-updated only within versions compatible with the existing code). We confirmed by directly reading the code that the remaining 6 (4 high, 2 moderate) sit in code paths this project doesn't actually use. Also re-verified the SQL handling used for search/save and the on-screen script-injection defenses.
+</details>
 
 <details>
 <summary><b>2026-07-26 — Noise memory cleanup tools, full backup export, scope filter defect fix</b></summary>
@@ -373,8 +374,6 @@ The complete milestone-by-milestone history is in the project's `CHECKPOINT.md` 
 | Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, restore from the latest `.db` file in `app/data/backup/` |
 | Changed a count in Settings but the graph didn't change | This is expected — the Graph tab uses a separate "node count" setting (different from the list page size) |
 
-More symptom-specific fixes: **[GUIDE.en.md Section 15](./GUIDE.en.md#15-troubleshooting)**.
-
 ---
 
 ## FAQ (Frequently Asked Questions)
@@ -387,8 +386,6 @@ A. O-Brain itself is free. If you use Claude Code or the Anthropic API, those se
 
 **Q. Are the graph node count and the list page size the same setting?**
 A. No. In the ⚙ Settings page, "page size" applies only to List/Timeline/Overview, while "graph node count" applies only to the Graph tab.
-
-More FAQs: **[GUIDE.en.md Section 16](./GUIDE.en.md#16-faq-frequently-asked-questions)**.
 
 ---
 
@@ -407,9 +404,8 @@ More FAQs: **[GUIDE.en.md Section 16](./GUIDE.en.md#16-faq-frequently-asked-ques
 - Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, etc.) are under **their own licenses** (MIT/Apache-2.0)
 - "Claude" and "Anthropic" are trademarks of their respective owners. O-Brain has no official affiliation with them
 - Full license text: `LICENSE` file · Full dependency notices: `NOTICE` file
-- For the detailed legal/copyright/commercial terms (permitted uses, obligations, liability limits, trademarks, privacy, and more — 12 subsections), see **[GUIDE.en.md Section 17](./GUIDE.en.md#17-legal--copyright--license--commercial-use)**
 
 ---
 
 *This document and README.en.html have identical content.*
-*Full guide: [GUIDE.en.md](./GUIDE.en.md) (English) · [GUIDE.md](./GUIDE.md) (Korean)*
+*Korean version: [README.md](./README.md)*
