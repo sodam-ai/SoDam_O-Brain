@@ -243,6 +243,16 @@ app.get('/', (req, res) => {
 });
 app.use(express.static(join(HERE, '..', 'web')));
 
+// 전역 에러 핸들러(반드시 마지막) — PRD 08 §7: 운영에서 스택트레이스·내부경로 비노출.
+// express.json() 파싱 실패(깨진 JSON)·본문 용량 초과처럼 라우트의 개별 try/catch를 거치지 않는 에러가
+// 여기로 떨어짐 — 지금까지는 Express 기본 핸들러가 스택트레이스·서버 내부 경로를 그대로 응답에 노출했음
+// (2026-07-27 검증 중 발견: 깨진 JSON 전송 시 D:\...\node_modules 경로까지 그대로 노출 확인).
+app.use((err, req, res, next) => {
+  console.error('[unhandled]', err);
+  const status = (err && (err.status || err.statusCode)) || 500;
+  res.status(status).json({ error: '요청을 처리하지 못했어요' });
+});
+
 app.listen(PORT, HOST, () => {
   console.log(`O-Brain 로컬 서버 ▶ http://${HOST}:${PORT}  (임베딩: ${embedMode()})`);
   // 시작 시 데이터 안전망 — 자동 백업(PRD 05 §4)
