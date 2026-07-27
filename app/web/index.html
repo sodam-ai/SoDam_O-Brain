@@ -587,6 +587,7 @@
     try { if (localStorage.getItem('obrain-autorefresh') === '0') autoRefreshOn = false; } catch (e) {}
     let autoRefreshSec = 45; // 폴링 주기(초)
     try { const _as = Number(localStorage.getItem('obrain-autorefresh-sec')); if (_as >= 10 && _as <= 300) autoRefreshSec = _as; } catch (e) {}
+    let selectedBackup = null; // 설정 탭에서 사용자가 고른 백업 파일명(복원 안내 개인화용) — 자동 파일교체는 하지 않음
     const baseName = p => String(p||'').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
     // 기억 1건 얻기 — 로드된 all에 없으면(상한 밖) 서버에서 id로 가져옴(대량 대비)
     async function getMemById(id){ id=Number(id); const a=(all||[]).find(x=>x.id===id); if(a) return a;
@@ -1017,26 +1018,45 @@
     }
 
     // 백업 목록 + 수동 복원 안내 — 읽기 전용(기존 데이터 무변경). PRD 05 §4 최소 요건.
+    // 선택 UI(2026-07-27 추가): 목록에서 백업 1개를 클릭하면 그 파일명이 반영된 안내로 개인화 + 이름 복사 버튼.
+    // 자동 파일교체(실제 DB 덮어쓰기)는 아직 만들지 않음 — 별도 승인 대상(위험도 높음, CHECKPOINT 참고).
     async function renderBackupList(){
       const list=document.getElementById('backupList'), help=document.getElementById('backupRestoreHelp');
       if(!list) return;
       let r; try{ r=await get('/api/backups'); }catch{ r=null; }
       if(!r || !Array.isArray(r.items)){ list.textContent='불러오지 못했어요.'; if(help) help.textContent=''; return; }
-      if(!r.items.length){ list.textContent='아직 백업이 없어요(서버를 한 번 더 시작하면 생겨요).'; }
+      if(!r.items.length){ list.textContent='아직 백업이 없어요(서버를 한 번 더 시작하면 생겨요).'; selectedBackup=null; }
       else {
+        if(selectedBackup && !r.items.some(it=>it.file===selectedBackup)) selectedBackup=null;
         const fmtSize = n => n<1024*1024 ? Math.round(n/1024)+'KB' : (n/1024/1024).toFixed(1)+'MB';
-        list.innerHTML = '보관된 백업 '+r.items.length+'개:<br>' + r.items.map(it =>
-          esc(new Date(it.mtime).toLocaleString('ko-KR')) + ' · ' + fmtSize(it.size) + ' · <code>'+esc(it.file)+'</code>'
-        ).join('<br>');
+        list.innerHTML = '보관된 백업 '+r.items.length+'개 (되돌리고 싶은 백업을 클릭해 선택하세요):<br>' + r.items.map(it => {
+          const sel = it.file===selectedBackup;
+          return '<button type="button" class="backup-item" data-file="'+esc(it.file)+'" style="display:block;width:100%;text-align:left;margin:4px 0;padding:6px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font:inherit;color:inherit;background:'+(sel?'var(--accent-weak)':'transparent')+';box-shadow:'+(sel?'inset 0 0 0 1px var(--accent)':'none')+'">'
+            + esc(new Date(it.mtime).toLocaleString('ko-KR')) + ' · ' + fmtSize(it.size) + ' · <code>'+esc(it.file)+'</code>'
+            + (sel?' <b>(선택됨)</b>':'') + '</button>';
+        }).join('');
+        list.querySelectorAll('.backup-item').forEach(btn=>{
+          btn.addEventListener('click', ()=>{ selectedBackup = (btn.dataset.file===selectedBackup) ? null : btn.dataset.file; renderBackupList(); });
+        });
       }
-      if(help) help.innerHTML =
+      if(!help) return;
+      if(!selectedBackup){
+        help.innerHTML = '위 목록에서 되돌리고 싶은 백업을 먼저 클릭해 선택하면, 그 파일 이름이 반영된 단계별 안내가 나와요.';
+        return;
+      }
+      help.innerHTML =
+        '선택한 백업: <code>'+esc(selectedBackup)+'</code> <button type="button" id="backupCopyNameBtn" style="margin-left:6px">파일 이름 복사</button><br><br>'+
         '1) 오브레인 서버를 끕니다(터미널 창에서 Ctrl+C 또는 창 닫기).<br>'+
-        '2) 위 목록에서 되돌리고 싶은 날짜의 파일 이름을 확인합니다.<br>'+
-        '3) 이 폴더를 엽니다: <code>'+esc(r.dir||'')+'</code><br>'+
-        '4) 그 안의 되돌릴 파일을 복사해 둡니다.<br>'+
-        '5) <code>data</code> 폴더 안 <code>obrain.db</code> 이름을 <code>obrain.db.old</code>로 바꿔 남겨둡니다(만약을 위해).<br>'+
-        '6) 복사해 둔 백업 파일 이름을 <code>obrain.db</code>로 바꿔 <code>data</code> 폴더에 넣습니다.<br>'+
-        '7) 서버를 다시 시작합니다(<code>npm start</code>).';
+        '2) 이 폴더를 엽니다: <code>'+esc(r.dir||'')+'</code><br>'+
+        '3) 그 안에서 <code>'+esc(selectedBackup)+'</code> 파일을 복사해 둡니다.<br>'+
+        '4) <code>data</code> 폴더 안 <code>obrain.db</code> 이름을 <code>obrain.db.old</code>로 바꿔 남겨둡니다(만약을 위해).<br>'+
+        '5) 복사해 둔 <code>'+esc(selectedBackup)+'</code> 파일 이름을 <code>obrain.db</code>로 바꿔 <code>data</code> 폴더에 넣습니다.<br>'+
+        '6) 서버를 다시 시작합니다(<code>npm start</code>).';
+      const cbtn=document.getElementById('backupCopyNameBtn');
+      if(cbtn) cbtn.addEventListener('click', async ()=>{
+        try{ await navigator.clipboard.writeText(selectedBackup); toast('파일 이름을 복사했어요','ok'); }
+        catch{ toast('복사하지 못했어요','err'); }
+      });
     }
 
     /* 관계(사용자 수동 연결) */
