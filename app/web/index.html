@@ -777,7 +777,9 @@
       let r; try{ r=await get('/api/duplicates'); }catch{ r=null; }
       if(!r || r.skipped){ host.innerHTML=`<h4>중복 후보</h4><div class="ov-mut">${r&&r.reason?esc(r.reason):'확인할 수 없어요'}</div>`; return; }
       if(!r.pairs.length){ host.innerHTML=`<h4>중복 후보</h4><div class="ov-mut">비슷한 기억이 발견되지 않았어요.</div>`; return; }
+      const cleanBtn = r.exact ? `<button id="dupCleanAllBtn" style="margin-bottom:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:12px">완전일치만 전부 한번에 정리</button>` : '';
       host.innerHTML=`<h4>중복 후보 (${r.pairs.length}쌍)</h4><div class="ov-mut" style="margin-bottom:6px">클릭해서 내용을 비교하고 정리 여부를 직접 확인하세요.</div>`
+        +cleanBtn
         +r.pairs.slice(0,10).map((p,i)=>`<div class="ov-hub" data-i="${i}" role="button" tabindex="0" style="cursor:pointer">
           <div style="font-size:13px">${esc(String(p.a.content).slice(0,50))}</div>
           <div style="font-size:11px;color:var(--muted);margin:2px 0">유사도 매우 높음 ↕</div>
@@ -787,6 +789,41 @@
         const open=()=>openMergeConfirm(r.pairs[Number(el.dataset.i)]);
         el.addEventListener('click',open); el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
       });
+      const cb=document.getElementById('dupCleanAllBtn'); if(cb) cb.addEventListener('click', openDupCleanConfirm);
+    }
+    // 완전일치 중복 일괄 정리 — 판단 필요 없는(내용이 문자 그대로 같은) 경우만 대상, 확인모달+10초 undo는 그대로 유지.
+    function openDupCleanConfirm(){
+      _bdMode='dupclean';
+      document.getElementById('bd-title').textContent='완전히 같은 내용의 중복 기억 정리';
+      document.getElementById('bd-desc').innerHTML='내용이 문자 그대로 똑같은 중복만 찾아, 가장 오래된 것 하나만 남기고 정리합니다. 정리 전 자동 백업이 저장됩니다.<br><span style="color:var(--danger);font-weight:600">10초 안에 되돌리기가 가능해요.</span>';
+      const scrim=document.getElementById('bdScrim'); scrim.classList.add('open'); scrim.removeAttribute('aria-hidden');
+      setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20);
+    }
+    async function execDupClean(){
+      closeBatchDelModal();
+      let res;
+      try{
+        const r=await fetch('/api/duplicates/clean-exact',{method:'POST'});
+        res=await r.json().catch(()=>({})); if(!r.ok) throw new Error(res.error||'서버 오류');
+      }catch(e){ toast('정리 실패: '+(e.message||''),'err'); return; }
+      const snaps=res.deleted||[];
+      if(!snaps.length){ toast('정리할 완전일치 중복이 없어요','ok'); return; }
+      all=[]; await softRefresh(); renderDupCandidates();
+      toast(`완전일치 중복 ${snaps.length}개를 정리했어요`,'ok', async()=>{
+        try{
+          for(const s of snaps){
+            const r2=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({content:s.content,type:s.type,importance:s.importance,source:s.source,confidence:s.confidence,project:s.project})});
+            const j2=await r2.json().catch(()=>({})); if(!r2.ok) continue;
+            const nid=j2.id;
+            for(const rel of (s.relations||[])){
+              try{ await fetch('/api/relation',{method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({from_id:rel.from_id===s.id?nid:rel.from_id,to_id:rel.to_id===s.id?nid:rel.to_id,type:rel.type})}); }catch{}
+            }
+          }
+          all=[]; await softRefresh(); renderDupCandidates(); toast('되돌렸어요','ok');
+        }catch{ toast('되돌리기 실패','err'); }
+      }, 10000);
     }
     function openMergeConfirm(pair){
       const ov=document.createElement('div');
@@ -1240,7 +1277,7 @@
       setTimeout(()=>document.getElementById('bdDelConfirm').focus(),20); }
     function closeBatchDelModal(){
       const scrim=document.getElementById('bdScrim');
-      if(scrim.contains(document.activeElement)){ const back=_bdMode==='single'?document.getElementById('d-del'):document.getElementById('selDel'); if(back) back.focus(); }
+      if(scrim.contains(document.activeElement)){ const back=_bdMode==='single'?document.getElementById('d-del'):(_bdMode==='dupclean'?document.getElementById('dupCleanAllBtn'):document.getElementById('selDel')); if(back) back.focus(); }
       scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); }
     async function execBatchDelete(){
       closeBatchDelModal();
@@ -1425,7 +1462,7 @@
     document.getElementById('selCancel').addEventListener('click', exitSelMode);
     document.getElementById('selDel').addEventListener('click', openBatchDelModal);
     document.getElementById('bdCancel').addEventListener('click', closeBatchDelModal);
-    document.getElementById('bdDelConfirm').addEventListener('click', ()=>{ if(_bdMode==='single') execSingleDelete(); else execBatchDelete(); });
+    document.getElementById('bdDelConfirm').addEventListener('click', ()=>{ if(_bdMode==='single') execSingleDelete(); else if(_bdMode==='dupclean') execDupClean(); else execBatchDelete(); });
     document.getElementById('bdScrim').addEventListener('click', e=>{ if(e.target===document.getElementById('bdScrim')) closeBatchDelModal(); });
 
     /* 단축키 */

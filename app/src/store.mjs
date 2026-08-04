@@ -82,10 +82,34 @@ export function getSimilar(db, id, k = 6) {
 // 오판(전혀 다른 기억을 중복으로 제안) 위험을 낮추려 그보다 훨씬 엄격한 값을 보수적으로 채택.
 // 그래도 이 함수는 "후보 제안"만 한다 — 실제 삭제·병합은 사람이 내용을 직접 보고 확인해야만 실행(자동 실행 없음, PRD 준수).
 const DUP_DISTANCE = 0.6;
+// 완전일치(문자 그대로 같은 content) 중복 — 벡터 계산 없이 GROUP BY 한 번으로 찾아 findDuplicateCandidates의
+// 1500건 성능가드와 무관하게 항상 가벼움(2093건 실DB 실측: 즉시 응답). 큰 DB에서 "정리 기능 자체가 없음"
+// 대신, 유사도 판단 없이 확실한 완전일치만이라도 사람이 정리할 수 있게 함. 반환 모양은 findDuplicateCandidates와
+// 동일(pairs[].a/b/distance) — 기존 UI(개요 탭 중복 후보 카드·merge 모달)를 그대로 재사용하기 위함.
+export function findExactDuplicates(db, limit, total) {
+  const rows = db.prepare(`
+    SELECT m.id b_id, g.min_id a_id
+    FROM memory m
+    JOIN (SELECT content, MIN(id) min_id, COUNT(*) c FROM memory GROUP BY content HAVING c > 1) g
+      ON m.content = g.content AND m.id != g.min_id
+    LIMIT ?
+  `).all(limit);
+  if (!rows.length) return { pairs: [], skipped: false, total, threshold: 0, exact: true };
+  const ids = [...new Set(rows.flatMap(r => [r.a_id, r.b_id]))];
+  const mems = db.prepare(
+    `SELECT id, content, type, importance, created_at FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
+  ).all(...ids);
+  const byId = new Map(mems.map(m => [m.id, m]));
+  const pairs = rows.map(r => ({ a: byId.get(r.a_id), b: byId.get(r.b_id), distance: 0 }))
+    .filter(p => p.a && p.b);
+  return { pairs, skipped: false, total, threshold: 0, exact: true };
+}
+
 export function findDuplicateCandidates(db, { limit = 30 } = {}) {
   const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
-  // graph.mjs와 동일한 성능가드 철학 — 노드당 개별 벡터쿼리라 DB가 크면 느려짐(2026-07-11 실측 교훈 재사용)
-  if (total > 1500) return { pairs: [], skipped: true, total, reason: '기억이 많아(1500건 초과) 안전을 위해 건너뜀' };
+  // graph.mjs와 동일한 성능가드 철학 — 노드당 개별 벡터쿼리라 DB가 크면 느려짐(2026-07-11 실측 교훈 재사용).
+  // 단 완전일치는 벡터 없이 가벼우므로 이 규모에서도 그 경로만 대체 실행(위 findExactDuplicates).
+  if (total > 1500) return findExactDuplicates(db, limit, total);
   const mems = db.prepare('SELECT id, content, type, importance, created_at FROM memory ORDER BY id').all();
   const byId = new Map(mems.map(m => [m.id, m]));
   const knn = db.prepare(

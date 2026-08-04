@@ -1,10 +1,28 @@
 // 세션 캡처 — transcript .jsonl → user/assistant text → 시크릿제거 → 추출 → 저장.
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync, openSync, readSync, closeSync } from 'node:fs';
 import { dirname, parse as parsePath } from 'node:path';
 import { ruleExtract } from './extract.mjs';
 import { redact } from './redact.mjs';
 import { openDb } from './db.mjs';
 import { addMemory } from './store.mjs';
+
+// 대용량 transcript(수백MB~1GB+)를 통째로 메모리에 올리면 Node 문자열 한도(≈512MB) 초과로 크래시하거나
+// (실측: 967MB 파일에서 ERR_STRING_TOO_LONG), 그 전에도 동기 전체읽기가 수 초 걸려 Stop 훅 타임아웃
+// 위험(PRD 05 §1 "백그라운드 처리, 사용자 대기 없음" 위반). 파일 끝 20MB만 읽어 최근 대화를 안전하게
+// 확보한다(작은 파일은 기존과 동일하게 전체를 읽음 — 회귀 없음).
+const MAX_TAIL_BYTES = 20 * 1024 * 1024;
+function readTail(path, maxBytes = MAX_TAIL_BYTES) {
+  const size = statSync(path).size;
+  if (size <= maxBytes) return readFileSync(path, 'utf-8');
+  const fd = openSync(path, 'r');
+  try {
+    const buf = Buffer.alloc(maxBytes);
+    readSync(fd, buf, 0, maxBytes, size - maxBytes);
+    const text = buf.toString('utf-8');
+    const nl = text.indexOf('\n'); // 첫 줄은 경계에서 잘렸을 수 있으니 버림
+    return nl === -1 ? text : text.slice(nl + 1);
+  } finally { closeSync(fd); }
+}
 
 // 파일이 속한 '프로젝트 루트' = .git 가 있는 폴더(최우선·진짜 저장소 루트).
 // .git 이 없으면 package.json/.PRD 가 있는 가장 바깥 폴더로 폴백(app/ 같은 하위서 멈추지 않게).
@@ -33,7 +51,7 @@ function projectRootOf(filePath, cache) {
 export function detectProject(transcriptPath, fallback = null) {
   try {
     if (!transcriptPath || !existsSync(transcriptPath)) return fallback;
-    let lines = readFileSync(transcriptPath, 'utf-8').split('\n').filter(l => l.trim());
+    let lines = readTail(transcriptPath).split('\n').filter(l => l.trim());
     if (lines.length > 1500) lines = lines.slice(-1500);
     const skip = /\\node_modules\\|\\AppData\\|\\\.git\\|\\Temp\\|\\O-Brain\\app\\data\b/i;
     const cache = new Map(), rootCount = {};
@@ -61,7 +79,7 @@ export function detectProject(transcriptPath, fallback = null) {
 // transcript .jsonl(줄별 JSON) → user/assistant 텍스트 교환 목록.
 // tool_use/tool_result 등 잡음 제외, {type:'text'}만 취함(Explore 확인 스키마).
 export function parseTranscript(path, { tailLines = 600 } = {}) {
-  let lines = readFileSync(path, 'utf-8').split('\n').filter(l => l.trim());
+  let lines = readTail(path).split('\n').filter(l => l.trim());
   if (lines.length > tailLines) lines = lines.slice(-tailLines); // 대용량 방지: 최근 위주
   const exchanges = [];
   for (const line of lines) {

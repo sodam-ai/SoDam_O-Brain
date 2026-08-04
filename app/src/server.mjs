@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
-import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates } from './store.mjs';
+import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce, listBackups } from './backup.mjs';
@@ -133,13 +133,38 @@ app.post('/api/duplicates/merge', async (req, res) => {
   const keepMem = getMemory(db, keepId), dropMem = getMemory(db, dropId);
   if (!keepMem || !dropMem) return res.status(404).json({ error: '없는 기억' });
   try { await backupOnce({ tag: 'before-merge' }); }
-  catch (e) { return res.status(500).json({ error: '백업 실패로 정리 중단: ' + (e?.message || '') }); }
+  catch (e) { console.error('[duplicates/merge]', e); return res.status(500).json({ error: '백업 실패로 정리 중단' }); } // 08 §7: 상세는 로컬 로그만(2026-08-02 정보노출 수정 — clean-exact와 동일 패턴)
   try {
     const keepOriginalContent = keepMem.content; // 되돌리기용 원본(합치기 모드일 때만 의미 있음)
     if (mode === 'combine') await updateMemory(db, keepId, { content: keepOriginalContent + '\n\n' + dropMem.content });
     deleteMemory(db, dropId);
     res.json({ ok: true, kept: keepId, dropped: dropId, mode, dropSnapshot: dropMem, keepOriginalContent });
   } catch (e) { console.error('[duplicates/merge]', e); res.status(500).json({ error: '정리 실패' }); } // 08 §7: 상세 원인은 로컬 로그(console.error)에만, 화면엔 일반 메시지만
+});
+// 완전일치 중복 일괄 정리 — "찾기는 항상 자동, 실행은 사람이 확인 버튼 누른 뒤"(PRD 자동삭제 금지 원칙 유지).
+// findDuplicateCandidates가 아니라 findExactDuplicates를 직접 호출 — DB가 줄어 total<=1500이 되어
+// KNN(유사도) 경로로 바뀌어도, 이 일괄삭제만큼은 "완전일치"만 대상으로 고정(모호한 유사매칭까지
+// 자동 삭제 대상에 넣지 않기 위함). 안전장치: batch-delete와 동일하게 백업 1회 + 루프 삭제
+// (merge API처럼 건마다 백업하면 keep=7 회전이 최근 진짜 백업을 밀어냄 — 2026-07-27 M14 2차 시도
+// 사고와 같은 패턴이라 반드시 피함). 응답에 삭제분 전체 스냅샷(관계 포함)을 담아 undo를
+// 클라이언트 캐시(all 배열, 페이지 상한 있음)에 의존하지 않고 되돌릴 수 있게 함.
+app.post('/api/duplicates/clean-exact', async (req, res) => {
+  const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
+  const r = findExactDuplicates(db, 1000, total);
+  if (!r.pairs.length) return res.json({ ok: true, deleted: [], failed: [] });
+  try { await backupOnce({ tag: 'before-dup-clean' }); }
+  catch (e) { console.error('[duplicates/clean-exact]', e); return res.status(500).json({ error: '백업 실패로 정리 중단' }); } // 08 §7: 상세는 로컬 로그만(2026-08-02 검증 중 발견 — e.message가 서버 절대경로를 응답에 노출하고 있었음)
+  const deleted = [], failed = [];
+  for (const p of r.pairs) {
+    const id = p.b.id;
+    const relRows = db.prepare('SELECT from_id, to_id, type FROM relation WHERE from_id = ? OR to_id = ?').all(id, id);
+    try {
+      const n = deleteMemory(db, id);
+      if (n) deleted.push({ id, content: p.b.content, type: p.b.type, importance: p.b.importance, source: 'user', confidence: 1, project: null, relations: relRows });
+      else failed.push(id);
+    } catch { failed.push(id); }
+  }
+  res.json({ ok: true, deleted, failed });
 });
 // 내보내기(Markdown/JSON) — 읽기 전용 스냅샷. 경로는 항상 data/export/ 고정(사용자 지정 경로 없음, 08 §3/§4 경로조작 방지).
 // 응답엔 파일 경로·건수만 담고 본문 전체는 담지 않음(대량 내보내기 시 프리징 방지 — 서버가 파일로 직접 씀).
@@ -176,7 +201,7 @@ app.post('/api/memory/batch-delete', async (req, res) => {
   const validIds = ids.map(Number).filter(n => Number.isInteger(n) && n > 0);
   if (!validIds.length) return res.status(400).json({ error: '유효한 id가 없어요' });
   try { await backupOnce({ tag: 'before-delete' }); }
-  catch (e) { return res.status(500).json({ error: '백업 실패로 삭제 중단: ' + (e?.message || '') }); }
+  catch (e) { console.error('[memory:batch-delete]', e); return res.status(500).json({ error: '백업 실패로 삭제 중단' }); } // 08 §7: 상세는 로컬 로그만(2026-08-02 정보노출 수정 — clean-exact와 동일 패턴)
   const deleted = [], failed = [];
   for (const id of validIds) {
     try { const n = deleteMemory(db, id); if (n) deleted.push(id); else failed.push(id); }
