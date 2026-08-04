@@ -119,6 +119,10 @@ O-Brain is the <strong>auto-notepad</strong> you keep next to that AI — it wri
 <td>Auto-detects similar memory pairs and lets you review, merge, or delete (backed up + 10-second undo)</td>
 </tr>
 <tr>
+<td><strong>Bulk Exact-Duplicate Cleanup</strong></td>
+<td>When multiple memory pairs have fully identical content, clean them all at once with a single &quot;Clean all exact duplicates&quot; button (separate from the pair-by-pair flow above, same backup + 10-second undo)</td>
+</tr>
+<tr>
 <td><strong>API Token Verification</strong></td>
 <td>Every API request is checked against a local token; missing or wrong tokens are rejected</td>
 </tr>
@@ -405,6 +409,14 @@ npm run seed       # Add sample data (for testing)
 <hr>
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
+<details open>
+<summary><b>2026-08-04 — Added bulk "clean all exact duplicates" button, prevented large-session crash, closed error-message information leaks, re-audited dependencies</b></summary><ul>
+<li><strong>Bulk exact-duplicate memory cleanup</strong>: On the Overview tab&#39;s duplicate-cleanup screen, added a &quot;Clean all exact duplicates&quot; button that removes every memory pair with fully identical content in one click, instead of confirming each pair individually (this is in addition to the existing pair-by-pair review/merge flow, which is still available). Same safety net as other bulk actions: automatic backup before deletion + 10-second undo.</li>
+<li><strong>Prevented large-transcript crash</strong>: Found and fixed an edge case where an extremely large Claude Code session log (roughly 900MB+) could freeze the entire auto-save process — it now reads only the most recent 20MB. This has no effect on normal use, since almost all session logs are far smaller than that.</li>
+<li><strong>Error-message information-leak review</strong>: Reproduced a rare backup-failure scenario and found 3 spots (in the duplicate-cleanup and bulk-delete screens) where the error response could leak the server&#39;s internal absolute folder path — closed immediately. Users now always see a safe generic message in this situation.</li>
+<li><strong>Dependency security re-audit</strong>: Re-ran a vulnerability scan (<code>npm audit</code>) on external libraries and safely auto-fixed 3 newly-disclosed high-severity findings (<code>ip-address</code>). The remaining 4 high-severity findings (<code>sharp</code>/<code>adm-zip</code>, via the AI embedding library) have no upstream fix yet — we confirmed by reading the code that O-Brain only processes text and never exercises the image-handling code path these vulnerabilities affect, so real-world risk is low.</li>
+<li><strong>Expanded automated test battery</strong>: Wrote a new 23-case automated test covering normal flow, invalid input, boundary values, failed authentication, and malicious requests — all 23 passed.</details></li>
+</ul>
 <details>
 <summary><b>2026-07-27 — Backup selection screen improvement + security review (error-exposure fix, dependency vulnerabilities reduced)</b></summary><ul>
 <li><strong>Pick the backup you want from the list</strong>: In the ⚙ Settings tab&#39;s backup list, clicking a backup now selects it — the manual restore steps below fill in with that exact backup&#39;s file name, and a &quot;Copy file name&quot; button appears, cutting down the risk of mistyping the name across several manual steps. (A one-click automatic restore was deliberately not built, for data-safety reasons — replacing the file still follows the manual steps.)</li>

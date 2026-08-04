@@ -47,6 +47,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Multi-select & Bulk Delete** | Select multiple memories and delete at once + 10-second undo |
 | **⚙ Settings Page** | Adjust list page size, graph node count, auto-refresh, theme, and intro banner directly in the app — saved to your browser so it persists |
 | **Duplicate Cleanup** | Auto-detects similar memory pairs and lets you review, merge, or delete (backed up + 10-second undo) |
+| **Bulk Exact-Duplicate Cleanup** | When multiple memory pairs have fully identical content, clean them all at once with a single "Clean all exact duplicates" button (separate from the pair-by-pair flow above, same backup + 10-second undo) |
 | **API Token Verification** | Every API request is checked against a local token; missing or wrong tokens are rejected |
 | **Performance Guard** | Auto-simplifies graph computation once memories exceed 1,500 to prevent freezing |
 | **Trustworthy Search Ranking** | Blends relevance, importance, recency, and confidence so human-verified memories rank above auto-extracted noise |
@@ -267,6 +268,16 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 ## Changelog
 
 Most recent entries first. Click any entry to expand it.
+
+<details open>
+<summary><b>2026-08-04 — Added bulk "clean all exact duplicates" button, prevented large-session crash, closed error-message information leaks, re-audited dependencies</b></summary>
+
+- **Bulk exact-duplicate memory cleanup**: On the Overview tab's duplicate-cleanup screen, added a "Clean all exact duplicates" button that removes every memory pair with fully identical content in one click, instead of confirming each pair individually (this is in addition to the existing pair-by-pair review/merge flow, which is still available). Same safety net as other bulk actions: automatic backup before deletion + 10-second undo.
+- **Prevented large-transcript crash**: Found and fixed an edge case where an extremely large Claude Code session log (roughly 900MB+) could freeze the entire auto-save process — it now reads only the most recent 20MB. This has no effect on normal use, since almost all session logs are far smaller than that.
+- **Error-message information-leak review**: Reproduced a rare backup-failure scenario and found 3 spots (in the duplicate-cleanup and bulk-delete screens) where the error response could leak the server's internal absolute folder path — closed immediately. Users now always see a safe generic message in this situation.
+- **Dependency security re-audit**: Re-ran a vulnerability scan (`npm audit`) on external libraries and safely auto-fixed 3 newly-disclosed high-severity findings (`ip-address`). The remaining 4 high-severity findings (`sharp`/`adm-zip`, via the AI embedding library) have no upstream fix yet — we confirmed by reading the code that O-Brain only processes text and never exercises the image-handling code path these vulnerabilities affect, so real-world risk is low.
+- **Expanded automated test battery**: Wrote a new 23-case automated test covering normal flow, invalid input, boundary values, failed authentication, and malicious requests — all 23 passed.
+</details>
 
 <details>
 <summary><b>2026-07-27 — Backup selection screen improvement + security review (error-exposure fix, dependency vulnerabilities reduced)</b></summary>
