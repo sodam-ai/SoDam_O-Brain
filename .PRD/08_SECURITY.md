@@ -57,7 +57,7 @@
 | 공격 | 요구사항 | 수용 기준 |
 |------|---------|-----------|
 | **SQL Injection** | better-sqlite3 **prepared statement(바인딩 파라미터)만** 사용. FTS5/vec 쿼리도 파라미터화 | 문자열 연결 쿼리 **0건**(코드 grep) |
-| **XSS** | 기억 내용은 React 기본 이스케이프 + 그래프 툴팁은 `textContent`(innerHTML 금지). **CSP `default-src 'self'`** | 외부 스크립트 0, `dangerouslySetInnerHTML` 0 |
+| **XSS** | ~~기억 내용은 React 기본 이스케이프~~ → **[확인됨, 2026-08-03 갱신] React 미사용 확정** — 화면에 뿌리는 모든 기억 `content`는 직접 구현한 `esc()`(`&<>"` 4종 치환) 또는 이를 내부 호출하는 `hl()`(검색어 하이라이트)를 반드시 거침(`web/index.html`). 그래프 툴팁은 `textContent`(innerHTML 금지). **CSP `default-src 'self'`** | 외부 스크립트 0. ~~`dangerouslySetInnerHTML` 0~~(React 없어 해당 API 자체가 없음) → **이스케이프 없이 `innerHTML`에 직접 꽂히는 지점 0건**(코드 grep 기준, 08_SECURITY 갱신 시점 재확인) |
 | **경로 조작** | 모든 파일 경로 정규화 + 허용 루트 검사 | `..` 포함 경로 거부 테스트 통과 |
 | **명령어 주입** | 셸에 문자열 보간 금지. 외부 실행은 인자 배열 방식 | `exec(`문자열 보간`)` 0건 |
 | **위험한 파일 업로드** | **N/A** — O-Brain는 파일 업로드 기능 없음. (향후 자료 첨부 도입 시: 확장자·MIME·크기 화이트리스트 + 실행 차단) | 업로드 엔드포인트 부재 확인 |
@@ -67,7 +67,7 @@
 ## 5. 비밀정보 관리 (ASVS V6/V7) — 코드/문서/로그/Git 비노출
 
 - **저장 단계 시크릿 필터(필수)**: 기억 `content` 저장 전 API키·토큰·비번·`.env` 값·사설키 블록을 `[REDACTED]` 치환(05 §2와 연결).
-- **키 보관**: `ANTHROPIC_API_KEY` 등은 **`.env.local`에만**. 코드·그래프·UI·로그·에러메시지에 노출 금지.
+- **키 보관**: ~~`ANTHROPIC_API_KEY` 등은 `.env.local`에만~~ → [확인됨] **미구현·미사용**(호스트 LLM 재활용으로 원안 자체 폐기, 코드 전수 검색 0건 — 04_PROJECT_SPEC.md §기술스택 참조). 코드·그래프·UI·로그·에러메시지에 시크릿 노출 금지 원칙 자체는 유지.
 - **Git 추적 제외**: `.gitignore`에 `.env*`, `data/`, `*.sqlite`, 백업 포함(이미 반영). 커밋 전 **시크릿 스캔**(gitleaks/grep) 권장.
 - **로그**: 토큰·키·기억 원문을 로그에 남기지 않음. 디버그 로그에도 마스킹.
 - 대상 시크릿 목록: API 키, 토큰, 비밀번호, `.env`, 인증서, 개인 키, DB 접속정보, OAuth Secret, 서비스 계정 키.

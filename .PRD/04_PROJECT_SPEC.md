@@ -4,6 +4,10 @@
 > 이 문서를 AI에게 항상 함께 공유하세요.
 > v2 변경: 시각화 핵심 격상 → 그래프 라이브러리 변경 + 시각화 규칙 추가.
 > v3 변경: 미결 항목 확정 — 임베딩 모델·코덱스 캡처 전략·추출 모델 결정.
+> v4 변경(2026-08-02, CHECKPOINT.md 실제 결정 반영): 빌드 중 React+Vite+Tailwind+shadcn/ui·
+> react-force-graph·vis-timeline·유료 Haiku API 계획을 **전부 폐기**하고 프레임워크 없는 순수 JS
+> 단일 화면 + 호스트 LLM(클로드코드/코덱스) 재활용으로 확정 구현함 — 아래 표를 실제 값으로 동기화.
+> 원안은 취소선으로 남겨 변경 이력을 보존.
 
 ---
 
@@ -11,18 +15,18 @@
 
 | 영역 | 선택 | 이유 |
 |------|------|------|
-| 언어/런타임 | **Node.js + TypeScript** (올인원) | memory-bank·claude-mem이 둘 다 TS/JS(확인됨). 클로드코드 훅이 JS 네이티브. 훅·서버·웹·그래프를 한 언어로 → AI 바이브코딩 최적 |
+| 언어/런타임 | ~~Node.js + TypeScript~~ → **Node.js(순수 JS, ESM `.mjs`)** (올인원) | [확인됨] `package.json`에 TypeScript 의존성 없음·타입체크 도구 전무, 전체 소스가 `.mjs`. 클로드코드 훅이 JS 네이티브. 훅·서버·웹·그래프를 한 언어로 → AI 바이브코딩 최적 |
 | 저장소(DB) | **SQLite** (better-sqlite3) + **sqlite-vec**(벡터) + **FTS5**(전문검색) | 외부 의존성 0, 노드·엣지·벡터·키워드 검색을 한 파일에. agentmemory "순수 SQLite" 교훈(확인됨) |
 | 로컬 임베딩 | **transformers.js** 또는 **fastembed** (택1, Phase 1 검증) | 의미검색을 100% 로컬로. 외부 임베딩 API 불필요 |
-| 웹 화면 | **React + Vite** (localhost) | 가볍고 빠름. 로컬 도구라 서버 배포 불필요 |
-| 스타일·컴포넌트 | **Tailwind CSS + shadcn/ui + 디자인 토큰** | 일관된 간격·색·타이포, 접근성 내장(키보드·ARIA), 과장식 없는 절제된 모던. UI/UX 표준은 06 |
-| **그래프 시각화** | **react-force-graph** (2D + 3D, **WebGL/GPU**) | **핵심.** 한 라이브러리로 2D·3D 모두 + force-directed + 노드 색/크기/글로우 커스텀 + 10만 노드급 성능. 3D 메모리 그래프 도구들이 쓰는 Force-Graph 방식(확인됨) |
-| (보조) 그래프 분석 | Cytoscape.js (Phase 3) | 중심성·최단경로 등 분석 알고리즘이 필요할 때만. (SVG라 ~1만 노드에서 느려 시각화 본체로는 부적합 — 확인됨) |
-| 타임라인 | vis-timeline 또는 커스텀(D3) | 기억의 시간 흐름·진화선 |
-| AI 호출(기억 추출) | 사용자의 **기존 클로드 키**(기본 Haiku) + **규칙기반 폴백** | 추출 품질 위해. "추출 순간만, 외부 영구저장 X" |
+| 웹 화면 | ~~React + Vite~~ → **바닐라 JS 단일 HTML**(프레임워크·빌드도구 없음, localhost) | [확인됨] 로컬 1인용 도구엔 빌드 파이프라인이 과함 — 더 가볍게 확정 변경 |
+| 스타일·컴포넌트 | ~~Tailwind CSS + shadcn/ui~~ → **순수 CSS + 디자인 토큰** | [확인됨] 프레임워크 없는 구조와 일치. 접근성(키보드·ARIA)·절제된 모던 기준은 그대로 유지. UI/UX 표준은 06 |
+| **그래프 시각화** | ~~react-force-graph~~ → **force-graph + 3d-force-graph**(같은 제작자의 non-React 버전, 2D+3D, **WebGL/GPU**) | [확인됨] **핵심.** React 미사용 결정에 맞춰 라이브러리만 non-React 버전으로 교체, 기능(2D·3D·force-directed·색/크기/글로우 커스텀)은 원안과 동일 |
+| (보조) 그래프 분석 | Cytoscape.js (Phase 3, **미착수**) | 중심성·최단경로 등 분석 알고리즘이 필요할 때만. (SVG라 ~1만 노드에서 느려 시각화 본체로는 부적합 — 확인됨) |
+| 타임라인 | ~~vis-timeline~~ → **커스텀 HTML/CSS 타임라인** | [확인됨] 새 의존성 추가 없이 자체 구현으로 확정 |
+| AI 호출(기억 추출) | ~~사용자의 기존 클로드 키(기본 Haiku, 유료 API)~~ → **호스트 LLM 재활용**(클로드코드/코덱스 세션 자체가 처리, 별도 API 키·과금 없음) + **규칙기반 폴백**(기본, 지금 실사용 중) | [확인됨] "무과금 우선" 레드라인으로 원안 대체. "추출 순간만, 외부 영구저장 X" 원칙은 그대로 |
 | 인증 | **없음** | 내 PC 1인 전용 로컬 도구 |
 
-> 그래프 라이브러리 변경 사유(확인됨): 직전 Cytoscape.js는 SVG/Canvas라 약 1만 노드에서 성능이 떨어지고 3D를 지원하지 않음. 시각화를 핵심으로 격상하면서 **react-force-graph**(WebGL, 2D+3D 통합)로 교체. 단, 그래프 '분석' 알고리즘이 필요한 Phase 3에서는 Cytoscape를 보조로 둘 수 있음.
+> 그래프 라이브러리 변경 사유(확인됨): 직전 Cytoscape.js는 SVG/Canvas라 약 1만 노드에서 성능이 떨어지고 3D를 지원하지 않음. 시각화를 핵심으로 격상하면서 **force-graph/3d-force-graph**(WebGL, 2D+3D 통합)로 교체. 단, 그래프 '분석' 알고리즘이 필요한 Phase 3에서는 Cytoscape를 보조로 둘 수 있음(아직 미착수).
 
 ---
 
@@ -35,8 +39,8 @@ O-Brain/
 │   ├── core/           # 기억 추출·보안필터·연결 로직
 │   ├── db/             # SQLite 연결·스키마·검색(sqlite-vec/FTS5)
 │   ├── server/         # localhost API (웹 화면에 데이터 제공)
-│   ├── web/            # React 대시보드
-│   │   ├── graph/      # react-force-graph 2D/3D 뷰 + 스타일(색·크기·글로우)
+│   ├── web/            # 바닐라 JS 단일 HTML 대시보드(확정, React 아님)
+│   │   ├── graph/      # force-graph/3d-force-graph 2D/3D 뷰 + 스타일(색·크기·글로우)
 │   │   ├── timeline/   # 타임라인 뷰
 │   │   ├── search/     # 검색 UI
 │   │   └── filters/    # 분류·유형·중요도·기간 필터
@@ -52,7 +56,7 @@ O-Brain/
 
 > 시각화는 이 제품의 차별점이므로 별도 규칙으로 못 박는다.
 
-- [ ] 그래프는 **react-force-graph**로, **2D/3D 토글**을 항상 제공.
+- [ ] 그래프는 **force-graph/3d-force-graph**로, **2D/3D 토글**을 항상 제공.
 - [ ] 노드 **색=분류(또는 유형)**, **크기=중요도+연결수**, **글로우=access_count**.
 - [ ] 엣지는 관계별 스타일 — **`모순됨`=빨강 점선**, **`대체함`=방향 화살표**.
 - [ ] **로컬 그래프(주변 1~2 hop) ↔ 글로벌 그래프(전체)** 전환 제공.
@@ -86,7 +90,7 @@ O-Brain/
 - [ ] AI 호출이 일어나면 **언제·왜 호출했는지 사용자에게 보이게** 해.
 - [ ] 검색은 **관련 기억만 소량** 반환해 토큰을 아껴.
 - [ ] 그래프·타임라인은 **01_PRD §8 사양**대로, 성능 가드와 함께.
-- [ ] UI는 **shadcn/ui + 디자인 토큰 우선 재사용**(06 사양: 대비 AA·포커스 링·터치 44px·8가지 상태·반응형 375px). 과한 장식·그라데이션·AI식 디자인 금지.
+- [ ] UI는 **디자인 토큰 우선 재사용**(순수 CSS, 원안 shadcn/ui에서 프레임워크 없는 구조에 맞춰 변경 확정 — 06 사양: 대비 AA·포커스 링·터치 44px·8가지 상태·반응형 375px). 과한 장식·그라데이션·AI식 디자인 금지.
 - [ ] 비가역 작업(삭제·병합·내보내기 덮어쓰기)은 **사용자 확인 게이트** 뒤에서만.
 
 ---
@@ -128,9 +132,9 @@ npm run build
 
 | 변수명 | 설명 | 어디서 발급 |
 |--------|------|------------|
-| ANTHROPIC_API_KEY | 기억 추출용 AI 키 (선택 — 규칙기반 폴백 쓰면 불필요) | console.anthropic.com 또는 기존 클로드 구독 |
+| ~~ANTHROPIC_API_KEY~~ | [확인됨] **미구현·미사용** — 호스트 LLM 재활용으로 원안(유료 API 키) 자체가 폐기됨, 코드 전수 검색 0건 | 해당 없음 |
 | OBRAIN_DATA_DIR | SQLite 저장 폴더 경로 (기본 ./data) | 직접 지정 |
-| OBRAIN_EXTRACT_MODE | "ai"(기본) 또는 "rule"(완전 로컬) | 직접 설정 |
+| ~~OBRAIN_EXTRACT_MODE~~ | [확인됨] **미구현** — 현재는 규칙기반 추출이 기본이자 유일 경로(코드 전수 검색 0건) | 해당 없음 |
 
 > `.env.local` 파일에 저장. 절대 GitHub에 올리지 마세요.
 
@@ -140,10 +144,12 @@ npm run build
 
 | 항목 | 확정 |
 |------|------|
-| 그래프 라이브러리 | **react-force-graph** (2D+3D, WebGL) — 최종 확정 |
-| 임베딩 | **transformers.js + `Xenova/all-MiniLM-L6-v2` (384)** 기본, fastembed는 속도 대안 |
-| 코덱스 캡처 전략 | **훅 우선 + 세션 로그 파일 읽기 폴백** — `src/hooks`는 두 경로 모두 지원하게 설계 |
-| 추출 모델 | 기본 **`claude-haiku-4-5`**, `OBRAIN_EXTRACT_MODE=rule`이면 규칙기반(완전 로컬) |
-| 타임라인 | **vis-timeline** |
+| 그래프 라이브러리 | ~~react-force-graph~~ → **force-graph + 3d-force-graph**(2D+3D, WebGL, non-React) — 2026-08-02 재확정 |
+| 임베딩 | **transformers.js(`@huggingface/transformers`) + `Xenova/all-MiniLM-L6-v2` (384)** — 구현·실사용 확인됨 |
+| 코덱스 캡처 전략 | **미착수(의도적 보류)** — 훅·로그폴백 코드 전수 검색 0건, Claude Code 세션만 실사용 중이라 재승인 전까지 보류(CHECKPOINT 확정) |
+| 추출 모델 | ~~claude-haiku-4-5(유료 API)~~ → **규칙기반이 기본이자 유일 경로**(완전 로컬·무과금), AI 추출은 `/o-brain:remember` 등 호스트 LLM 수동 호출로 대체 |
+| 타임라인 | ~~vis-timeline~~ → **커스텀 HTML/CSS**(자체 구현) — 2026-08-02 재확정 |
 
 > 빌드 중 1회 수치 실측(결정 확정·수치만): react-force-graph 3D 프레임 · all-MiniLM 속도 · 코덱스 로그 경로/형식.
+> (2026-08-02 갱신) 위 세 표는 실제 구현·CHECKPOINT.md 확정 결정과 동기화 완료. 원안(React 계열·유료
+> API)은 취소선으로 이력만 보존.

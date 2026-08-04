@@ -26,30 +26,30 @@
 
 - **목적**: 클로드코드·코덱스 로컬 메모리 + **지식그래프 시각화** (1인용)
 - **차별점(핵심)**: 기억을 '쌓는' 게 아니라 '잇고 보여주는' 도구 — **2D/3D 그래프 + 타임라인**
-- **기술**: Node·TypeScript 올인원 + SQLite(sqlite-vec/FTS5) + React + **react-force-graph(2D/3D·WebGL)**
+- **기술**: Node·TypeScript 올인원 + SQLite(sqlite-vec/FTS5) + ~~React~~ → **[확인됨, 2026-08-03 갱신] 바닐라 JS** + force-graph/3d-force-graph(2D/3D·WebGL)
 - **로그인**: 없음 (로컬 전용)
-- **기억 추출**: AI 추출(기존 클로드 키, 추출 순간만·외부 영구저장 X) + 규칙기반 폴백
-- **보안**: 저장 전 시크릿(키·비번) 자동 제거 — Phase 1 포함
+- **기억 추출**: 규칙기반이 기본(완전 로컬·무과금), 필요 시 호스트 LLM(클로드코드/코덱스) 수동 호출도 가능·외부 영구저장 없음
+- **보안**: 저장 전 민감정보(비밀번호 등) 자동 제거 — Phase 1 포함
 
 ## v2 변경점 (시각화 격상)
 
 - 시각화를 **Phase 1 핵심**으로 격상 (이전엔 2D 기본·3D는 Phase 3였음).
-- 그래프 라이브러리 **Cytoscape.js → react-force-graph** (WebGL·2D+3D 통합, ~1만 노드 한계 극복).
+- 그래프 라이브러리 **Cytoscape.js → force-graph/3d-force-graph**(WebGL·2D+3D 통합, ~1만 노드 한계 극복) — 2026-08-03: React 미사용 확정에 맞춰 non-React 버전으로 재확정.
 - **타임라인 뷰** + 시각화/시간 필드(access_count·valid_from/until·invalidated_by) 추가.
 - 유사 저장소 6개(Cognee·Graphiti·Memento·buildautomata 3D·TheSethRose·Obsidian) 장점 흡수.
 
 ## 다음 단계
 
 Phase 1을 시작하려면 [03_PHASES.md](./03_PHASES.md)의 **"Phase 1 시작 프롬프트"**를 복사해 AI에게 주세요.
-시작 전 권장: 그래프 라이브러리(react-force-graph)·임베딩·코덱스 훅 1회 손검증.
+시작 전 권장: 그래프 라이브러리(force-graph/3d-force-graph)·임베딩·코덱스 훅 1회 손검증.
 
 ## 확정된 결정 (v3 — 모두 Resolved)
 
-- [x] 그래프: **react-force-graph**(2D+3D) + 타임라인 **vis-timeline**
+- [x] 그래프: ~~react-force-graph~~ → **force-graph/3d-force-graph**(2D+3D) + 타임라인 ~~vis-timeline~~ → **커스텀 HTML/CSS**(2026-08-03 갱신)
 - [x] 임베딩: **transformers.js `all-MiniLM-L6-v2` (384)** 기본
-- [x] 코덱스: **훅 + 세션 로그 파일 폴백**(미성숙 위험 설계로 우회)
-- [x] 추출: 기본 **claude-haiku-4-5** + 규칙기반 폴백
+- [x] 코덱스: ~~훅 + 세션 로그 파일 폴백(미성숙 위험을 설계로 낮춤)~~ → **미착수·의도적 보류**(코덱스 실사용 근거 없음, 2026-08-03 CHECKPOINT 확정)
+- [x] 추출: ~~기본 claude-haiku-4-5(유료 API)~~ → **규칙기반이 기본**(완전 로컬·무과금, 2026-08-03 갱신) + 규칙기반 폴백
 - [x] scope 기본 `project` / 분류 시드 제공 / 이름 **O-Brain**(변경 가능)
 
 ### 빌드 중 1회 수치 실측만 남음 (결정 X, 수치 확인 O)
-- react-force-graph 3D 프레임 · all-MiniLM 속도 · 코덱스 로그 경로
+- ~~react-force-graph~~ force-graph/3d-force-graph 3D 프레임 · all-MiniLM 속도 · 코덱스 로그 경로(코덱스 캡처는 보류 중이라 미실측)

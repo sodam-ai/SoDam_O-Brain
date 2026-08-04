@@ -26,6 +26,9 @@ build/
 *.todos-report.md
 .complexity-log.md
 
+# 다른 SoDam 도구(sodam-reverse)가 이 작업폴더를 cwd로 쓰며 남기는 안전로그 — O-Brain과 무관, 실수 커밋 방지
+app/.sodam-re/
+
 # OS / 에디터
 .DS_Store
 Thumbs.db

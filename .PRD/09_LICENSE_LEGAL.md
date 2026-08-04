@@ -18,9 +18,11 @@
 
 ## 1. 프로젝트 라이선스 (가장 중요)
 
-- **현재 상태: [결정 필요]** — O-Brain에 지정된 라이선스가 **아직 없음**. 임의 단정하지 않는다.
-- **강력 추천(결정 필요)**: **Apache License 2.0**, 저작권자 **SoDam AI Studio**, 연도 **2026**.
-  - *이유:* 회원님의 다른 공개 키트 다수가 Apache-2.0 © SoDam AI Studio 관례([확인됨] — 메모리상 다수 repo). 특허 보호 조항이 있어 상업 배포에 안전.
+- **현재 상태: [확인됨]** — **Apache License 2.0**, 저작권자 **SoDam AI Studio**, 연도 **2026**으로 이미
+  적용 완료(2026-08-02 확인: 저장소 루트 `LICENSE`·`NOTICE` 파일 실재, `app/package.json`의
+  `"license": "Apache-2.0"`과도 일치). 이 문서가 과거 "[결정 필요]"로 남아있던 것은 결정이 안 된 게
+  아니라 **문서 갱신이 결정을 못 따라간 것**이었음 — 실제 결정을 문서에 반영해 동기화.
+  - *이유(원안 그대로 유지):* 회원님의 다른 공개 키트 다수가 Apache-2.0 © SoDam AI Studio 관례([확인됨] — 메모리상 다수 repo). 특허 보호 조항이 있어 상업 배포에 안전.
 - 라이선스 확정 시 **[검토 필요]** 항목:
   - 공식 명칭(SPDX: `Apache-2.0`) · **라이선스 전문(LICENSE 파일)** · 저작권자 · 연도
   - **NOTICE 파일 필요 여부**(Apache-2.0는 NOTICE 포함 시 보존 의무) · 재배포 조건
@@ -32,7 +34,7 @@
 
 | 항목 | 현재 | 비고 |
 |------|------|------|
-| 저작권자 | [결정 필요] (추천: SoDam AI Studio) | 확정 후 LICENSE·README 일치 |
+| 저작권자 | [확인됨] SoDam AI Studio | `NOTICE` 파일과 일치 확인(2026-08-02) |
 | 수정 | 라이선스 따름 (Apache-2.0면 허용) | |
 | 복제·재배포 | 라이선스 따름 (허용, 고지 보존) | |
 | 상업적 사용 | 라이선스 따름 (Apache-2.0면 허용) | 단 §5 외부 서비스 약관 별도 |
@@ -43,6 +45,9 @@
 
 > 아래 라이선스는 **추정([검토 필요])** — 출시 전 각 패키지 공식 표기로 확인할 것.
 
+> (2026-08-02 갱신) 아래 표는 `app/package.json` 실제 의존성 목록과 동기화함 — react/vite/tailwind/
+> shadcn-ui/vis-timeline/@anthropic-ai/sdk는 **미채택으로 확정**되어 표에서 제거(실제로 설치된 적 없음).
+
 | 의존성 | 추정 라이선스 | 상업/배포 |
 |--------|--------------|-----------|
 | SQLite | Public Domain | 자유 |
@@ -50,11 +55,9 @@
 | sqlite-vec | Apache-2.0/MIT(추정) | [검토 필요] |
 | @huggingface/transformers | Apache-2.0(추정) | 자유 |
 | all-MiniLM-L6-v2 (모델) | Apache-2.0(추정) | [검토 필요] 모델 카드 확인 |
-| react / react-dom / express / vite | MIT(추정) | 자유 |
-| react-force-graph | MIT(추정) | 자유 |
-| vis-timeline | Apache-2.0/MIT(추정) | [검토 필요] |
-| Tailwind CSS / shadcn-ui / lucide | MIT·ISC(추정) | 자유 |
-| @anthropic-ai/sdk | MIT(추정) | 자유 |
+| express | MIT(추정) | 자유 |
+| force-graph / 3d-force-graph | MIT(추정) | 자유 |
+| @modelcontextprotocol/sdk | MIT(추정) | 자유 |
 
 - **검토 기준**: 모든 의존성이 **MIT/Apache/ISC/BSD 등 허용형(permissive)** 인지 확인. **GPL/AGPL 등 카피레프트가 섞이면** 폐쇄 배포·납품과 충돌할 수 있으므로 [전문가 검토 필요].
 - **요구사항**: 의존성 추가 시마다 라이선스 확인 → 허용형만 채택(현재 스택은 허용형으로 구성됨, 단 공식 확인 필요).
