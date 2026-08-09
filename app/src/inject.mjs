@@ -33,7 +33,10 @@ export async function buildInjection({ query = '', project = '', max = 8 } = {})
   let mems;
   try {
     if (query) {
-      mems = await search(db, query, max);
+      // scope 우선순위(PRD 07 §5) — 쿼리 유무와 무관하게 항상 "현재 프로젝트 + 전역" 우선이어야 하는데,
+      // 이 경로(query 있음)는 지금까지 실제로 호출된 적이 없어 projectFilter 누락이 드러나지 않았던 잠재
+      // 결함(2026-08-10 발견) — 다른 프로젝트 기억이 섞여 들어오는 걸 막는다.
+      mems = await search(db, query, max, project || null);
     } else {
       // 후보 풀 = 최근 60 + 중요도 상위 40(오래된 핵심 기억도 후보 유지) → 합성점수로 재정렬.
       // project 있으면 해당 프로젝트 + 전역(NULL) 기억. project 없으면 global scope만(타 프로젝트 섞임 방지).
