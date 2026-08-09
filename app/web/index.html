@@ -1633,7 +1633,11 @@
       renderGraphA11yList(data.nodes);
       const capNote = (gData.total>gData.shown) ? ` · 전체 ${gData.total}개 중 상위 ${gData.shown}개` : '';
       const modeNote = orphanView ? '고립 기억만 · ' : '';
-      document.getElementById('gcount').textContent = data.nodes.length ? `${modeNote}노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}${capNote}` : (orphanView?'고립된 기억이 없어요 🎉':'');
+      // 성능가드로 유사도 연결이 생략된 상태(PRD §8.4)를 화면에 알림(05 §3 실패 가시화 — 은폐 금지)
+      const simpNote = gData.simplified ? ' · 유형별 연결(유사도 생략)' : '';
+      const gc = document.getElementById('gcount');
+      gc.textContent = data.nodes.length ? `${modeNote}노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}${capNote}${simpNote}` : (orphanView?'고립된 기억이 없어요 🎉':'');
+      gc.title = gData.simplified ? `기억이 ${gData.total}개로 많아, 성능 보호를 위해 의미 유사도 대신 유형(결정/제약 등)이 같은 기억끼리만 연결해 표시하고 있어요. 노이즈·중복 기억을 정리하면 다시 유사도 연결로 돌아올 수 있어요.` : '';
       if(!data.nodes.length){ el.innerHTML='<div class="empty"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="9" r="2.4"/><circle cx="9" cy="18" r="2.4"/></svg></div><h4>그릴 기억이 없어요</h4><p>대화가 쌓이면 비슷한 기억끼리 선으로 이어진 지도가 그려집니다.</p></div>'; _reapply=()=>{}; return; }
       const dim = n => { const h=effHi(); return h.size && !h.has(lid(n)); }; // hover 또는 검색으로 흐려짐
       // 링크 색: 직접강조>파랑, hover중 비강조>흐림, 검색중 양끝일치면 보통/아니면 흐림, 평소 관계색/기본
