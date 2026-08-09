@@ -270,8 +270,9 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
-<summary><b>2026-08-09~10 — Graph fallback-mode notice, fixed dropped "#"-prefixed memories, blocked local-command log leakage</b></summary>
+<summary><b>2026-08-09~10 — Context-matched memories on session resume, graph fallback-mode notice, fixed dropped "#"-prefixed memories, blocked local-command log leakage</b></summary>
 
+- **Resuming a session now surfaces memories related to what you were discussing**: Previously, resuming a Claude Code session always pulled in memories by "most recent / most important" only. Now it also looks at what the prior conversation was about and prioritizes memories relevant to that topic (e.g., resuming a conversation about "button color" surfaces button-related decisions first). A brand-new session has no prior conversation to go on, so it still uses the same recency/importance ordering as before.
 - **Graph fallback-mode notice**: Once memories pass 1,500, the graph automatically switches to a simpler "same-type only" connection mode to stay fast — but until now, nothing on screen told you this was happening. The graph view now shows a "connected by type (similarity skipped)" note at the bottom, explaining why and how cleaning up noise/duplicate memories can bring back the more precise similarity-based connections.
 - **Fixed sentences starting with "#" being dropped entirely**: Previously, if you typed something like "# let's do this," the assistant would mistake it for a document heading and discard the whole sentence — even when it was a real, important instruction. Now only the "#" marker is stripped, and the rest of the sentence is judged for saving exactly as any other sentence would be.
 - **Blocked local-command output from contaminating auto-save candidates**: Found and closed a gap where the text output of a locally-run command (not something you actually typed) could be reviewed as a save candidate. No memory was ever incorrectly saved because of this, but the safeguard was incomplete, so we closed it proactively.
