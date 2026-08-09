@@ -107,6 +107,11 @@ export function stripInjected(text) {
   t = t.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/gi, ' '); // 훅/리마인더 블록
   t = t.replace(/```[\s\S]*?```/g, ' ');                                 // 코드펜스(설정·로그 등)
   t = t.replace(/<command-[\s\S]*?<\/command-[a-z]*>/gi, ' ');           // 슬래시명령 래퍼
+  // 로컬 명령(!... 실행) 결과·주의문구 래퍼 — command-*는 걸렀는데 local-command-*는 빠져있던 틈
+  // (2026-08-10 실측: 다른 프로젝트 실transcript 200개 재감사에서 <local-command-stdout>/<local-command-caveat>
+  // 태그 원문이 그대로 남아 close-miss 후보에 섞이는 것을 발견. CUES엔 안 걸려 저장까진 안 됐지만
+  // 방어선이 완전하지 않았음 — system-reminder·command-* 래퍼와 같은 이유로 동일하게 제거).
+  t = t.replace(/<local-command-[\s\S]*?<\/local-command-[a-z]*>/gi, ' ');
   const drop = /(📌|O-Brain 자동 주입|O-Brain 로컬 기억|페르소나 v5|\[페르소나|persona_core|MANDATORY SKILL|hookSpecificOutput|additionalContext|UserPromptSubmit hook|SessionStart hook|SessionEnd hook|Skill\()/i;
   // 대화 인용 노이즈(2026-07-26 실DB 감사: 노이즈 표본 20/20이 이 형태) — 압축요약/전사에 박힌
   // "**Claude:**"/"Assistant:"/"User:" 인용은 '지금 사용자가 한 말'이 아니라 세션 요약 조각이 user 턴에
