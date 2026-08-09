@@ -43,24 +43,26 @@
 
 ## 3. 의존성 라이선스 (호환성 검토)
 
-> 아래 라이선스는 **추정([검토 필요])** — 출시 전 각 패키지 공식 표기로 확인할 것.
+> (2026-08-09 갱신) 아래 표는 더 이상 추정이 아니라 **실측** — `app/node_modules/<pkg>/package.json`의
+> `license` 필드를 직접 스캔해 확인(대상: `app/package.json` `dependencies` 7개 전부 + better-sqlite3가
+> 설치하는 실제 네이티브 바이너리 서브패키지 `sqlite-vec-windows-x64`). **전부 허용형(MIT/Apache-2.0/MIT
+> OR Apache) 확인, GPL·AGPL 계열 0건.**
 
-> (2026-08-02 갱신) 아래 표는 `app/package.json` 실제 의존성 목록과 동기화함 — react/vite/tailwind/
-> shadcn-ui/vis-timeline/@anthropic-ai/sdk는 **미채택으로 확정**되어 표에서 제거(실제로 설치된 적 없음).
-
-| 의존성 | 추정 라이선스 | 상업/배포 |
-|--------|--------------|-----------|
+| 의존성 | 실측 라이선스(2026-08-09) | 상업/배포 |
+|--------|--------------------------|-----------|
 | SQLite | Public Domain | 자유 |
-| better-sqlite3 | MIT(추정) | 자유 |
-| sqlite-vec | Apache-2.0/MIT(추정) | [검토 필요] |
-| @huggingface/transformers | Apache-2.0(추정) | 자유 |
-| all-MiniLM-L6-v2 (모델) | Apache-2.0(추정) | [검토 필요] 모델 카드 확인 |
-| express | MIT(추정) | 자유 |
-| force-graph / 3d-force-graph | MIT(추정) | 자유 |
-| @modelcontextprotocol/sdk | MIT(추정) | 자유 |
+| better-sqlite3 | **[확인됨] MIT** | 자유 |
+| sqlite-vec | **[확인됨] MIT OR Apache** | 자유 |
+| sqlite-vec-windows-x64(네이티브 바이너리) | **[확인됨] MIT OR Apache** | 자유 |
+| @huggingface/transformers | **[확인됨] Apache-2.0** | 자유 |
+| all-MiniLM-L6-v2 (모델, npm 패키지 아님) | Apache-2.0(추정) | [검토 필요] — HuggingFace Hub 런타임 다운로드라 npm 스캔 범위 밖, 모델 카드 별도 확인 필요 |
+| express | **[확인됨] MIT** | 자유 |
+| force-graph | **[확인됨] MIT** | 자유 |
+| 3d-force-graph | **[확인됨] MIT** | 자유 |
+| @modelcontextprotocol/sdk | **[확인됨] MIT** | 자유 |
 
 - **검토 기준**: 모든 의존성이 **MIT/Apache/ISC/BSD 등 허용형(permissive)** 인지 확인. **GPL/AGPL 등 카피레프트가 섞이면** 폐쇄 배포·납품과 충돌할 수 있으므로 [전문가 검토 필요].
-- **요구사항**: 의존성 추가 시마다 라이선스 확인 → 허용형만 채택(현재 스택은 허용형으로 구성됨, 단 공식 확인 필요).
+- **요구사항 충족(2026-08-09)**: npm 의존성 8개(직접 7 + 네이티브 바이너리 서브패키지 1) 전부 허용형 실측 확인, 카피레프트 0건 — §12 Must "의존성 라이선스 허용형 확인" 코드 스캔 부분 완료. all-MiniLM-L6-v2 모델 카드 확인만 [검토 필요]로 남음.
 
 ---
 
@@ -168,5 +170,6 @@ README에 명확히 안내: 사용자가 O-Brain를 **수정 · 복제 · 포크
   파일 실재). **[검토 필요]로 남음**: 정식 공개 시점·범위에 대한 사용자의 명시적 선언(저장소가
   GitHub PUBLIC으로 실재하나, 이것이 "정식 공개 결정"인지 "임시 상태"인지는 별도 확인 필요 — 임의
   단정 안 함).
-- **[검토 필요]** 의존성 라이선스 공식 확인 · 제품명 "O-Brain" 상표 · Anthropic 약관 원문(귀속·상업)
+- **[확인됨, 2026-08-09 추가]** 의존성 라이선스 — §3 참조, npm 패키지 8개 전부 실측 완료(MIT/Apache 계열, 카피레프트 0건).
+- **[검토 필요]** all-MiniLM-L6-v2 모델 카드(§3, npm 스캔 범위 밖) · 제품명 "O-Brain" 상표 · Anthropic 약관 원문(귀속·상업)
 - **[전문가 검토 필요]** 카피레프트(GPL/AGPL) 혼입 시 배포 영향 · 고객사 납품 계약 조건 · 면책 문구의 법적 효력
