@@ -74,7 +74,7 @@
 | R5 | better-sqlite3 Windows 빌드 실패 | 중 | 0단계 실측 + 대안(node:sqlite / sql.js) |
 | R6 | 데이터 유실 | **높음** | 스냅샷 백업 + .gitignore |
 | R7 | 잘못된 자동 기억(오추출) | 중 | **confidence 필드 + '검토 대기' 표시**, 신뢰도 낮으면 주입 후순위·자동 삭제 금지 |
-| R8 | 플러그인 1패키지(훅+MCP+로컬앱) 구현 가능성 미확인 | 중 | 실제 클로드코드 플러그인 스펙 확인(10 [검토 필요]), 안 되면 훅·MCP·앱 분리 패키지로 폴백 |
+| R8 | ~~플러그인 1패키지(훅+MCP+로컬앱) 구현 가능성 미확인~~ → **[확인됨, 2026-08-10] 해소** — `plugin/.claude-plugin/plugin.json`이 commands+mcpServers를 이미 번들, `hooks/hooks.json`은 클로드코드 관례로 자동 로드(10_DEPLOYMENT_INSTALL.md §11 실측) | 해소 | (분리 패키지 폴백 불필요, 그대로 유지) |
 
 ---
 
