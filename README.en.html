@@ -410,6 +410,13 @@ npm run seed       # Add sample data (for testing)
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
 <details open>
+<summary><b>2026-08-09~10 — Context-matched memories on session resume, graph fallback-mode notice, fixed dropped "#"-prefixed memories, blocked local-command log leakage</b></summary><ul>
+<li><strong>Resuming a session now surfaces memories related to what you were discussing</strong>: Previously, resuming a Claude Code session always pulled in memories by &quot;most recent / most important&quot; only. Now it also looks at what the prior conversation was about and prioritizes memories relevant to that topic (e.g., resuming a conversation about &quot;button color&quot; surfaces button-related decisions first). A brand-new session has no prior conversation to go on, so it still uses the same recency/importance ordering as before.</li>
+<li><strong>Graph fallback-mode notice</strong>: Once memories pass 1,500, the graph automatically switches to a simpler &quot;same-type only&quot; connection mode to stay fast — but until now, nothing on screen told you this was happening. The graph view now shows a &quot;connected by type (similarity skipped)&quot; note at the bottom, explaining why and how cleaning up noise/duplicate memories can bring back the more precise similarity-based connections.</li>
+<li><strong>Fixed sentences starting with &quot;#&quot; being dropped entirely</strong>: Previously, if you typed something like &quot;# let&#39;s do this,&quot; the assistant would mistake it for a document heading and discard the whole sentence — even when it was a real, important instruction. Now only the &quot;#&quot; marker is stripped, and the rest of the sentence is judged for saving exactly as any other sentence would be.</li>
+<li><strong>Blocked local-command output from contaminating auto-save candidates</strong>: Found and closed a gap where the text output of a locally-run command (not something you actually typed) could be reviewed as a save candidate. No memory was ever incorrectly saved because of this, but the safeguard was incomplete, so we closed it proactively.</details></li>
+</ul>
+<details>
 <summary><b>2026-08-04 — Added bulk "clean all exact duplicates" button, prevented large-session crash, closed error-message information leaks, re-audited dependencies</b></summary><ul>
 <li><strong>Bulk exact-duplicate memory cleanup</strong>: On the Overview tab&#39;s duplicate-cleanup screen, added a &quot;Clean all exact duplicates&quot; button that removes every memory pair with fully identical content in one click, instead of confirming each pair individually (this is in addition to the existing pair-by-pair review/merge flow, which is still available). Same safety net as other bulk actions: automatic backup before deletion + 10-second undo.</li>
 <li><strong>Prevented large-transcript crash</strong>: Found and fixed an edge case where an extremely large Claude Code session log (roughly 900MB+) could freeze the entire auto-save process — it now reads only the most recent 20MB. This has no effect on normal use, since almost all session logs are far smaller than that.</li>
@@ -525,6 +532,34 @@ npm run seed       # Add sample data (for testing)
 <td>Changed a count in Settings but the graph didn&#39;t change</td>
 <td>This is expected — the Graph tab uses a separate &quot;node count&quot; setting (different from the list page size)</td>
 </tr>
+<tr>
+<td>Downloaded folder/file is blocked or won&#39;t open</td>
+<td>This is often an antivirus or &quot;downloaded from another PC&quot; warning. Right-click the file (or the zip) → <strong>Properties → check &quot;Unblock&quot; → OK</strong>. If antivirus keeps blocking it, add this folder as an exception</td>
+</tr>
+<tr>
+<td><code>better-sqlite3</code>-related error during <code>npm install</code></td>
+<td>This usually resolves itself since a prebuilt binary is used. If it still fails, <strong>reinstall Node.js 20.x LTS</strong> and run <code>npm install</code> again</td>
+</tr>
+<tr>
+<td><code>/plugin install</code> gives a &quot;Marketplace not found&quot; error</td>
+<td>You <strong>must run it in two separate steps</strong> — follow the <a href="#claude-code-plugin-optional">Claude Code Plugin</a> order above again (<code>marketplace add</code> first, <code>install</code> second)</td>
+</tr>
+<tr>
+<td>Errors when the install path has spaces or non-English characters</td>
+<td>Some tools can&#39;t handle spaces or non-ASCII characters in the folder path. We recommend installing to a path with <strong>no spaces and ASCII-only characters</strong> (e.g. <code>C:\Tools\O-Brain</code>)</td>
+</tr>
+<tr>
+<td>3D graph doesn&#39;t show or keeps stuttering</td>
+<td>Older PCs or some browsers render 3D (WebGL) slowly. <strong>Switch to 2D</strong> on the Graph tab, or lower &quot;Graph node count&quot; in ⚙ Settings</td>
+</tr>
+<tr>
+<td>Search returns zero results</td>
+<td>If you just started the server, the AI embedding model may still be downloading (1–3 minutes, first run only). If it&#39;s still empty, you may not have any memories saved yet — run <code>npm run seed</code> to check with sample data</td>
+</tr>
+<tr>
+<td>Behavior looks wrong after updating to a new version</td>
+<td>Restarting the server <strong>automatically upgrades</strong> the database structure to the latest version (auto-migration). If something still looks wrong, restore from the most recent file in <code>app/data/backup/</code> (an automatic backup is made before every update)</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="faq-frequently-asked-questions">FAQ (Frequently Asked Questions)</h2>
@@ -554,20 +589,31 @@ A. No. In the ⚙ Settings page, &quot;page size&quot; applies only to List/Time
 </tr>
 <tr>
 <td>Commercial use</td>
-<td>Permitted under Apache-2.0 terms</td>
+<td><strong>Permitted</strong> — modification, copying, forking, redistribution, resale, running it as a service, use in training materials, and delivery to a company/client are all allowed under Apache-2.0 terms (preserve copyright/license notices)</td>
+</tr>
+<tr>
+<td>Prohibited</td>
+<td>Using &quot;Claude&quot;/&quot;Anthropic&quot; trademarks or logos as if they were O-Brain&#39;s own, or implying official partnership/certification</td>
+</tr>
+<tr>
+<td>Limitation of Liability</td>
+<td>The copyright holder is not liable for any damages (including data loss) arising from use of this software</td>
 </tr>
 <tr>
 <td>Warranty</td>
-<td><strong>None (AS-IS)</strong> — you are responsible for outcomes</td>
+<td><strong>None (AS-IS, No Warranty)</strong> — you are fully responsible for the outcomes of use</td>
 </tr>
 <tr>
 <td>External services</td>
-<td>Claude / Anthropic and other service terms apply separately</td>
+<td>Claude / Anthropic and other external services are governed by <strong>their own terms of service</strong>, separate from O-Brain (see below)</td>
 </tr>
 </tbody></table>
 <ul>
-<li>Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, etc.) are under <strong>their own licenses</strong> (MIT/Apache-2.0)</li>
-<li>&quot;Claude&quot; and &quot;Anthropic&quot; are trademarks of their respective owners. O-Brain has no official affiliation with them</li>
+<li>Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, 3d-force-graph, express, @modelcontextprotocol/sdk) and the local AI model (all-MiniLM-L6-v2) have all been confirmed to use <strong>permissive licenses (MIT/Apache-2.0)</strong> — no copyleft/GPL-family licenses are involved, so commercial use is unaffected.</li>
+<li><strong>Ownership of output generated via Claude Code/Anthropic API</strong>: per the text of Anthropic&#39;s Commercial Terms of Service, outputs belong to <strong>the user</strong>, and conversation content is not used to train Anthropic&#39;s models (verified against anthropic.com/legal/commercial-terms, 2026-08-10). Specific plan details and usage policies can vary by account, so please check the terms directly for anything account-specific — that&#39;s set by Anthropic, not O-Brain.</li>
+<li>&quot;Claude&quot;, &quot;Anthropic&quot;, &quot;Codex&quot;, and &quot;OpenAI&quot; are trademarks of their respective owners. O-Brain has <strong>no official affiliation or certification</strong> with them and does not use their logos or brand assets. (Saying &quot;works with Claude Code&quot; is fine; presenting O-Brain as an officially certified product is not.)</li>
+<li>The product name &quot;O-Brain&quot; is a personal-project working name. Whether it is formally trademarked elsewhere has not been confirmed — if you plan to register a trademark or use this name prominently in a commercial context, we recommend checking an official trademark database separately first.</li>
+<li><strong>This README/license section is not legal advice.</strong> If you&#39;re planning an actual commercial deployment, contract, or redistribution, treat the above as reference only and consult a qualified professional (e.g. a lawyer) as needed.</li>
 <li>Full license text: <code>LICENSE</code> file · Full dependency notices: <code>NOTICE</code> file</li>
 </ul>
 <hr>

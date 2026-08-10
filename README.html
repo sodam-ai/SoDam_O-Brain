@@ -397,7 +397,7 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <hr>
 <h2 id="보안-개요--데이터-흐름">보안 개요 · 데이터 흐름</h2>
 <ul>
-<li>서버는 **127.0.0.1(내 PC 전용)**에만 바인딩 — 외부 기기에서 접근 불가</li>
+<li>서버는 <strong>127.0.0.1</strong>(내 PC 전용)에만 바인딩 — 외부 기기에서 접근 불가</li>
 <li>기억 저장 전 <strong>API 키·비밀번호 자동 제거</strong> (redact.mjs 처리)</li>
 <li>서버 실행마다 새로운 <strong>로컬 API 토큰</strong> 자동 생성 (crypto.randomBytes)</li>
 <li><code>data/</code>, <code>.env.local</code>, <code>*.sqlite</code>는 <code>.gitignore</code>에 포함 — Git에 절대 올라가지 않음</li>
@@ -410,6 +410,13 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <h2 id="업데이트-내용-요약">업데이트 내용 요약</h2>
 <p>최신 항목이 위에 오도록 정리했습니다. 각 항목을 눌러 펼쳐 보세요.</p>
 <details open>
+<summary><b>2026-08-09~10 — 세션 재개 시 맥락 맞춤 기억 주입, 그래프 축소모드 안내 표시, 저장 시 놓치던 문장 되살림, 로컬 명령 결과 오염 방지</b></summary><ul>
+<li><strong>세션을 다시 열면, 하던 얘기와 관련된 기억을 먼저 보여줌</strong>: 지금까지는 클로드코드 세션을 재개할 때 항상 &quot;최근 것·중요한 것&quot; 순으로만 기억을 자동으로 불러왔습니다. 이제는 직전에 무슨 대화를 하고 있었는지를 함께 살펴서, 그 주제와 관련 있는 기억을 우선으로 불러옵니다(예: &quot;버튼 색상&quot; 얘기를 하다 재개하면 버튼 관련 결정이 먼저 뜸). 완전히 새로 시작하는 세션은 아직 참고할 대화가 없으니 기존 방식(최근·중요순) 그대로입니다.</li>
+<li><strong>그래프가 단순해졌을 때 안내 문구 추가</strong>: 기억이 많이 쌓이면(1,500건 이상) 그래프가 느려지지 않도록 자동으로 &quot;같은 종류끼리만 연결&quot;하는 단순한 방식으로 바뀌는데, 지금까지는 이 사실이 화면에 전혀 안내되지 않았습니다. 이제 그래프 화면 하단에 &quot;유형별 연결(유사도 생략)&quot; 문구와 함께, 왜 이렇게 됐는지·노이즈나 중복 기억을 정리하면 어떻게 다시 정밀한 연결로 돌아오는지 설명이 함께 표시됩니다.</li>
+<li><strong>&quot;#&quot;으로 시작하는 문장이 통째로 사라지던 문제 수정</strong>: 지금까지는 사용자가 &quot;# 이렇게 하자&quot;처럼 문장 앞에 &quot;#&quot;을 붙이면, 실제로 중요한 지시였어도 문서 제목으로 오인해 통째로 저장 후보에서 빠지는 문제가 있었습니다. 이제는 &quot;#&quot; 표시만 떼어내고 나머지 문장은 평소처럼 정상적으로 저장 여부를 판단합니다.</li>
+<li><strong>자동 저장 시 시스템 로그가 섞여드는 문제 방지</strong>: 클로드코드가 로컬 명령을 실행한 결과 문구가 사용자의 실제 발화가 아닌데도 저장 후보로 검토되던 지점을 발견해 걸러내도록 보강했습니다(실제로 잘못 저장된 사례는 없었지만, 방어가 완전하지 않았던 부분을 미리 막았습니다).</details></li>
+</ul>
+<details>
 <summary><b>2026-08-04 — 완전일치 중복 "전부 한번에 정리" 추가, 대용량 세션 크래시 방지, 오류 메시지 정보노출 차단, 의존성 보안 재점검</b></summary><ul>
 <li><strong>완전일치 중복 기억 일괄 정리</strong>: 개요 탭 중복 정리 화면에, 내용이 완전히 똑같은 기억 쌍이 여러 건일 때 하나하나 확인하지 않고 &quot;완전일치만 전부 한번에 정리&quot; 버튼 한 번으로 모두 정리할 수 있는 기능을 추가했습니다(기존의 건별 확인·병합 방식과 별개로 추가된 것이라 기존 방식도 그대로 남아있습니다). 삭제 전 자동 백업 + 10초 되돌리기는 기존 기능과 동일하게 적용됩니다.</li>
 <li><strong>대용량 대화 기록 크래시 방지</strong>: 클로드코드 세션 기록이 아주 커지는 극단적인 경우(약 900MB 이상) 자동 저장 과정이 통째로 멈춰버릴 수 있던 문제를 발견해, 최근 20MB 분량만 읽어 처리하도록 수정했습니다. 평소 사용에는 영향이 없습니다(대부분의 세션 기록은 이 크기보다 훨씬 작습니다).</li>
@@ -458,7 +465,7 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <details>
 <summary><b>2026-07-06 — ⚙ 설정 페이지 신설 + 실사용 검증 중 버그 2건 수정</b></summary><ul>
 <li>목록/타임라인/개요 불러오기 개수를 50/100/200/500/직접입력(1~500)으로 조절 가능하게 하고, 브라우저에 저장해 다음에 열어도 유지되도록 함.</li>
-<li>헤더 ⚙ 버튼 → **5번째 탭(진짜 설정 페이지)**으로 이동. 그래프 표시 노드 개수(50<del>2000)·자동 새로고침 켜짐/주기(10</del>300초)·테마(밝게/어둡게)·안내 배너 표시 여부까지 5개 항목 완비.</li>
+<li>헤더 ⚙ 버튼 → <strong>5번째 탭</strong>(진짜 설정 페이지)으로 이동. 그래프 표시 노드 개수(50<del>2000)·자동 새로고침 켜짐/주기(10</del>300초)·테마(밝게/어둡게)·안내 배너 표시 여부까지 5개 항목 완비.</li>
 <li><strong>버그 수정 1</strong>: 그래프 노드 개수에 소수(예 500.7)를 입력하면 서버가 500 에러를 내고 화면이 처리 안 된 예외를 던지던 문제 — 서버·클라이언트 양쪽에서 정수로 강제하도록 수정.</li>
 <li><strong>버그 수정 2</strong>: 일괄삭제 확인창은 &quot;10초 안에 되돌리기 가능&quot;이라 안내하지만 실제 되돌리기 버튼은 5.5초면 사라지던 불일치 — 10초로 통일.</details></li>
 </ul>
@@ -525,6 +532,34 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 <td>설정에서 개수를 바꿨는데 그래프가 그대로</td>
 <td>정상입니다 — 그래프 탭은 &quot;표시할 노드 개수&quot;라는 별도 설정을 씁니다(목록 개수와 다름)</td>
 </tr>
+<tr>
+<td>다운로드한 폴더/파일이 차단되거나 안 열림</td>
+<td>백신이나 &quot;다른 PC에서 옴&quot; 경고일 수 있습니다. 파일(또는 압축파일) 우클릭 → <strong>속성 → 차단 해제(Unblock)</strong> 체크 → 확인. 백신에서 계속 막으면 이 폴더를 예외로 등록</td>
+</tr>
+<tr>
+<td><code>npm install</code> 중 <code>better-sqlite3</code> 관련 오류</td>
+<td>미리 컴파일된 버전을 쓰도록 돼 있어 보통은 자동 해결됩니다. 그래도 실패하면 Node.js를 <strong>20.x LTS로 재설치</strong>한 뒤 <code>npm install</code>을 다시 실행</td>
+</tr>
+<tr>
+<td><code>/plugin install</code>이 &quot;Marketplace not found&quot; 오류를 냄</td>
+<td><strong>반드시 2단계로 나눠서</strong> 실행해야 합니다 — 위 <a href="#claude-code-%ED%94%8C%EB%9F%AC%EA%B7%B8%EC%9D%B8-%EB%B0%A9%EC%8B%9D-%EC%84%A0%ED%83%9D">Claude Code 플러그인 방식</a> 순서(<code>marketplace add</code> 먼저, <code>install</code>은 그다음)를 그대로 다시 따라 하세요</td>
+</tr>
+<tr>
+<td>경로에 한글이나 띄어쓰기가 있으면 오류가 남</td>
+<td>설치 폴더 경로에 한글·공백이 섞이면 일부 프로그램이 인식을 못 할 수 있습니다. <strong>영문·공백 없는 경로</strong>(예: <code>C:\Tools\O-Brain</code>)에 설치하는 걸 권장</td>
+</tr>
+<tr>
+<td>3D 그래프가 안 보이거나 자꾸 끊김</td>
+<td>오래된 PC나 일부 브라우저는 3D 렌더링(WebGL)이 느립니다. 그래프 화면에서 <strong>2D로 전환</strong>하거나, ⚙ 설정에서 &quot;그래프 표시 노드 개수&quot;를 줄여보세요</td>
+</tr>
+<tr>
+<td>검색했는데 결과가 하나도 안 나옴</td>
+<td>서버를 막 켰다면 AI 임베딩 모델을 내려받는 중일 수 있습니다(1~3분, 최초 1회만). 그래도 안 나오면 아직 저장된 기억이 없는 것일 수 있으니 <code>npm run seed</code>로 예제 데이터를 넣어 확인해 보세요</td>
+</tr>
+<tr>
+<td>프로그램을 새 버전으로 바꾼 뒤 동작이 이상함</td>
+<td>서버를 다시 시작하면 데이터베이스 구조를 최신 버전으로 <strong>자동으로 맞춰줍니다</strong>(자동 마이그레이션). 그래도 이상하면 <code>app/data/backup/</code>의 최근 백업 파일로 복원하세요(업데이트 전 자동 백업됨)</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="faq-자주-묻는-질문">FAQ (자주 묻는 질문)</h2>
@@ -554,20 +589,31 @@ A. 아닙니다. ⚙ 설정 페이지의 &quot;한 번에 불러올 개수&quot;
 </tr>
 <tr>
 <td>상업적 사용</td>
-<td>Apache-2.0 조건 하에 허용</td>
+<td><strong>허용</strong> — 수정·복제·포크·재배포·판매·서비스 운영·교육 자료 활용·회사/고객사 납품 모두 Apache-2.0 조건(저작권·라이선스 고지 보존) 하에 가능</td>
+</tr>
+<tr>
+<td>금지 사항</td>
+<td>&quot;Claude&quot;·&quot;Anthropic&quot; 등 타인 상표·로고를 O-Brain 자체 상표처럼 쓰거나, 공식 제휴·인증인 것처럼 표시하는 것</td>
+</tr>
+<tr>
+<td>책임 제한 (Limitation of Liability)</td>
+<td>이 소프트웨어를 사용해 발생하는 어떤 손해(데이터 손실 포함)에도 저작권자는 법적 책임을 지지 않습니다</td>
 </tr>
 <tr>
 <td>보증</td>
-<td><strong>없음 (AS-IS)</strong> — 사용 결과 책임은 사용자에게 있음</td>
+<td><strong>없음 (AS-IS, No Warranty)</strong> — 사용 결과 책임은 전적으로 사용자에게 있습니다</td>
 </tr>
 <tr>
 <td>외부 서비스</td>
-<td>Claude / Anthropic 등 외부 서비스 약관은 별도 적용</td>
+<td>Claude / Anthropic 등 외부 서비스는 O-Brain과 별개로 <strong>그 자체의 이용약관</strong>이 적용됩니다(아래 참고)</td>
 </tr>
 </tbody></table>
 <ul>
-<li>내장 오픈소스 라이브러리(better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph 등)는 <strong>각자의 라이선스</strong>(MIT/Apache-2.0)를 따릅니다</li>
-<li>&quot;Claude&quot;, &quot;Anthropic&quot;은 해당 회사의 상표입니다. O-Brain은 이들과 공식 제휴 관계가 없습니다</li>
+<li>내장 오픈소스 라이브러리(better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, 3d-force-graph, express, @modelcontextprotocol/sdk)와 로컬 AI 모델(all-MiniLM-L6-v2)은 전부 <strong>허용형 라이선스</strong>(MIT/Apache-2.0)로 확인됐습니다(카피레프트·GPL 계열 없음) — 상업적 사용에 지장이 없습니다.</li>
+<li><strong>Claude Code/Anthropic API로 만든 산출물(대화 결과)의 소유권</strong>: Anthropic 상업 이용약관 원문 기준으로 산출물은 <strong>사용자 소유</strong>이며, 대화 내용은 Anthropic의 모델 학습에 쓰이지 않습니다(anthropic.com/legal/commercial-terms 원문 확인, 2026-08-10). 다만 요금제·세부 사용 정책은 계정마다 다를 수 있으니 정확한 내용은 그 약관 원문에서 직접 확인하시기 바랍니다 — 이건 O-Brain이 아니라 Anthropic이 정하는 부분입니다.</li>
+<li>&quot;Claude&quot;, &quot;Anthropic&quot;, &quot;Codex&quot;, &quot;OpenAI&quot;는 각 회사의 상표입니다. O-Brain은 이들과 <strong>공식 제휴·인증 관계가 없고</strong>, 로고나 브랜드 이미지를 사용하지 않습니다. (&quot;Claude Code와 함께 작동함&quot;이라는 설명은 가능하지만, 공식 인증 제품처럼 보이게 하지 않습니다.)</li>
+<li>제품명 &quot;O-Brain&quot;은 개인 프로젝트의 작업명입니다. 정식 상표 등록 여부는 확인되지 않았으므로, 이 이름으로 상표를 출원하거나 상업적으로 크게 내세우기 전에는 별도로 공식 상표 데이터베이스를 확인하는 것을 권장합니다.</li>
+<li><strong>이 README·라이선스 안내는 법률 자문이 아닙니다.</strong> 계약·납품·재배포 등 실제 상업적 활용을 계획 중이라면, 위 내용을 참고 자료로만 쓰고 필요 시 변호사 등 전문가의 확인을 받으시기 바랍니다.</li>
 <li>라이선스 전문: <code>LICENSE</code> 파일 · 의존성 고지 전문: <code>NOTICE</code> 파일</li>
 </ul>
 <hr>

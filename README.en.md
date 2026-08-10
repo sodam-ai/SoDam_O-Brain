@@ -393,6 +393,13 @@ The complete milestone-by-milestone history is in the project's `CHECKPOINT.md` 
 | Embedding download fails | Check internet connection · allow Node.js through firewall |
 | Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, restore from the latest `.db` file in `app/data/backup/` |
 | Changed a count in Settings but the graph didn't change | This is expected — the Graph tab uses a separate "node count" setting (different from the list page size) |
+| Downloaded folder/file is blocked or won't open | This is often an antivirus or "downloaded from another PC" warning. Right-click the file (or the zip) → **Properties → check "Unblock" → OK**. If antivirus keeps blocking it, add this folder as an exception |
+| `better-sqlite3`-related error during `npm install` | This usually resolves itself since a prebuilt binary is used. If it still fails, **reinstall Node.js 20.x LTS** and run `npm install` again |
+| `/plugin install` gives a "Marketplace not found" error | You **must run it in two separate steps** — follow the [Claude Code Plugin](#claude-code-plugin-optional) order above again (`marketplace add` first, `install` second) |
+| Errors when the install path has spaces or non-English characters | Some tools can't handle spaces or non-ASCII characters in the folder path. We recommend installing to a path with **no spaces and ASCII-only characters** (e.g. `C:\Tools\O-Brain`) |
+| 3D graph doesn't show or keeps stuttering | Older PCs or some browsers render 3D (WebGL) slowly. **Switch to 2D** on the Graph tab, or lower "Graph node count" in ⚙ Settings |
+| Search returns zero results | If you just started the server, the AI embedding model may still be downloading (1–3 minutes, first run only). If it's still empty, you may not have any memories saved yet — run `npm run seed` to check with sample data |
+| Behavior looks wrong after updating to a new version | Restarting the server **automatically upgrades** the database structure to the latest version (auto-migration). If something still looks wrong, restore from the most recent file in `app/data/backup/` (an automatic backup is made before every update) |
 
 ---
 
@@ -417,12 +424,17 @@ A. No. In the ⚙ Settings page, "page size" applies only to List/Timeline/Overv
 |------|---------|
 | Personal use | Free to use |
 | Modification · copying | Permitted (must preserve copyright notices) |
-| Commercial use | Permitted under Apache-2.0 terms |
-| Warranty | **None (AS-IS)** — you are responsible for outcomes |
-| External services | Claude / Anthropic and other service terms apply separately |
+| Commercial use | **Permitted** — modification, copying, forking, redistribution, resale, running it as a service, use in training materials, and delivery to a company/client are all allowed under Apache-2.0 terms (preserve copyright/license notices) |
+| Prohibited | Using "Claude"/"Anthropic" trademarks or logos as if they were O-Brain's own, or implying official partnership/certification |
+| Limitation of Liability | The copyright holder is not liable for any damages (including data loss) arising from use of this software |
+| Warranty | **None (AS-IS, No Warranty)** — you are fully responsible for the outcomes of use |
+| External services | Claude / Anthropic and other external services are governed by **their own terms of service**, separate from O-Brain (see below) |
 
-- Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, etc.) are under **their own licenses** (MIT/Apache-2.0)
-- "Claude" and "Anthropic" are trademarks of their respective owners. O-Brain has no official affiliation with them
+- Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, 3d-force-graph, express, @modelcontextprotocol/sdk) and the local AI model (all-MiniLM-L6-v2) have all been confirmed to use **permissive licenses (MIT/Apache-2.0)** — no copyleft/GPL-family licenses are involved, so commercial use is unaffected.
+- **Ownership of output generated via Claude Code/Anthropic API**: per the text of Anthropic's Commercial Terms of Service, outputs belong to **the user**, and conversation content is not used to train Anthropic's models (verified against anthropic.com/legal/commercial-terms, 2026-08-10). Specific plan details and usage policies can vary by account, so please check the terms directly for anything account-specific — that's set by Anthropic, not O-Brain.
+- "Claude", "Anthropic", "Codex", and "OpenAI" are trademarks of their respective owners. O-Brain has **no official affiliation or certification** with them and does not use their logos or brand assets. (Saying "works with Claude Code" is fine; presenting O-Brain as an officially certified product is not.)
+- The product name "O-Brain" is a personal-project working name. Whether it is formally trademarked elsewhere has not been confirmed — if you plan to register a trademark or use this name prominently in a commercial context, we recommend checking an official trademark database separately first.
+- **This README/license section is not legal advice.** If you're planning an actual commercial deployment, contract, or redistribution, treat the above as reference only and consult a qualified professional (e.g. a lawyer) as needed.
 - Full license text: `LICENSE` file · Full dependency notices: `NOTICE` file
 
 ---
