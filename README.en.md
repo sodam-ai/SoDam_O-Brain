@@ -281,6 +281,13 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-08-17 — Discovered and recovered a 6-day silent auto-save outage, hardened memory-save validation</b></summary>
+
+- **Discovered and recovered a 6-day silent auto-save outage**: Between 2026-08-11 and 2026-08-17, a Node.js update on this PC broke compatibility with the internal storage module (better-sqlite3), but the failure was designed to fail silently instead of showing an error, so nobody noticed. Conversations during that window may not have been saved to O-Brain. It's fixed now — if this ever happens again, checking the last-save time on the dashboard or via `/o-brain:status` will reveal a silent outage.
+- **Added an extra layer of validation on memory save**: The save function itself now always clamps importance/confidence values to their valid ranges (1-5, 0-1), not just the callers that invoke it. No bad value was ever actually saved because of this gap, but it was a shallow spot in the defenses that we closed proactively.
+</details>
+
+<details>
 <summary><b>2026-08-09~10 — Context-matched memories on session resume, graph fallback-mode notice, fixed dropped "#"-prefixed memories, blocked local-command log leakage</b></summary>
 
 - **Resuming a session now surfaces memories related to what you were discussing**: Previously, resuming a Claude Code session always pulled in memories by "most recent / most important" only. Now it also looks at what the prior conversation was about and prioritizes memories relevant to that topic (e.g., resuming a conversation about "button color" surfaces button-related decisions first). A brand-new session has no prior conversation to go on, so it still uses the same recency/importance ordering as before.
