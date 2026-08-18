@@ -193,6 +193,17 @@ Stop the server: `Ctrl + C` in the terminal.
 | **Timeline** | Memories in chronological order |
 | **⚙ Settings** | Adjust page size for List/Timeline/Overview, graph node count, auto-refresh on/off and interval, theme, and intro banner visibility — 5 controls in one page. Values are saved to your browser (localStorage) and persist across visits |
 
+#### Screen Preview
+
+> The items below are placeholders, not actual screenshots. Run `npm start` and open
+> `http://127.0.0.1:7740` in your browser to see the real screens right away.
+
+- [Image: Graph view — 2D/3D knowledge graph screen]
+- [Image: Overview tab — stats/distribution screen]
+- [Image: List tab — card list + detail panel screen]
+- [Image: Timeline tab — chronological memory screen]
+- [Image: Settings tab — 5 adjustable controls screen]
+
 ---
 
 ## Key Commands
