@@ -4,6 +4,9 @@ import { embed, toBlob } from './embed.mjs';
 import { classify } from './classify.mjs';
 
 export async function addMemory(db, { content, type = '지식', importance = 3, source = 'ai', confidence = 0.6, project = null, category = null, scope = 'global', session_id = null }) {
+  // 호출부(HTTP/MCP)가 이미 클램프하지만, 함수 자체도 방어(향후 새 호출부의 클램프 누락 대비 — 07-11 비대칭 결함과 같은 유형 재발 방지).
+  importance = Math.min(5, Math.max(1, Number.isFinite(Number(importance)) ? Math.round(Number(importance)) : 3));
+  confidence = Math.min(1, Math.max(0, Number.isFinite(Number(confidence)) ? Number(confidence) : 0.6));
   const { clean, hits } = redact(content);          // 1) 보안 (저장 전 필수)
   // 1.2) 중복 방지 — 같은 프로젝트에 '내용(redact 후)이 정확히 같은' 기억이 있으면 재저장 안 함.
   // 의미유사도가 아니라 '정확 일치'만 검사 → 서로 다른 결정은 절대 막지 않음(silent failure 방지). 스킵은 호출자에 가시화.
