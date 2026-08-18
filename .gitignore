@@ -30,6 +30,11 @@ build/
 # 위치 무관(저장소 최상위에도 별도로 생김, 2026-08-03 실측 확인) 매칭
 .sodam-re/
 
+# 다른 설치 플러그인(멀티에이전트 상태추적 추정)이 이 폴더를 cwd로 쓰며 남기는 세션 락파일 — O-Brain 코드 무관, 2026-08-17 plugin/scripts/ 아래에서 실측 확인
+.active-agents
+.active-agents.lock
+.active-agents.tmp
+
 # OS / 에디터
 .DS_Store
 Thumbs.db
