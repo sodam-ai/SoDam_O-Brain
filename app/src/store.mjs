@@ -171,6 +171,39 @@ export function findIsolatedClusters(db, { maxClusters = 5, maxMembers = 6 } = {
   })).filter(c => c.members.length);
 }
 
+// 최단경로 찾기 — PRD 05 §6 "그래프 분석 알고리즘"의 남은 조각. relation 테이블만으로 BFS(방향 무시,
+// 연결 여부만 봄 — findIsolatedClusters의 Union-Find와 같은 원칙). 새 의존성 없음.
+export function findShortestPath(db, fromId, toId) {
+  fromId = Number(fromId); toId = Number(toId);
+  if (!Number.isFinite(fromId) || !Number.isFinite(toId)) return { found: false, path: [] };
+  if (fromId === toId) {
+    const row = db.prepare('SELECT id, content, type FROM memory WHERE id = ?').get(fromId);
+    return row ? { found: true, path: [row] } : { found: false, path: [] };
+  }
+  const relations = db.prepare('SELECT from_id, to_id FROM relation').all();
+  if (!relations.length) return { found: false, path: [] };
+  const adj = new Map();
+  const link = (a, b) => { if (!adj.has(a)) adj.set(a, []); adj.get(a).push(b); };
+  for (const r of relations) { link(r.from_id, r.to_id); link(r.to_id, r.from_id); }
+  if (!adj.has(fromId) || !adj.has(toId)) return { found: false, path: [] };
+  const prev = new Map([[fromId, null]]);
+  const queue = [fromId];
+  while (queue.length) {
+    const cur = queue.shift();
+    if (cur === toId) break;
+    for (const next of adj.get(cur) || []) {
+      if (!prev.has(next)) { prev.set(next, cur); queue.push(next); }
+    }
+  }
+  if (!prev.has(toId)) return { found: false, path: [] };
+  const ids = [];
+  for (let n = toId; n !== null; n = prev.get(n)) ids.unshift(n);
+  const rows = db.prepare(`SELECT id, content, type FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`).all(...ids);
+  const byId = new Map(rows.map(r => [r.id, r]));
+  const path = ids.map(id => byId.get(id)).filter(Boolean);
+  return { found: path.length === ids.length, path };
+}
+
 // 대시보드 개요용 집계 — DB 전체 기준(SQL COUNT/GROUP BY)이라 기억 수가 수천이어도 정확·빠름.
 export function getStats(db) {
   const get = (sql, ...a) => db.prepare(sql).get(...a);

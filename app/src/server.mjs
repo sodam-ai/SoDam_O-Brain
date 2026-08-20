@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
-import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates } from './store.mjs';
+import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates, findShortestPath } from './store.mjs';
 import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce, listBackups } from './backup.mjs';
@@ -63,6 +63,14 @@ app.get('/api/stats', (req, res) => {
 });
 app.get('/api/categories', (req, res) => {
   try { res.json(listCategories(db)); } catch (e) { res.status(500).json({ error: '카테고리 조회 실패' }); }
+});
+// 두 기억 사이 최단경로 — PRD 05 §6 "그래프 분석 알고리즘"
+app.get('/api/path', (req, res) => {
+  const from = Number(req.query.from), to = Number(req.query.to);
+  if (!Number.isInteger(from) || from <= 0 || !Number.isInteger(to) || to <= 0) {
+    return res.status(400).json({ error: '잘못된 id' });
+  }
+  try { res.json(findShortestPath(db, from, to)); } catch (e) { res.status(500).json({ error: '경로 탐색 실패' }); }
 });
 // 기억 1건 — 그래프에서 상한 밖 노드를 눌러도 상세를 열 수 있게(대량 대비)
 app.get('/api/memory/:id', (req, res) => {

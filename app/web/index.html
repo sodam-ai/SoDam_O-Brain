@@ -503,7 +503,8 @@
           <div class="redactnote"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>저장할 때 비밀번호·API 키 같은 민감정보는 자동으로 가려집니다.</span></div>
           <div class="eact"><button class="save" id="e-save">저장</button><button class="cancel" id="e-cancel">취소</button></div>
         </div>
-        <div class="drel" id="d-rel"></div></div>
+        <div class="drel" id="d-rel"></div>
+        <div class="drel" id="d-path"></div></div>
     </aside>
   </main>
 
@@ -1143,6 +1144,40 @@
       }));
     }
 
+    /* 최단경로 찾기 — PRD 05 §6 그래프 분석. 새 검색 UI 없이 기존 select 패턴(#relTarget과 동일) 재사용 */
+    function renderPathFinder(m){
+      const host=document.getElementById('d-path'); if(!host) return;
+      const opts=all.filter(a=>a.id!==m.id).map(a=>`<option value="${a.id}">[${esc(a.type)}] ${esc(String(a.content).slice(0,28))}</option>`).join('');
+      host.innerHTML = `<h4>다른 기억까지 경로 찾기</h4>
+        <div class="reladd">
+          <select id="pathTarget" aria-label="목적지 기억">${opts}</select>
+          <button id="pathFind">찾기</button>
+        </div>
+        <div id="pathResult" style="margin-top:8px"></div>`;
+      const btn=host.querySelector('#pathFind');
+      if(btn) btn.addEventListener('click',()=>findPathTo(m.id));
+    }
+    async function findPathTo(fromId){
+      const sel=document.getElementById('pathTarget'); if(!sel) return;
+      const toId=Number(sel.value);
+      const box=document.getElementById('pathResult'); if(box) box.innerHTML='<span style="color:var(--muted);font-size:.82rem">찾는 중…</span>';
+      let r; try{ r=await get('/api/path?from='+fromId+'&to='+toId); }catch{ r={found:false,path:[]}; }
+      if(!box) return;
+      if(!r || !r.found || !r.path.length){ box.innerHTML='<div class="relempty">연결된 경로가 없어요.</div>'; setPathHighlight([]); return; }
+      box.innerHTML = r.path.map((p,i)=>`<div class="relrow"><span class="reltag" style="color:var(--accent);background:var(--accent-weak,rgba(0,0,0,.08))">${i+1}단계</span><span class="rt" title="${esc(p.content)}">${esc(String(p.content).slice(0,60))}</span></div>`).join('');
+      setPathHighlight(r.path.map(p=>p.id));
+    }
+    function setPathHighlight(ids){ // 경로 전체를 그래프에서 강조 — 기존 highlightNodes/highlightLinks 재사용, 새 렌더러 없음
+      highlightNodes.clear(); highlightLinks.clear();
+      if(ids && ids.length && G){
+        for(const id of ids) highlightNodes.add(id);
+        const idSet=new Set(ids);
+        for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
+          if(idSet.has(s)&&idSet.has(t)) highlightLinks.add(l); }
+      }
+      try{ _reapply(); }catch{}
+    }
+
     /* 상세 패널 + 포커스 관리 */
     let curDetail=null, lastFocused=null;
     function openDetail(m){ curDetail=m; lastFocused=document.activeElement; exitEditUI();
@@ -1157,6 +1192,7 @@
         `<span class="dtime">${esc(absTime(m.created_at))}</span>`].filter(Boolean).join('');
       document.getElementById('d-content').textContent=m.content;
       renderRelations(m);
+      renderPathFinder(m);
       if(m.id) fetch('/api/memory/'+m.id+'/touch',{method:'POST'}).then(()=>{ m.access_count=(m.access_count||0)+1; gData=null; }).catch(()=>{}); // 조회 기록(글로우)
       document.getElementById('detail').classList.add('open');
       document.getElementById('scrim').classList.add('open');
