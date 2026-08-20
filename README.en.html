@@ -83,6 +83,10 @@ O-Brain is the <strong>auto-notepad</strong> you keep next to that AI — it wri
 <td>Visualize memories as 2D/3D dots and lines</td>
 </tr>
 <tr>
+<td><strong>Shortest Path Finder</strong></td>
+<td>From the detail panel, pick another memory and click &quot;Find path&quot; to see how many relation-hops connect the two memories, then highlight that path on the graph (highlight persists across tab switches and 2D/3D toggles). Shows &quot;No connected path&quot; if there isn&#39;t one</td>
+</tr>
+<tr>
 <td><strong>Time Travel</strong></td>
 <td>Query memories that were &quot;alive&quot; on any past date</td>
 </tr>
@@ -422,6 +426,14 @@ npm run seed       # Add sample data (for testing)
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
 <details open>
+<summary><b>2026-08-20~21 — New shortest-path finder, 3 bug fixes (accessibility, undo, path highlight), passed a comprehensive security/input-validation test round</b></summary><ul>
+<li><strong>Shortest path finder (new feature)</strong>: From a memory&#39;s detail panel, search for and pick another memory, then click &quot;Find path&quot; — it finds how many relation-hops connect the two (&quot;step 1 → step 2 → step 3&quot;) and highlights that exact path on the graph with a bold connector. If they&#39;re not connected, it shows &quot;No connected path.&quot; As a safety guard, once the relation count exceeds 5,000 the search is skipped to protect performance (verified directly against real data at the 5,000/5,001 boundary).</li>
+<li><strong>Bug fix 1 — closed panels stayed &quot;open&quot; for screen readers</strong>: Closing the memory detail panel or the command palette (Ctrl+K) visually hid it, but screen readers (accessibility tools) still saw it as open. Fixed.</li>
+<li><strong>Bug fix 2 — the delete-undo notice could disappear early</strong>: Deleting a memory shows a &quot;10-second undo&quot; notice, but if a background notification about new memories happened to appear at that exact moment, it would immediately overwrite and erase the undo notice. Now, background notifications no longer overwrite an active undo notice.</li>
+<li><strong>Bug fix 3 — the path-finder highlight disappeared when switching graph views</strong>: If you found a path from the List or Overview tab and then switched to the Graph tab (or toggled 2D/3D), the highlight you just found would silently vanish. Fixed — the most recently found path now stays highlighted across tab switches and 2D/3D toggles.</li>
+<li><strong>Comprehensive security &amp; input-validation testing</strong>: Ran real tests with invalid values, empty values, boundary cases (e.g. finding a path from a memory to itself), unauthenticated requests, SQL-injection-style strings, and malicious scripts (<code>&lt;script&gt;</code> tags, etc.) — every case was either safely rejected with a clear error message (bad input) or rendered harmlessly as plain text (malicious scripts were neutralized across all three places content is shown: list cards, detail view, and graph hover tooltips). Also tried a 200KB oversized submission, which the existing 64KB request-size limit correctly and safely rejected.</details></li>
+</ul>
+<details>
 <summary><b>2026-08-17 — Discovered and recovered a 6-day silent auto-save outage, hardened memory-save validation</b></summary><ul>
 <li><strong>Discovered and recovered a 6-day silent auto-save outage</strong>: Between 2026-08-11 and 2026-08-17, a Node.js update on this PC broke compatibility with the internal storage module (better-sqlite3), but the failure was designed to fail silently instead of showing an error, so nobody noticed. Conversations during that window may not have been saved to O-Brain. It&#39;s fixed now — if this ever happens again, checking the last-save time on the dashboard or via <code>/o-brain:status</code> will reveal a silent outage.</li>
 <li><strong>Added an extra layer of validation on memory save</strong>: The save function itself now always clamps importance/confidence values to their valid ranges (1-5, 0-1), not just the callers that invoke it. No bad value was ever actually saved because of this gap, but it was a shallow spot in the defenses that we closed proactively.</details></li>

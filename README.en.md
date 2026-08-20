@@ -38,6 +38,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **100% Local** | All memories stay on your PC only. No external server or cloud transfer |
 | **Hybrid Search** | Keyword (FTS5) + semantic similarity (vector search) simultaneously |
 | **Knowledge Graph** | Visualize memories as 2D/3D dots and lines |
+| **Shortest Path Finder** | From the detail panel, pick another memory and click "Find path" to see how many relation-hops connect the two memories, then highlight that path on the graph (highlight persists across tab switches and 2D/3D toggles). Shows "No connected path" if there isn't one |
 | **Time Travel** | Query memories that were "alive" on any past date |
 | **Confidence Decay** | AI-extracted memories auto-decay with a 30-day half-life |
 | **Security Filter** | API keys and passwords auto-removed before saving (`[REDACTED]`) |
@@ -281,6 +282,16 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-08-20~21 — New shortest-path finder, 3 bug fixes (accessibility, undo, path highlight), passed a comprehensive security/input-validation test round</b></summary>
+
+- **Shortest path finder (new feature)**: From a memory's detail panel, search for and pick another memory, then click "Find path" — it finds how many relation-hops connect the two ("step 1 → step 2 → step 3") and highlights that exact path on the graph with a bold connector. If they're not connected, it shows "No connected path." As a safety guard, once the relation count exceeds 5,000 the search is skipped to protect performance (verified directly against real data at the 5,000/5,001 boundary).
+- **Bug fix 1 — closed panels stayed "open" for screen readers**: Closing the memory detail panel or the command palette (Ctrl+K) visually hid it, but screen readers (accessibility tools) still saw it as open. Fixed.
+- **Bug fix 2 — the delete-undo notice could disappear early**: Deleting a memory shows a "10-second undo" notice, but if a background notification about new memories happened to appear at that exact moment, it would immediately overwrite and erase the undo notice. Now, background notifications no longer overwrite an active undo notice.
+- **Bug fix 3 — the path-finder highlight disappeared when switching graph views**: If you found a path from the List or Overview tab and then switched to the Graph tab (or toggled 2D/3D), the highlight you just found would silently vanish. Fixed — the most recently found path now stays highlighted across tab switches and 2D/3D toggles.
+- **Comprehensive security & input-validation testing**: Ran real tests with invalid values, empty values, boundary cases (e.g. finding a path from a memory to itself), unauthenticated requests, SQL-injection-style strings, and malicious scripts (`<script>` tags, etc.) — every case was either safely rejected with a clear error message (bad input) or rendered harmlessly as plain text (malicious scripts were neutralized across all three places content is shown: list cards, detail view, and graph hover tooltips). Also tried a 200KB oversized submission, which the existing 64KB request-size limit correctly and safely rejected.
+</details>
+
+<details>
 <summary><b>2026-08-17 — Discovered and recovered a 6-day silent auto-save outage, hardened memory-save validation</b></summary>
 
 - **Discovered and recovered a 6-day silent auto-save outage**: Between 2026-08-11 and 2026-08-17, a Node.js update on this PC broke compatibility with the internal storage module (better-sqlite3), but the failure was designed to fail silently instead of showing an error, so nobody noticed. Conversations during that window may not have been saved to O-Brain. It's fixed now — if this ever happens again, checking the last-save time on the dashboard or via `/o-brain:status` will reveal a silent outage.
