@@ -1168,6 +1168,7 @@
       setPathHighlight(r.path.map(p=>p.id));
     }
     function setPathHighlight(ids){ // 경로 전체를 그래프에서 강조 — 기존 highlightNodes/highlightLinks 재사용, 새 렌더러 없음
+      lastPathIds = (ids && ids.length) ? ids.slice() : null; // 그래프 탭 전환 시 재적용용(버그: drawGraph가 무조건 지움)
       highlightNodes.clear(); highlightLinks.clear();
       if(ids && ids.length && G){
         for(const id of ids) highlightNodes.add(id);
@@ -1423,7 +1424,7 @@
       document.getElementById('view-settings').hidden = (t!=='settings');
       document.getElementById('subbar').style.display = (t==='overview'||t==='settings') ? 'none' : '';
       if(t==='overview') renderOverview();
-      if(t==='graph') initGraph();
+      if(t==='graph') initGraph().then(()=>{ if(lastPathIds && lastPathIds.length) setPathHighlight(lastPathIds); }); // drawGraph()가 지운 경로 강조 재적용(버그 수정)
       if(t==='settings') renderSettingsPage(); }
 
     /* 검색 */
@@ -1582,6 +1583,7 @@
     /* ── 그래프 ── */
     let gMode='2d', gData=null, G=null;
     let highlightNodes=new Set(), highlightLinks=new Set();
+    let lastPathIds=null; // 마지막으로 찾은 경로(그래프 탭 전환 시 drawGraph()가 강조를 지우는 것 재적용용)
     let searchHits=null, _reapply=()=>{};                 // 검색 강조 대상(없으면 null) / 그래프 재착색 함수
     const EMPTY=new Set();
     const lid = e => (typeof e==='object'&&e)?e.id:e;
@@ -1623,6 +1625,7 @@
     }
     function openGraphNode(n){ getMemById(n.id).then(m=>openDetail(m||{id:n.id,type:n.type,importance:n.importance||Math.round(n.val||1),content:n.name,category:n.category,access_count:n.access,created_at:n.created_at,project:n.project,confidence:n.confidence,source:'-'})); }
     function setGraphHighlight(nodeId){ // hover(마우스)·a11y 포커스(키보드) 공용 강조 로직 — PRD §14 키보드 동등 기능
+      lastPathIds=null; // hover/포커스가 경로 강조보다 우선(경로 재적용 예약 취소)
       highlightNodes.clear(); highlightLinks.clear();
       if(nodeId!=null && G){ highlightNodes.add(nodeId);
         for(const l of G.graphData().links){ const s=lid(l.source),t=lid(l.target);
@@ -1663,7 +1666,8 @@
       }
       if(gData) drawGraph();
     }
-    function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph(); }
+    function setGraphMode(m){ gMode=m; document.getElementById('g2d').classList.toggle('on',m==='2d'); document.getElementById('g3d').classList.toggle('on',m==='3d'); drawGraph();
+      if(lastPathIds && lastPathIds.length) setPathHighlight(lastPathIds); } // 2D/3D 전환 시에도 drawGraph()가 지운 경로 강조 재적용
     const nodeR = n => 3.7*Math.sqrt(Math.max(1, n.val||1));
 
     function drawGraph(){
@@ -1770,9 +1774,11 @@
       } catch(e){} finally { _refreshing = false; }
     }
     function _busy(){ // 사용자 작업 중이면 자동 새로고침 보류(방해 방지)
+      const t=document.getElementById('toast');
       return document.getElementById('detail').classList.contains('open')
           || document.getElementById('cmdk').classList.contains('open')
-          || ((document.getElementById('q').value||'').trim() !== '');
+          || ((document.getElementById('q').value||'').trim() !== '')
+          || (t.classList.contains('show') && t.querySelector('button.undo') != null); // 되돌리기 대기 중엔 자동알림이 토스트를 덮어쓰지 않게(버그: 삭제 직후 자동갱신 알림이 되돌리기 버튼을 지워버림)
     }
     async function pollHealth(){
       if(!autoRefreshOn) return;
