@@ -35,6 +35,10 @@ build/
 .active-agents.lock
 .active-agents.tmp
 
+# 하네스 자체 진단로그 — 셸 명령 실패 시 자동 재생성됨, O-Brain 코드와 무관(CHECKPOINT.md 여러 라운드에서
+# 실측: 삭제해도 다음 실패 시 다시 생김). 최상위·app/ 등 위치 무관하게 매번 새로 삭제하는 대신 등록.
+.failure-tracker.jsonl
+
 # OS / 에디터
 .DS_Store
 Thumbs.db
