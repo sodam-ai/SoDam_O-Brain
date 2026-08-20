@@ -484,7 +484,7 @@
     <section id="view-settings" class="view" role="tabpanel" aria-labelledby="settingsBtn" hidden><div class="ov" id="settingsPage"></div></section>
 
     <div class="scrim" id="scrim"></div>
-    <aside id="detail" role="dialog" aria-modal="true" aria-labelledby="d-title" tabindex="-1">
+    <aside id="detail" role="dialog" aria-modal="true" aria-labelledby="d-title" aria-hidden="true" tabindex="-1">
       <div class="dhead">
         <h3 id="d-title"></h3>
         <button class="iconbtn" id="d-copy" aria-label="내용 복사" title="내용 복사"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
@@ -509,7 +509,7 @@
   </main>
 
   <div class="cmdk-scrim" id="cmdkScrim"></div>
-  <div class="cmdk" id="cmdk" role="dialog" aria-modal="true" aria-label="명령 팔레트">
+  <div class="cmdk" id="cmdk" role="dialog" aria-modal="true" aria-label="명령 팔레트" aria-hidden="true">
     <div class="cmdk-in">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="cmdkInput" placeholder="명령 실행 또는 기억 검색…  (예: 그래프, 테마, 포트)" autocomplete="off" aria-label="명령 또는 검색" />
@@ -1195,6 +1195,7 @@
       renderPathFinder(m);
       if(m.id) fetch('/api/memory/'+m.id+'/touch',{method:'POST'}).then(()=>{ m.access_count=(m.access_count||0)+1; gData=null; }).catch(()=>{}); // 조회 기록(글로우)
       document.getElementById('detail').classList.add('open');
+      document.getElementById('detail').removeAttribute('aria-hidden');
       document.getElementById('scrim').classList.add('open');
       document.getElementById('d-close').focus();
       // 어느 세션(창)에서 저장됐는지 — 여러 창을 동시에 쓸 때 출처 구분(실패해도 무시, 있으면만 붙임)
@@ -1207,8 +1208,13 @@
         }).catch(()=>{});
       }
     }
-    function closeDetail(){ exitEditUI(); document.getElementById('detail').classList.remove('open'); document.getElementById('scrim').classList.remove('open');
-      curDetail=null; if(lastFocused && lastFocused.focus){ try{ lastFocused.focus(); }catch(e){} } }
+    function closeDetail(){ exitEditUI(); const d=document.getElementById('detail');
+      d.classList.remove('open'); document.getElementById('scrim').classList.remove('open');
+      curDetail=null;
+      // 포커스가 #detail 안에 남아있으면 aria-hidden이 브라우저에 의해 거부됨(포커스 먼저 이동 필수)
+      if(lastFocused && lastFocused.focus){ try{ lastFocused.focus(); }catch(e){} }
+      else if(document.activeElement && document.activeElement.blur){ try{ document.activeElement.blur(); }catch(e){} }
+      d.setAttribute('aria-hidden','true'); }
 
     /* 상세 편집(내용/유형/중요도) — 저장 시 서버에서 재redact+재임베딩 */
     function exitEditUI(){ const b=document.getElementById('d-body'); if(b) b.classList.remove('editing'); const f=document.getElementById('d-edit-form'); if(f) f.classList.remove('on'); }
@@ -1540,8 +1546,10 @@
       function mark(){ const els=[...listEl.querySelectorAll('.cmdk-item')]; els.forEach((el,i)=>el.classList.toggle('sel',i===sel));
         const cur=els[sel]; if(cur) cur.scrollIntoView({block:'nearest'}); }
       function exec(i){ const it=items[i]; if(!it) return; close(); if(it.type==='cmd') it.run(); else openDetail(it.m); }
-      function openP(){ open=true; scrim.classList.add('open'); box.classList.add('open'); input.value=''; render(''); setTimeout(()=>input.focus(),20); }
-      function close(){ open=false; scrim.classList.remove('open'); box.classList.remove('open'); }
+      function openP(){ open=true; scrim.classList.add('open'); box.classList.add('open'); box.removeAttribute('aria-hidden'); input.value=''; render(''); setTimeout(()=>input.focus(),20); }
+      function close(){ open=false; scrim.classList.remove('open'); box.classList.remove('open');
+        input.blur(); // 포커스가 box 안(검색창)에 남아있으면 aria-hidden이 브라우저에 의해 거부됨
+        box.setAttribute('aria-hidden','true'); }
       input.addEventListener('input', e=>render(e.target.value));
       listEl.addEventListener('click', e=>{ const el=e.target.closest('[data-i]'); if(el) exec(Number(el.dataset.i)); });
       listEl.addEventListener('mousemove', e=>{ const el=e.target.closest('[data-i]'); if(el){ sel=Number(el.dataset.i); mark(); } });
