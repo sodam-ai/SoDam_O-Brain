@@ -180,6 +180,10 @@ export function findShortestPath(db, fromId, toId) {
     const row = db.prepare('SELECT id, content, type FROM memory WHERE id = ?').get(fromId);
     return row ? { found: true, path: [row] } : { found: false, path: [] };
   }
+  // 프로젝트 전역 상한 관례(graph.mjs SIM_TOTAL_THRESHOLD 등)와 일관 — relation이 비정상적으로 많으면
+  // 무제한 로드 대신 명시적으로 생략(틀린 답 대신 "생략됨"만 반환 — 진화추적 skipped 패턴과 동일 원칙).
+  const relCount = db.prepare('SELECT COUNT(*) n FROM relation').get().n;
+  if (relCount > 5000) return { found: false, path: [], skipped: true };
   const relations = db.prepare('SELECT from_id, to_id FROM relation').all();
   if (!relations.length) return { found: false, path: [] };
   const adj = new Map();

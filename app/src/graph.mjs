@@ -1,5 +1,5 @@
-// 그래프 데이터 — 노드(기억) + 엣지(이미 있는 임베딩으로 "비슷한 기억끼리" 자동 연결).
-// 관계(relation) 표는 Phase 2에 채워지므로, 그 전엔 의미 유사도로 그래프를 만든다(실데이터).
+// 그래프 데이터 — 노드(기억) + 엣지(사용자가 직접 만든 관계 우선, 없는 쌍은 임베딩 유사도로 보완).
+// relation 표에 실제 연결이 있으면 그 관계선을 우선 쓰고, 아직 안 이어진 기억끼리만 의미 유사도로 채운다.
 
 export function buildGraph(db, { neighbors = 2, limit = 600 } = {}) {
   const total = db.prepare('SELECT COUNT(*) n FROM memory').get().n;
