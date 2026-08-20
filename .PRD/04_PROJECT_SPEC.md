@@ -147,6 +147,7 @@ npm run build
 | 그래프 라이브러리 | ~~react-force-graph~~ → **force-graph + 3d-force-graph**(2D+3D, WebGL, non-React) — 2026-08-02 재확정 |
 | 임베딩 | **transformers.js(`@huggingface/transformers`) + `Xenova/all-MiniLM-L6-v2` (384)** — 구현·실사용 확인됨 |
 | 코덱스 캡처 전략 | **미착수(의도적 보류)** — 훅·로그폴백 코드 전수 검색 0건, Claude Code 세션만 실사용 중이라 재승인 전까지 보류(CHECKPOINT 확정) |
+| 멀티도구 확장(제미나이·커서) | **미착수(의도적 보류)** — PRD 전체에 연동 스펙 한 줄뿐, 실사용 근거 없음. 코덱스와 동일 기준으로 재승인 전까지 보류(2026-08-20 CHECKPOINT 확정) |
 | 추출 모델 | ~~claude-haiku-4-5(유료 API)~~ → **규칙기반이 기본이자 유일 경로**(완전 로컬·무과금), AI 추출은 `/o-brain:remember` 등 호스트 LLM 수동 호출로 대체 |
 | 타임라인 | ~~vis-timeline~~ → **커스텀 HTML/CSS**(자체 구현) — 2026-08-02 재확정 |
 

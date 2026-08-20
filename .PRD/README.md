@@ -48,6 +48,7 @@ Phase 1을 시작하려면 [03_PHASES.md](./03_PHASES.md)의 **"Phase 1 시작 �
 - [x] 그래프: ~~react-force-graph~~ → **force-graph/3d-force-graph**(2D+3D) + 타임라인 ~~vis-timeline~~ → **커스텀 HTML/CSS**(2026-08-03 갱신)
 - [x] 임베딩: **transformers.js `all-MiniLM-L6-v2` (384)** 기본
 - [x] 코덱스: ~~훅 + 세션 로그 파일 폴백(미성숙 위험을 설계로 낮춤)~~ → **미착수·의도적 보류**(코덱스 실사용 근거 없음, 2026-08-03 CHECKPOINT 확정)
+- [x] 멀티도구(제미나이·커서): ~~Phase 3 확장~~ → **미착수·의도적 보류**(실사용 근거 없음 + 연동 스펙 미정의, 2026-08-20 CHECKPOINT 확정) — PRD 안에서 남은 신규 코딩 항목 없음
 - [x] 추출: ~~기본 claude-haiku-4-5(유료 API)~~ → **규칙기반이 기본**(완전 로컬·무과금, 2026-08-03 갱신) + 규칙기반 폴백
 - [x] scope 기본 `project` / 분류 시드 제공 / 이름 **O-Brain**(변경 가능)
 
