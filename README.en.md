@@ -237,6 +237,7 @@ npm run seed       # Add sample data (for testing)
 | API token file | `app/data/.api-token` (regenerated each run) |
 | Personal settings | `app/.env.local` (uses defaults if absent) |
 | This document | Project root (`README.md`/`README.en.md` and each `.html`) |
+| `app/web/graph.html` | **Intentionally kept early prototype file** (the current screen is `index.html`). It's dead code referenced nowhere, but kept as-is to preserve early development history rather than deleted |
 
 ### Environment Variables (`app/.env.local`)
 

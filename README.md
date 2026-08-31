@@ -237,6 +237,7 @@ npm run seed       # 예제 데이터 입력 (테스트용)
 | API 토큰 파일 | `app/data/.api-token` (실행마다 갱신) |
 | 개인 설정 | `app/.env.local` (없으면 기본값 사용) |
 | 이 문서 | 프로젝트 최상위(`README.md`/`README.en.md`/각 `.html`) |
+| `app/web/graph.html` | **의도적으로 남겨둔 초기 시제품 파일**(지금 쓰는 화면은 `index.html`). 코드 어디서도 안 쓰이는 죽은 파일이지만, 개발 초기 기록 보존 목적으로 삭제하지 않고 그대로 둠 |
 
 ### 환경 변수 (`app/.env.local`)
 
