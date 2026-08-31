@@ -196,14 +196,22 @@ Stop the server: `Ctrl + C` in the terminal.
 
 #### Screen Preview
 
-> The items below are placeholders, not actual screenshots. Run `npm start` and open
-> `http://127.0.0.1:7740` in your browser to see the real screens right away.
+> The screens below are filled with example (synthetic) data — not real personal memories.
 
-- [Image: Graph view — 2D/3D knowledge graph screen]
-- [Image: Overview tab — stats/distribution screen]
-- [Image: List tab — card list + detail panel screen]
-- [Image: Timeline tab — chronological memory screen]
-- [Image: Settings tab — 5 adjustable controls screen]
+**Graph view — 2D/3D knowledge graph** (red dashed = contradicts, green solid = supports)
+![Graph view](assets/screenshots/graph-2d.png)
+
+**Overview tab — stats/distribution**
+![Overview tab](assets/screenshots/overview.png)
+
+**List tab — card list + detail panel**
+![List tab](assets/screenshots/list-detail.png)
+
+**Timeline tab — chronological memory**
+![Timeline tab](assets/screenshots/timeline.png)
+
+**Settings tab — 5 adjustable controls**
+![Settings tab](assets/screenshots/settings.png)
 
 ---
 
