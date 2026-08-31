@@ -570,6 +570,10 @@ npm run seed       # Add sample data (for testing)
 <td>This usually resolves itself since a prebuilt binary is used. If it still fails, <strong>reinstall Node.js 20.x LTS</strong> and run <code>npm install</code> again</td>
 </tr>
 <tr>
+<td>Memories suddenly stop being saved / the graph stops growing, with no visible error</td>
+<td>If Windows auto-updates Node.js, the already-installed <code>better-sqlite3</code> binary can silently mismatch (no on-screen error — this is inherent to the auto-save feature). Run <code>cd app</code> then <code>npm rebuild better-sqlite3</code>, then confirm with <code>npm run status</code>. Checking <code>npm run status</code> occasionally is recommended</td>
+</tr>
+<tr>
 <td><code>/plugin install</code> gives a &quot;Marketplace not found&quot; error</td>
 <td>You <strong>must run it in two separate steps</strong> — follow the <a href="#claude-code-plugin-optional">Claude Code Plugin</a> order above again (<code>marketplace add</code> first, <code>install</code> second)</td>
 </tr>
