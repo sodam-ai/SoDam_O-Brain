@@ -98,15 +98,19 @@ O-Brain/
 
 ## 테스트 방법
 
+> [갱신, 2026-09-01 확인됨] 아래 세 명령은 최초 개념 설계 당시 초안이었고, 실제 `app/package.json`엔
+> 존재하지 않는다(이 프로젝트는 위 "기술 스택"대로 TypeScript·번들러 자체가 없음 — `tsc`/`build`가
+> 애초에 성립 불가). 실제 존재하는 스크립트로 정정.
+
 ```bash
+# 자체 테스트 스위트(임시 DB로 실행, 실 데이터 미접촉)
+npm run selftest
+
+# 실행 상태 점검(DB 통계·최근 저장 확인)
+npm run status
+
 # 웹 화면 로컬 실행
-npm run dev
-
-# 타입 체크
-npx tsc --noEmit
-
-# 빌드 확인
-npm run build
+npm start
 
 # 핵심 시나리오 수동 검증
 # 1) 클로드코드 세션 종료 -> data 폴더 SQLite에 새 기억이 쌓이는지
@@ -124,7 +128,8 @@ npm run build
 > ⚠️ 통합 방식 정정: 클로드코드 훅을 `settings.json`에 손으로 넣는 게 아니라 **클로드코드 플러그인으로 배포**(훅+MCP 번들). 상세는 **10_DEPLOYMENT_INSTALL.md**.
 1. **클로드코드 플러그인 설치**(`/plugin install`) → 훅·MCP 자동 등록
 2. (코덱스) **MCP 서버 등록** + 로그 파일 폴백
-3. 로컬 앱(그래프) 셋업: `npm install` → `db:init` → 로컬 서버 실행 → localhost 열기
+3. 로컬 앱(그래프) 셋업: `npm install` → `npm start`(최초 실행 시 DB 자동 생성, 별도 `db:init` 스크립트
+   없음 — `db.mjs`의 `openDb()`가 매 시작 시 스키마를 자동 확인·생성) → localhost 열기
 4. (선택) 공개 시: GitHub + 설치 안내 — Phase 1 범위 밖
 
 ---
