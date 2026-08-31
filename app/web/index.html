@@ -814,7 +814,7 @@
         try{
           for(const s of snaps){
             const r2=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({content:s.content,type:s.type,importance:s.importance,source:s.source,confidence:s.confidence,project:s.project})});
+              body:JSON.stringify({content:s.content,type:s.type,importance:s.importance,source:s.source,confidence:s.confidence,project:s.project,scope:s.scope,category:s.category})});
             const j2=await r2.json().catch(()=>({})); if(!r2.ok) continue;
             const nid=j2.id;
             for(const rel of (s.relations||[])){
@@ -857,7 +857,7 @@
         all=[]; await softRefresh(); renderDupCandidates();
         toast('정리했어요', 'ok', async ()=>{
           try{
-            await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:j.dropSnapshot.content,type:j.dropSnapshot.type,importance:j.dropSnapshot.importance,source:'user'})});
+            await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:j.dropSnapshot.content,type:j.dropSnapshot.type,importance:j.dropSnapshot.importance,source:j.dropSnapshot.source,confidence:j.dropSnapshot.confidence,project:j.dropSnapshot.project,scope:j.dropSnapshot.scope,category:j.dropSnapshot.category})});
             if(j.mode==='combine'){ await fetch('/api/memory/'+j.kept,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:j.keepOriginalContent})}); }
             all=[]; await softRefresh(); renderDupCandidates();
             toast('되돌렸어요','ok');
@@ -1255,7 +1255,8 @@
       const id=_bdSingleId; if(!id) return;
       const m=all.find(x=>x.id===id) || (curDetail&&curDetail.id===id?curDetail:null);
       if(!m){ toast('삭제 대상을 찾을 수 없어요','err'); return; }
-      const snap={ content:m.content, type:m.type||'지식', importance:m.importance||3, source:'user', confidence:m.confidence??1, project:m.project||null,
+      const snap={ content:m.content, type:m.type||'지식', importance:m.importance||3, source:m.source||'user', confidence:m.confidence??1, project:m.project||null,
+        scope:m.scope||'global', category:m.category||null,
         relations:rels.filter(r=>r.from_id===id||r.to_id===id) };
       try{ const r=await fetch('/api/memory/'+id,{method:'DELETE'}); if(!r.ok) throw 0; }
       catch{ toast('삭제하지 못했어요(서버 확인)','err'); return; }
@@ -1266,7 +1267,7 @@
       toast('기억을 삭제했어요','ok', async()=>{
         try{
           const r=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({content:snap.content,type:snap.type,importance:snap.importance,source:snap.source,confidence:snap.confidence,project:snap.project})});
+            body:JSON.stringify({content:snap.content,type:snap.type,importance:snap.importance,source:snap.source,confidence:snap.confidence,project:snap.project,scope:snap.scope,category:snap.category})});
           const j=await r.json().catch(()=>({})); if(!r.ok) throw 0;
           const nid=j.id;
           for(const rel of snap.relations){
@@ -1327,7 +1328,8 @@
       const ids=[...selectedIds];
       const pairs=ids.map(id=>{ const m=all.find(x=>x.id===id)||{}; if(!m.content) return null;
         return { id, content:m.content, type:m.type||'지식', importance:m.importance||3,
-          source:'user', confidence:m.confidence??1, project:m.project||null,
+          source:m.source||'user', confidence:m.confidence??1, project:m.project||null,
+          scope:m.scope||'global', category:m.category||null,
           relations:rels.filter(r=>r.from_id===id||r.to_id===id) }; }).filter(Boolean);
       exitSelMode();
       let res;
@@ -1349,7 +1351,7 @@
           if(!deleted.has(p.id)) continue;
           try{
             const r=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({content:p.content,type:p.type,importance:p.importance,source:p.source,confidence:p.confidence,project:p.project})});
+              body:JSON.stringify({content:p.content,type:p.type,importance:p.importance,source:p.source,confidence:p.confidence,project:p.project,scope:p.scope,category:p.category})});
             const j=await r.json().catch(()=>({})); if(!r.ok) throw 0;
             const nid=j.id;
             for(const rel of p.relations){

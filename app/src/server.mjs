@@ -11,6 +11,7 @@ import { initEmbedder, embedMode } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
 import { backupOnce, listBackups } from './backup.mjs';
 import { exportMemories } from './export.mjs';
+import { CATEGORIES } from './classify.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.OBRAIN_PORT || 7740);
@@ -168,7 +169,7 @@ app.post('/api/duplicates/clean-exact', async (req, res) => {
     const relRows = db.prepare('SELECT from_id, to_id, type FROM relation WHERE from_id = ? OR to_id = ?').all(id, id);
     try {
       const n = deleteMemory(db, id);
-      if (n) deleted.push({ id, content: p.b.content, type: p.b.type, importance: p.b.importance, source: 'user', confidence: 1, project: null, relations: relRows });
+      if (n) deleted.push({ id, content: p.b.content, type: p.b.type, importance: p.b.importance, source: p.b.source, confidence: p.b.confidence, project: p.b.project, category: p.b.category, scope: p.b.scope, relations: relRows });
       else failed.push(id);
     } catch { failed.push(id); }
   }
@@ -220,14 +221,15 @@ app.post('/api/memory/batch-delete', async (req, res) => {
 
 // 기억 생성(UI 복원·신규용) — addMemory 재사용(redact·embed·중복방지 포함)
 app.post('/api/memory', async (req, res) => {
-  const { content, type = '지식', importance = 3, source = 'user', confidence = 1, project = null, scope = 'global' } = req.body || {};
+  const { content, type = '지식', importance = 3, source = 'user', confidence = 1, project = null, scope = 'global', category = null } = req.body || {};
   if (!content || typeof content !== 'string' || !content.trim())
     return res.status(400).json({ error: '내용 필수' });
   try {
     const confNum = Number(confidence);
     const result = await addMemory(db, { content, type, importance: Math.min(5, Math.max(1, Number(importance) || 3)),
       source, confidence: Number.isFinite(confNum) ? Math.min(1, Math.max(0, confNum)) : 1,
-      project, scope: scope === 'project' ? 'project' : 'global' });
+      project, scope: scope === 'project' ? 'project' : 'global',
+      category: CATEGORIES.includes(category) ? category : null }); // 미지정/무효값이면 addMemory가 content로 자동분류(store.mjs classify 폴백)
     res.status(result.skipped ? 200 : 201).json({ ok: true, ...result });
   } catch (e) { console.error('[memory:create]', e); res.status(500).json({ error: '저장 실패' }); } // 08 §7: 동일 원칙
 });

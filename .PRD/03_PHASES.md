@@ -31,7 +31,7 @@
 
 ### 데이터
 - 프로젝트, 세션, 기억(+access_count·valid_from/until·invalidated_by), 연결, 분류
-- scope 기본 `project` 저장 / 분류 기본 시드(결정·보안·UI·배포·도구·성능·데이터·기타) 제공
+- scope 기본 `project` 저장 / 분류 기본 시드([갱신, 2026-09-01 확인됨] 실제 `classify.mjs` 기준 보안·데이터/DB·배포/인프라·AI/모델·UI/UX·설정/환경·규칙/문서·기타) 제공
 - 기억에 confidence(추출 신뢰도)·source(ai/rule/user) 기록 — 오추출 구분(R7)
 
 ### 인증

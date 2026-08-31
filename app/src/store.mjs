@@ -100,7 +100,7 @@ export function findExactDuplicates(db, limit, total) {
   if (!rows.length) return { pairs: [], skipped: false, total, threshold: 0, exact: true };
   const ids = [...new Set(rows.flatMap(r => [r.a_id, r.b_id]))];
   const mems = db.prepare(
-    `SELECT id, content, type, importance, created_at FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
+    `SELECT id, content, type, importance, created_at, source, confidence, project, category, scope FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
   ).all(...ids);
   const byId = new Map(mems.map(m => [m.id, m]));
   const pairs = rows.map(r => ({ a: byId.get(r.a_id), b: byId.get(r.b_id), distance: 0 }))
