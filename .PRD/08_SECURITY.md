@@ -100,6 +100,9 @@
 
 - **lockfile 커밋**(package-lock.json) — 버전 고정.
 - **`npm audit`** 정기 실행, **high/critical 0** 유지(수용 기준).
+  > [확인됨 예외, 2026-09-01] 현재 high 4건 존재 — `adm-zip`/`sharp`(`@huggingface/transformers`
+  > 전이의존), 업스트림에 수정판 없음(CHECKPOINT M28 실측). 코드로 고칠 방법 없어 기준 미달
+  > 상태로 남겨둠 — **업스트림 수정판 공개 시 재확인·업그레이드 필요**, 방치 승인이 아님.
 - 네이티브 모듈(better-sqlite3)·로컬 임베딩 모델은 **공식 출처**만. 모델 파일 무결성 확인.
 - 의존성 추가 시 필요 최소만(공격면 축소).
 
@@ -130,7 +133,7 @@
 - 입력 검증(불신 전제) · 운영 에러 비노출 · lockfile
 
 **Should (P1~P2)**
-- 로컬 API 토큰(웹↔서버) · 보안 헤더 일습 · `npm audit` high/critical 0
+- 로컬 API 토큰(웹↔서버) · 보안 헤더 일습 · `npm audit` high/critical 0(예외 각주는 위 §8 의존성 보안 참고)
 - 훅 nonce(1회용) · 시크릿 커밋 스캔(gitleaks)
 
 **Could (P2~P3)**
