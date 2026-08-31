@@ -71,7 +71,11 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const type = ['결정', '제약', '선호', '패턴', '지식'].includes(args.type) ? args.type : '지식';
     const importance = Math.min(5, Math.max(1, Number(args.importance) || 3));
     const category = CATEGORIES.includes(args.category) ? args.category : null; // 목록에 없는 값은 무시하고 자동분류로 폴백(안전장치)
-    const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project: args.project ? String(args.project) : null, scope: args.scope === 'project' ? 'project' : 'global', category });
+    const project = args.project ? String(args.project) : null;
+    // scope 미지정 시: project가 있으면 project로 추론(extract-session.mjs 자동캡처 경로와 동일 원칙,
+    // PRD 02 "Phase 1 기본값=project·자동 전역화 금지" 준수) — 명시적 'global'/'project'는 그대로 존중.
+    const scope = args.scope === 'project' || args.scope === 'global' ? args.scope : (project ? 'project' : 'global');
+    const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project, scope, category });
     return { content: [{ type: 'text', text: JSON.stringify({ saved: !r.skipped, id: r.id, skipped: !!r.skipped, note: r.skipped ? '동일 내용 기억이 이미 있어 새로 저장하지 않음(중복)' : undefined, redacted: r.redactedHits }) }] };
   }
   if (name === 'get_memory') {

@@ -221,14 +221,17 @@ app.post('/api/memory/batch-delete', async (req, res) => {
 
 // 기억 생성(UI 복원·신규용) — addMemory 재사용(redact·embed·중복방지 포함)
 app.post('/api/memory', async (req, res) => {
-  const { content, type = '지식', importance = 3, source = 'user', confidence = 1, project = null, scope = 'global', category = null } = req.body || {};
+  const { content, type = '지식', importance = 3, source = 'user', confidence = 1, project = null, scope, category = null } = req.body || {};
   if (!content || typeof content !== 'string' || !content.trim())
     return res.status(400).json({ error: '내용 필수' });
   try {
     const confNum = Number(confidence);
+    // scope 미지정 시: project가 있으면 project로 추론(extract-session.mjs 자동캡처 경로와 동일 원칙,
+    // PRD 02 "Phase 1 기본값=project·자동 전역화 금지" 준수) — 명시적 'global'/'project'는 그대로 존중.
+    const resolvedScope = scope === 'project' || scope === 'global' ? scope : (project ? 'project' : 'global');
     const result = await addMemory(db, { content, type, importance: Math.min(5, Math.max(1, Number(importance) || 3)),
       source, confidence: Number.isFinite(confNum) ? Math.min(1, Math.max(0, confNum)) : 1,
-      project, scope: scope === 'project' ? 'project' : 'global',
+      project, scope: resolvedScope,
       category: CATEGORIES.includes(category) ? category : null }); // 미지정/무효값이면 addMemory가 content로 자동분류(store.mjs classify 폴백)
     res.status(result.skipped ? 200 : 201).json({ ok: true, ...result });
   } catch (e) { console.error('[memory:create]', e); res.status(500).json({ error: '저장 실패' }); } // 08 §7: 동일 원칙
