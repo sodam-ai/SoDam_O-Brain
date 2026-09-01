@@ -3,7 +3,7 @@ import express from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
 import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates, findShortestPath } from './store.mjs';
@@ -22,7 +22,16 @@ await initEmbedder();
 
 // 로컬 API 토큰 — 서버 실행마다 새로 생성. index.html에 주입 + data/.api-token 파일 공유(MCP 플러그인용).
 const API_TOKEN = randomBytes(16).toString('hex');
+const API_TOKEN_BUF = Buffer.from(API_TOKEN);
 try { writeFileSync(join(DATA_DIR, '.api-token'), API_TOKEN, { mode: 0o600 }); } catch {}
+
+// 타이밍 공격 방지 — 문자열 !== 비교는 다른 지점에서 비교가 끊겨 실행시간 차이로
+// 토큰을 한 글자씩 유추당할 여지가 있음(방어심층). 길이 확인 후 timingSafeEqual만 사용.
+function isValidToken(token) {
+  if (typeof token !== 'string') return false;
+  const buf = Buffer.from(token);
+  return buf.length === API_TOKEN_BUF.length && timingSafeEqual(buf, API_TOKEN_BUF);
+}
 
 const app = express();
 app.use((req, res, next) => {
@@ -40,7 +49,7 @@ app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 
 // 로컬 API 토큰 검증(PRD 08 §2 Should) — 지금까지는 발급만 하고 검증을 안 해 장식이었음.
 // index.html이 이미 모든 /api/ 요청에 헤더를 자동 첨부하도록 되어 있어(541-549줄 fetch 몽키패치) 안전하게 켤 수 있음.
 app.use('/api', (req, res, next) => {
-  if (req.headers['x-obrain-token'] !== API_TOKEN) return res.status(403).json({ error: '허용되지 않은 요청' });
+  if (!isValidToken(req.headers['x-obrain-token'])) return res.status(403).json({ error: '허용되지 않은 요청' });
   next();
 });
 
