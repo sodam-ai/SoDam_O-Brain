@@ -64,6 +64,10 @@ export function buildGraph(db, { neighbors = 2, limit = 600 } = {}) {
     .map(l => ({ ...l, rel: null }));
   for (const r of relations) {
     if (!nodeIds.has(r.from_id) || !nodeIds.has(r.to_id)) continue; // 고아 관계 무시
+    // 자기참조 관계(from_id===to_id) 방어 — addRelation()이 이미 막아 정상 경로로는 못 만들지만
+    // (2026-09-01 실행테스트 확인), addLink()의 기존 자기루프 방지(`a===b`면 무시)와 동일한 방어를
+    // 여기도 둬 그래프 렌더링에 자기루프 선이 남지 않게 함(방어심층).
+    if (r.from_id === r.to_id) continue;
     merged.push({ source: r.from_id, target: r.to_id, rel: r.type, directed: true });
   }
 

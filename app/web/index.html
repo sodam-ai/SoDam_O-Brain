@@ -565,7 +565,7 @@
       };
     }
     const get = u => fetch(u).then(r => r.json());
-    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     function hexA(hex, a){ const h=hex.replace('#',''); const n=parseInt(h.length===3?h.replace(/(.)/g,'$1$1'):h,16);
       return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
     function lighten(hex, amt){ const h=hex.replace('#',''); const n=parseInt(h,16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
@@ -575,7 +575,8 @@
     let selMode = false, selectedIds = new Set(); // 일괄삭제 선택 모드
     let minImp = 0, period = 'all', localFocus = null, projectFilter = '', scopeFilter = '', orphanView = false, travelDate = '', lowConfOnly = false, noiseOnly = false; // 중요도/기간/프로젝트/범위/신뢰도/노이즈 필터 + 로컬(이웃) 포커스 + 고립보기 + 시간여행
     // 노이즈 의심 판정(M12-① 추출 게이트와 동일 기준) — 2026-07-26 이전 저장분에 섞인 세션요약 인용/표/헤더를 사람이 골라보기 위함.
-    const NOISE_RE = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
+    // [정정, 2026-09-01] extract.mjs와 동일 라벨 확장(AI·GPT 추가) — 4개 파일 동기화 유지.
+    const NOISE_RE = /^\*{0,2}(Claude|Assistant|AI|GPT|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
     function isNoisy(m){ return NOISE_RE.test(String(m.content||'').trim()); }
     let statTotal = 0, listLoading = false; const _memCache = {}; // 대량 대비: 전체 총계 + 목록 더보기 + 단건 캐시
     let pageSize = 100; // 목록/타임라인/개요 초기 로드 개수(사용자 조절 가능, 브라우저에 저장돼 다음에 열어도 유지됨). 그래프 탭은 /api/graph 별도 사용, 영향 없음.

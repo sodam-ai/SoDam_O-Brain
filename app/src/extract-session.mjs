@@ -117,7 +117,8 @@ export function stripInjected(text) {
   // "**Claude:**"/"Assistant:"/"User:" 인용은 '지금 사용자가 한 말'이 아니라 세션 요약 조각이 user 턴에
   // 섞여 들어온 것(2026-08-09 190개 실transcript 재검증: 인용 줄 25건 표본 전부 AI 자기서술·문서조각으로
   // 확인, 과필터 없음). 줄 전체를 버림.
-  const dropQuote = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]/i;
+  // [정정, 2026-09-01] extract.mjs와 동일 라벨 확장(AI·GPT 추가) — 4개 파일 동기화 유지.
+  const dropQuote = /^\*{0,2}(Claude|Assistant|AI|GPT|User|사용자|어시스턴트)\*{0,2}\s*[:：]/i;
   // 헤딩 마커(#)는 줄 전체를 버리지 않고 마커만 제거 — 2026-08-09 190개 실transcript 재검증에서
   // "비공개 저장소가 아니거나 확인할 수 없으면 commit/push 하지 마" 같은 사용자의 실제 지시문이
   // "#"로 시작한다는 이유만으로 통째로 삭제되는 오탐(30/720건, 4.2%)을 확인. 순수 문서 헤딩(마커
@@ -161,8 +162,14 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
   const scope = project ? 'project' : 'global';
   const saved = [];
   for (const m of memories) {
-    const r = await addMemory(db, { ...m, project, scope, session_id });
-    saved.push({ id: r.id, type: m.type, content: m.content });
+    // 후보 하나가 실패해도(빈 내용 등) 배치 전체가 중단되지 않도록 개별 방어(QA 실측 확인 —
+    // 기존엔 try/catch 없이 하나라도 던지면 이후 후보 전부 저장 안 됨).
+    try {
+      const r = await addMemory(db, { ...m, project, scope, session_id });
+      saved.push({ id: r.id, type: m.type, content: m.content });
+    } catch (e) {
+      console.error('[o-brain] 후보 저장 실패(건너뜀):', e?.message || e);
+    }
   }
   db.close();
   return { exchanges: exchanges.length, candidates: memories.length, saved, project, session_id };

@@ -69,7 +69,16 @@ export async function search(db, query, k = 10, projectFilter = null) {
       const rec = Math.max(0, 1 - Math.min(days / 60, 1));                                    // 최신성(최근 60일)
       m._final = 0.7 * rel + 0.15 * imp + 0.10 * rec + 0.05 * conf;
     }
-    out.sort((a, b) => b._final - a._final);
+    // 관련도 최소 보장선(2026-09-01 실행테스트로 재현·확정) — RRF 원점수가 다른(=관련도가
+    // 진짜로 다른) 후보끼리는 품질 보너스로 순서를 못 뒤집게 막는다. min-max 정규화가 RRF의
+    // 원래 좁은 점수차를 [0,1] 전체로 늘려 펴는 바람에, 거의 무관한 후보가 근소한 relevance
+    // 우위(정규화 후 6%p)를 중요도·신뢰도 보너스(최대 20%p)로 뒤집어 정확 일치 결과보다 위로
+    // 올라가는 걸 재현 확인(CHECKPOINT M62) — 위 주석 "분명히 더 관련 있는 결과는 안 뒤집힘"
+    // 의도를 실제로 지키려면 원점수 동률일 때만 품질로 정하는 게 맞음.
+    out.sort((a, b) => {
+      if (Math.abs(a._score - b._score) > 1e-9) return b._score - a._score; // 원점수 다르면 관련도 그대로
+      return b._final - a._final;                                           // 원점수 동률일 때만 품질로 결정
+    });
   }
   const sliced = out.slice(0, k);
   sliced.total = out.length; // 잘려나간 개수를 호출자가 알 수 있게(배열이라 JSON.stringify·기존 소비자는 영향 없음)

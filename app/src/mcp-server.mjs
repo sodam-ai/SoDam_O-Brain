@@ -1,4 +1,5 @@
-// O-Brain MCP 서버(stdio) — AI가 기억을 직접 검색.  도구: search_memory, get_memory.
+// O-Brain MCP 서버(stdio) — AI가 기억을 직접 검색·저장·연결.
+// 도구(7개): search_memory, save_memory, get_memory, get_related, get_timeline, add_relation, list_categories.
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';

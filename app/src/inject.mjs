@@ -7,7 +7,8 @@ import { search } from './search.mjs';
 // M12-①은 '앞으로 저장될' 노이즈만 막았고, 2026-07-26 이전 저장분(실측 383건)은 아직 DB에 남아있음.
 // 그 기존 노이즈가 중요도/최신성 점수로 다음 세션 컨텍스트에 다시 새어들지 않도록 주입 직전에 한 번 더 거른다.
 // (삭제 아님 — 주입 후보에서만 제외. 실데이터는 그대로 두고, 정리는 목록 탭 노이즈 필터+전체선택으로 사람이 확인 후 수행)
-const NOISE_RE = /^\*{0,2}(Claude|Assistant|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
+// [정정, 2026-09-01] extract.mjs와 동일 라벨 확장(AI·GPT 추가) — 4개 파일 동기화 유지.
+const NOISE_RE = /^\*{0,2}(Claude|Assistant|AI|GPT|User|사용자|어시스턴트)\*{0,2}\s*[:：]|^#{1,6}\s|\|.*\|/i;
 const isNoisy = m => NOISE_RE.test(String(m.content || '').trim());
 
 // 세션 시작(검색어 없음) 주입용 합성 랭킹 — 중요도만으론 매번 같은 옛 기억만 떠서,
@@ -34,8 +35,10 @@ export async function buildInjection({ query = '', project = '', max = 8 } = {})
   try {
     if (query) {
       // scope 우선순위(PRD 07 §5) — 쿼리 유무와 무관하게 항상 "현재 프로젝트 + 전역" 우선이어야 하는데,
-      // 이 경로(query 있음)는 지금까지 실제로 호출된 적이 없어 projectFilter 누락이 드러나지 않았던 잠재
-      // 결함(2026-08-10 발견) — 다른 프로젝트 기억이 섞여 들어오는 걸 막는다.
+      // 2026-08-10 당시엔 이 경로(query 있음)가 아직 실호출된 적이 없어 projectFilter 누락이 안 드러난
+      // 잠재 결함이었음(그때 발견·수정). [정정, 2026-09-01] 이후 `plugin/scripts/memory-inject-hook.mjs`가
+      // 세션 재개(resume) 시 직전 대화를 query로 넘기게 되면서 이 경로는 더 이상 죽은 코드가 아니라
+      // 세션 재개마다 실제로 실행되는 살아있는 경로임 — 다른 프로젝트 기억이 섞여 들어오는 걸 막는다.
       mems = await search(db, query, max, project || null);
     } else {
       // 후보 풀 = 최근 60 + 중요도 상위 40(오래된 핵심 기억도 후보 유지) → 합성점수로 재정렬.

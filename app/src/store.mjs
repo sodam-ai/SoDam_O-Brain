@@ -8,6 +8,9 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
   importance = Math.min(5, Math.max(1, Number.isFinite(Number(importance)) ? Math.round(Number(importance)) : 3));
   confidence = Math.min(1, Math.max(0, Number.isFinite(Number(confidence)) ? Number(confidence) : 0.6));
   const { clean, hits } = redact(content);          // 1) 보안 (저장 전 필수)
+  // [정정, 2026-09-01] updateMemory는 빈 내용을 거부하는데 addMemory는 검증이 없어 공백만
+  // 있는 기억이 그대로 저장되던 비대칭 결함(QA 실측 확인) — 같은 방어를 여기도 추가.
+  if (!clean.trim()) throw new Error('내용이 비어 있어요');
   // 1.2) 중복 방지 — 같은 프로젝트에 '내용(redact 후)이 정확히 같은' 기억이 있으면 재저장 안 함.
   // 의미유사도가 아니라 '정확 일치'만 검사 → 서로 다른 결정은 절대 막지 않음(silent failure 방지). 스킵은 호출자에 가시화.
   const dup = db.prepare(
