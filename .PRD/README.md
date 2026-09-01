@@ -26,7 +26,7 @@
 
 - **목적**: 클로드코드·코덱스 로컬 메모리 + **지식그래프 시각화** (1인용)
 - **차별점(핵심)**: 기억을 '쌓는' 게 아니라 '잇고 보여주는' 도구 — **2D/3D 그래프 + 타임라인**
-- **기술**: Node·TypeScript 올인원 + SQLite(sqlite-vec/FTS5) + ~~React~~ → **[확인됨, 2026-08-03 갱신] 바닐라 JS** + force-graph/3d-force-graph(2D/3D·WebGL)
+- **기술**: ~~Node·TypeScript~~ → **[정정, 2026-09-01] Node·바닐라 JS(ESM, TypeScript 미사용)** 올인원 + SQLite(sqlite-vec/FTS5) + ~~React~~ → **[확인됨, 2026-08-03 갱신] force-graph/3d-force-graph(2D/3D·WebGL)**
 - **로그인**: 없음 (로컬 전용)
 - **기억 추출**: 규칙기반이 기본(완전 로컬·무과금), 필요 시 호스트 LLM(클로드코드/코덱스) 수동 호출도 가능·외부 영구저장 없음
 - **보안**: 저장 전 민감정보(비밀번호 등) 자동 제거 — Phase 1 포함

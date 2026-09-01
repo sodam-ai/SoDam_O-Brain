@@ -291,6 +291,17 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-08-31~09-01 — Fixed a gap in the secret filter, fixed a search-ranking defect, hardened auto-save reliability, passed a pre-deployment full review</b></summary>
+
+- **Fixed a gap in the secret filter**: The filter that's supposed to strip passwords/API keys before saving was missing environment-variable-style names with underscores, like `DATABASE_PASSWORD=xxx`. Fixed. Common key formats like `sk-...` and `AKIA...` were already being caught correctly.
+- **Fixed occasional search-ranking mix-ups**: Even when a memory matched the search query exactly, a different, less-relevant memory with higher importance/confidence could sometimes outrank it. Fixed — an exact match is now always prioritized.
+- **Fixed questions being mis-saved as "decisions"**: Sentences ending in a question ("Should we do it this way?") were sometimes auto-saved as decision memories even though nothing was actually decided. Fixed.
+- **Fixed quoted lines starting with "AI:"/"GPT:" slipping past the noise filter**: Quoted lines like "AI:"/"GPT:" that show up in conversation summaries weren't being caught by the existing noise filter (which already caught "Claude:"/"User:" etc.). Added.
+- **Improved auto-save so one failed item no longer blocks the rest**: When saving several memories at once after a session ends, if one item failed, the whole batch used to fail with it. Fixed — now the rest save normally even if one fails.
+- **Pre-deployment full review**: Checked the normal flow, invalid inputs, boundary values, suspicious-looking search strings, unauthenticated access attempts, cross-site request blocking, and whether every single API route is protected by authentication — all against a real running server. Everything was handled safely. All items above were re-verified with no regressions in other features.
+</details>
+
+<details>
 <summary><b>2026-08-20~21 — New shortest-path finder, 3 bug fixes (accessibility, undo, path highlight), passed a comprehensive security/input-validation test round</b></summary>
 
 - **Shortest path finder (new feature)**: From a memory's detail panel, search for and pick another memory, then click "Find path" — it finds how many relation-hops connect the two ("step 1 → step 2 → step 3") and highlights that exact path on the graph with a bold connector. If they're not connected, it shows "No connected path." As a safety guard, once the relation count exceeds 5,000 the search is skipped to protect performance (verified directly against real data at the 5,000/5,001 boundary).
@@ -473,6 +484,7 @@ A. No. In the ⚙ Settings page, "page size" applies only to List/Timeline/Overv
 - **Ownership of output generated via Claude Code/Anthropic API**: per the text of Anthropic's Commercial Terms of Service, outputs belong to **the user**, and conversation content is not used to train Anthropic's models (verified against anthropic.com/legal/commercial-terms, 2026-08-10). Specific plan details and usage policies can vary by account, so please check the terms directly for anything account-specific — that's set by Anthropic, not O-Brain.
 - "Claude", "Anthropic", "Codex", and "OpenAI" are trademarks of their respective owners. O-Brain has **no official affiliation or certification** with them and does not use their logos or brand assets. (Saying "works with Claude Code" is fine; presenting O-Brain as an officially certified product is not.)
 - The product name "O-Brain" is a personal-project working name. Whether it is formally trademarked elsewhere has not been confirmed — if you plan to register a trademark or use this name prominently in a commercial context, we recommend checking an official trademark database separately first.
+- **AI-generated content — verify before use**: The code and documentation in this project (including design documents) were produced with AI assistance. Before deploying, redistributing, selling, or delivering this project to a company/client commercially, **please personally verify copyright attribution, provenance, commercial-use eligibility, and similarity to existing copyrighted works (code snippets in particular)** for any AI-generated code, documents, or images included — this project does not warrant that verification on your behalf.
 - **This README/license section is not legal advice.** If you're planning an actual commercial deployment, contract, or redistribution, treat the above as reference only and consult a qualified professional (e.g. a lawyer) as needed.
 - Full license text: `LICENSE` file · Full dependency notices: `NOTICE` file
 

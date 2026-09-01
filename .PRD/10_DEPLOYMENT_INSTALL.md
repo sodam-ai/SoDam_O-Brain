@@ -61,7 +61,10 @@ obrain/                      (배포 단위)
 1. **클로드코드**: `/plugin install`(마켓플레이스 또는 로컬 경로)로 O-Brain 플러그인 설치 → 훅·MCP 자동 등록.
 2. **코덱스(선택)**: 코덱스 config에 O-Brain MCP 서버 등록(안내 제공).
 3. **로컬 앱(그래프)**: 최초 1회 의존성 셋업(보조 스크립트가 Node 확인·`npm install`) → `npm start`로 로컬 서버 실행 시 DB 자동 생성(`db.mjs`의 `openDb()`, 별도 `db:init` 스크립트 없음) → 이후 명령/플러그인이 로컬 서버 실행.
-4. `.env.local` 추출 모드(ai/rule)·키 설정.
+4. ~~`.env.local` 추출 모드(ai/rule)·키 설정~~ → [정정, 2026-09-01] 이 단계는 실재하지 않음.
+   `OBRAIN_EXTRACT_MODE`·`ANTHROPIC_API_KEY` 모두 코드 전수 검색 0건으로 확인된 미구현 항목
+   (04_PROJECT_SPEC.md §환경변수 참조) — 별도 설정 없이 규칙 기반 자동 캡처가 기본이자 유일 경로.
+   AI 품질 추출은 env 설정이 아니라 `/o-brain:remember` 명령·`save_memory` MCP 도구로 수행.
 
 > 비개발자 배려: 1·3을 한 번에 안내하는 **셋업 도우미**(스크립트 또는 플러그인 명령)를 제공하되, "클로드코드 설치"는 어디까지나 **플러그인 설치**임을 분명히.
 

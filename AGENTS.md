@@ -3,6 +3,9 @@
 > 설계 정본 = `.PRD\` 13문서. 이 파일은 그 위에서 **확정 결정 + 실측 검증 사실 + 다음 할 일**만 1장으로 압축.
 > 새 세션은 **이 파일부터** 읽고 시작(PRD 전체 재독 불필요).
 > 작성: 2026-06-20 (Step 0 확정 + Step 1 스파이크 + **수직 슬라이스 완료** 시점)
+> [정정, 2026-09-01] 이후 M1~M44(44개 마일스톤) 진행됨 — §1·§2·§4의 낡은 부분은 정정 표시
+> 해뒀지만, **최신 진행상황의 정본은 `CHECKPOINT.md`**. 이 파일은 여전히 "확정 결정 요약"
+> 용도로만 신뢰할 것.
 
 ## 0. 한 줄
 클로드코드·코덱스 대화에서 기억을 **자동 저장** → **2D/3D 지식그래프+타임라인**으로 보고 검색하는 **100% 로컬 1인용** 도구. 차별점=쌓기가 아니라 "잇고 보여주기".
@@ -13,9 +16,16 @@
 - **바인딩** = `127.0.0.1` 전용(외부 차단, 08).
 - **DB 드라이버** = `better-sqlite3`(1순위·prebuilt OK) / 폴백 `node:sqlite`(Node22 내장). 둘 다 sqlite-vec 로드 검증됨.
 - **라이선스** = 보류(로컬이라 불필요). 공개 시 Apache-2.0 © SoDam AI Studio (09).
-- 언어 Node22+TS · 임베딩 `Xenova/all-MiniLM-L6-v2`(384) · 그래프 react-force-graph(2D/3D) · UI Tailwind+shadcn/ui (04).
+- ~~언어 Node22+TS · 그래프 react-force-graph(2D/3D) · UI Tailwind+shadcn/ui~~ → [정정, 2026-09-01]
+  실제 구현: **순수 JS ESM**(`.mjs`, TypeScript 미사용) · Node **26.7.0**(`package.json` engines,
+  실측) · 그래프 `force-graph`/`3d-force-graph`(React 아닌 순수 JS 버전 — React 자체 미사용) ·
+  UI **순수 CSS + 디자인 토큰**(Tailwind·shadcn/ui 미채택, `06_UI_WIREFRAMES.md` §1과 일치).
+  임베딩 `all-MiniLM-L6-v2`(384)만 원안과 동일하게 유지.
 
 ## 2. 실측으로 검증된 사실 (스파이크 — 증거)
+> [정정, 2026-09-01] 이 표는 2026-06-20 스파이크 시점의 동결 기록. Node 버전만 이후 26.7.0으로
+> 올라감(실측) — 나머지(better-sqlite3·sqlite-vec·FTS5·훅 구조·시크릿 필터)는 지금도 유효.
+
 | 항목 | 결과 | 증거 |
 |---|---|---|
 | Node/플랫폼 | v22.19.0 · win32 x64 · 인터넷 OK | `node -v` |
@@ -39,6 +49,10 @@
 2. **시크릿은 'AI 추출 호출 *전*'에도 제거** — PRD는 "저장 전 제거"만 명시(05). 추출 시 대화가 Anthropic으로 전송되므로, **전송 전에도** 시크릿 스캔/마스킹하거나 감지 시 `rule` 모드로 전환. (보안·R2 — "100% 로컬 안심" 보호)
 
 ## 4. 다음 할 일 (강력 추천 순서)
+> [정정, 2026-09-01] 아래 1~5번은 2026-06-20~23 시점 기록(역사 보존용, 삭제 안 함). 이후
+> M1~M44 진행됐고 **최신 상태는 `CHECKPOINT.md`가 정본** — 예: 4번의 "영문 README"는
+> `README.en.md`/`README.en.html`로 이미 완료됨.
+
 1. ✅ **[완료] 얇은 수직 슬라이스** — `app/src`(db·redact·embed·search·store·server) + `app/web/index.html`. 저장→한국어 하이브리드검색→localhost(7740)→HTML 전구간 실동작. 실행: `npm run seed` → `npm start` → 브라우저 `http://127.0.0.1:7740`.
 2. ✅ **[Phase 1a — 실기기 자동캡처 확인 완료(2026-06-20)]** 실세션에서 결정문장 말하고 `/clear`(=SessionEnd) → **자동저장 성공**(#6 [결정] "포트 7740", 총 6건). SessionEnd stdin 스키마 확정 = `{session_id, transcript_path, cwd, hook_event_name, reason}`. `/clear`도 SessionEnd 발화. **미확인**: SessionStart 주입(되읽기) 실사용 · MCP 도구 실사용. ↓아래는 구현 이력:
    🔄 **[코어 구현·자체검증]** `plugin/`(훅+MCP 선언·런처) + `app/src`(`extract.mjs`·`extract-session.mjs`·`inject.mjs`·`mcp-server.mjs`). 자체검증 통과: 전사파싱→시크릿제거(전송 전)→규칙추출→저장 / SessionStart 주입문 / MCP `search_memory`·`get_memory`. **남은 1건(사용자 실행)**: 클로드코드 ①`/plugin marketplace add <plugin폴더>` ②`/plugin install o-brain@o-brain-local` → 실세션 종료로 자동캡처 + `app/data/_probe.json`(SessionEnd stdin 스키마) 확정 → 새 세션 주입 확인. (아키텍처: 무거운 코드/의존성=app/, 플러그인=절대경로 동적 import → 설치복사에도 견고. 폴더 이동 시 `OBRAIN_ROOT` 환경변수)

@@ -17,6 +17,16 @@ Copyright 2024 Alex Garcia
 https://github.com/asg017/sqlite-vec
 License: Apache-2.0
 
+sqlite-vec-windows-x64 (네이티브 바이너리 서브패키지)
+Copyright 2024 Alex Garcia
+https://github.com/asg017/sqlite-vec
+License: MIT OR Apache-2.0
+
+all-MiniLM-L6-v2 (임베딩 모델, npm 패키지 아님)
+Copyright sentence-transformers
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+License: Apache-2.0
+
 -----------------------------------------------------------------------
 MIT License
 -----------------------------------------------------------------------

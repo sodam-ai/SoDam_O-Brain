@@ -51,11 +51,16 @@
 
 ## C. 시각화 라이브러리 (선택 근거)
 
-| 라이브러리 | URL | 결론 |
+> [정정, 2026-09-01] 이 표는 PRD 작성 당시(2026-06-20)의 리서치·초기 결정 기록으로 보존.
+> 이후 `06_UI_WIREFRAMES.md` 2026-08-03 전환(React 미사용 확정)에 따라 실제 구현은
+> **`force-graph`/`3d-force-graph`(React 아닌 순수 JS 버전)** — 이름은 비슷하나 다른 패키지.
+> 타임라인도 vis-timeline이 아니라 직접 구현(`app/web/index.html`, 외부 의존성 없음).
+
+| 라이브러리 | URL | 결론(2026-06-20 당시) |
 |------|-----|------|
-| react-force-graph | https://github.com/vasturiano/react-force-graph | **채택**(2D+3D·WebGL) |
+| react-force-graph | https://github.com/vasturiano/react-force-graph | 채택 검토 → 이후 순수 JS 버전(`force-graph`/`3d-force-graph`)으로 대체 |
 | Cytoscape.js | https://js.cytoscape.org/ | Phase 3 분석 보조(SVG, ~1만노드 한계로 본체 탈락) |
-| vis-timeline | https://github.com/visjs/vis-timeline | 타임라인 채택 |
+| vis-timeline | https://github.com/visjs/vis-timeline | 채택 검토 → 이후 직접 구현으로 대체(외부 의존성 미도입) |
 | 비교글(Cytoscape/vis/Sigma) | https://www.pkgpulse.com/blog/cytoscape-vs-vis-network-vs-sigma-graph-visualization-javascript-2026 | [검색] 교체 근거 |
 | Neo4j 시각화 도구 정리 | https://neo4j.com/blog/graph-visualization/neo4j-graph-visualization-tools/ | [검색] 개요 |
 
@@ -63,10 +68,14 @@
 
 ## D. 기술 스택 · 표준 (공식 문서는 출시 전 라이선스 재확인 — 09 참조)
 
+> [정정, 2026-09-01] 아래는 2026-06-20 당시 초기 리서치 목록(보존). ~~React · Vite · Tailwind
+> CSS · shadcn/ui · lucide~~ → 실제 구현은 **순수 JS ESM + 순수 CSS**(React·빌드도구·아이콘
+> 패키지 미사용, `06_UI_WIREFRAMES.md`·`AGENTS.md` 확인됨). ~~@anthropic-ai/sdk~~ → 실제로는
+> **미사용**(`app/package.json` 대조 확인, MCP 프로토콜만 사용 — `09_LICENSE_LEGAL.md` §4 참조).
+
 - SQLite / FTS5 / sqlite-vec — 로컬 저장·검색
 - @huggingface/transformers (transformers.js) + 모델 `all-MiniLM-L6-v2` — 로컬 임베딩(384)
-- React · Vite · Tailwind CSS · shadcn/ui · lucide — UI
-- better-sqlite3 · express · @anthropic-ai/sdk
+- better-sqlite3 · express
 - OWASP ASVS Level 1 — 보안 기준
 
 ---
