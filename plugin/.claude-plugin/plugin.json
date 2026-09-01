@@ -9,7 +9,7 @@
   "mcpServers": {
     "o-brain": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/../app/src/mcp-server.mjs"]
+      "args": ["--env-file-if-exists=${CLAUDE_PLUGIN_ROOT}/../app/.env.local", "${CLAUDE_PLUGIN_ROOT}/../app/src/mcp-server.mjs"]
     }
   }
 }

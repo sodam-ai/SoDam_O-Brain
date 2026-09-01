@@ -1,6 +1,6 @@
 # O-Brain 플러그인 (훅 + MCP)
 
-클로드코드 대화에서 기억을 **자동 저장**(SessionEnd)하고, 새 세션에 **자동 주입**(SessionStart)하며, AI가 직접 검색할 **MCP 도구**(`search_memory`·`get_memory`)를 제공합니다.
+클로드코드 대화에서 기억을 **자동 저장**(SessionEnd)하고, 새 세션에 **자동 주입**(SessionStart)하며, AI가 직접 쓸 **MCP 도구 7개**를 제공합니다: `search_memory`(검색)·`save_memory`(수동 저장)·`get_memory`(단건 조회)·`get_related`(연결된 기억)·`get_timeline`(시간순 조회)·`add_relation`(관계 연결)·`list_categories`(분류 목록).
 
 > 무거운 코드·의존성은 모두 `../app`에 있습니다. 이 폴더는 얇은 선언·런처입니다.
 > 코어는 이 폴더 기준 상대경로(`../app`)로 자동으로 찾습니다(plugin/과 app/이 항상 형제 폴더인 한 어느 컴퓨터에서도 동작). 두 폴더를 따로 떨어뜨려 둔 경우에만 환경변수 `OBRAIN_ROOT`를 새 경로로 설정하세요.
@@ -21,7 +21,7 @@
 ## 동작
 - **세션 종료** → `scripts/memory-extract-hook.mjs` → 대화 추출(기본 규칙) → `app/data/obrain.db` 저장
 - **세션 시작** → `scripts/memory-inject-hook.mjs` → 이전 기억 소량 주입
-- **MCP** → `app/src/mcp-server.mjs` → `search_memory` / `get_memory`
+- **MCP** → `app/src/mcp-server.mjs` → `search_memory`·`save_memory`·`get_memory`·`get_related`·`get_timeline`·`add_relation`·`list_categories` (7개)
 
 ## 확인
 - `app/data/_probe.json` : 실제로 받은 SessionEnd stdin 형식(스키마 확인용)

@@ -9,12 +9,12 @@
     "node": "~26.7.0"
   },
   "scripts": {
-    "seed": "node src/seed.mjs",
-    "search": "node src/search-demo.mjs",
-    "status": "node src/status.mjs",
-    "selftest": "node src/selftest.mjs",
-    "backup": "node src/backup-cli.mjs",
-    "start": "node src/server.mjs"
+    "seed": "node --env-file-if-exists=.env.local src/seed.mjs",
+    "search": "node --env-file-if-exists=.env.local src/search-demo.mjs",
+    "status": "node --env-file-if-exists=.env.local src/status.mjs",
+    "selftest": "node --env-file-if-exists=.env.local src/selftest.mjs",
+    "backup": "node --env-file-if-exists=.env.local src/backup-cli.mjs",
+    "start": "node --env-file-if-exists=.env.local src/server.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
