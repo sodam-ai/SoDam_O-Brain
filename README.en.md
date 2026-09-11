@@ -281,6 +281,7 @@ Tech stack: Node.js ES Modules · Express.js v5 · SQLite (better-sqlite3) · sq
 - No external cloud communication. Embedding model runs entirely locally
 - Input validation: invalid IDs, out-of-range numbers, and disallowed CORS origins are all safely rejected by the server with 400/403/404 (verified by testing)
 - Even on an unexpected server error (e.g. a malformed request), internal file paths and error stack details are never exposed on screen — only a safe generic message is shown; full details go to the server log only (global error handler added 2026-07-27)
+- Data stays safe even with several Claude Code windows open at once (verified 2026-09-11: many concurrent creates and concurrent edits on the same record, no corruption or crash; a wait-then-retry safeguard was added)
 
 Security headers applied: `Content-Security-Policy` (same-origin resources only) · `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` (blocks iframe embedding) · `Referrer-Policy: no-referrer`.
 
@@ -291,6 +292,17 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-09-11 — Dependency security patches (3 newly discovered), live-tested concurrency and mobile rendering, hardened multi-session safety, added a mobile UI hint</b></summary>
+
+- **Dependency vulnerabilities: 7 → 4**: During a routine check, besides the already-known adm-zip issue (GitHub issue #1, CVE-2026-39244), 3 newly disclosed vulnerabilities turned up — fast-uri (high) and hono/qs (moderate) — and were resolved safely via `npm audit fix`. adm-zip was pinned to the latest release (0.6.0), which fixed the "unbounded memory allocation" issue; the remaining "symlink-following" issue has no fix even in the latest release, so it stays open with its severity downgraded from high to moderate (waiting on an upstream fix; confirmed directly that it can't currently be avoided). The remaining 4 (sharp, onnxruntime-node, 2 issues via the AI embedding library, and the 1 residual symlink issue) were all directly confirmed to have no upstream fix yet.
+- **Live-tested concurrent requests (race conditions)**: Simulated several Claude Code windows using O-Brain at the same moment by running 20 concurrent creates, 10 concurrent edits on the very same memory, and a mixed delete/read/create load against a real running server. Everything was handled correctly with no data corruption, no conflicts, and no server errors.
+- **Hardened multi-session safety**: The test above didn't reproduce a failure, but a theoretical gap was found — if two windows write at the exact same instant, an operation could previously fail immediately — so a safeguard was added proactively: wait up to 5 seconds and retry instead of failing right away.
+- **Live-tested the mobile layout**: Rendered the real page at 375px (a standard phone width) in an actual browser and confirmed everything displays correctly, with no horizontal scrolling and nothing cut off-screen.
+- **Added a scroll hint to the mobile filter bar**: The filter row (sort, importance, date range, etc.) is deliberately horizontally scrollable on narrow screens, but had no visual hint — during live testing this looked like a bug (content cut off) rather than intended behavior. Added a subtle fade at the right edge (purely visual, no functional change).
+- Re-ran the self-check (`npm run selftest`) after all the above — all 14 checks still pass.
+</details>
+
+<details>
 <summary><b>2026-08-31~09-01 — Fixed a gap in the secret filter, fixed a search-ranking defect, hardened auto-save reliability, passed a pre-deployment full review</b></summary>
 
 - **Fixed a gap in the secret filter**: The filter that's supposed to strip passwords/API keys before saving was missing environment-variable-style names with underscores, like `DATABASE_PASSWORD=xxx`. Fixed. Common key formats like `sk-...` and `AKIA...` were already being caught correctly.

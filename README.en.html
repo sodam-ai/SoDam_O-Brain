@@ -426,12 +426,23 @@ npm run seed       # Add sample data (for testing)
 <li>No external cloud communication. Embedding model runs entirely locally</li>
 <li>Input validation: invalid IDs, out-of-range numbers, and disallowed CORS origins are all safely rejected by the server with 400/403/404 (verified by testing)</li>
 <li>Even on an unexpected server error (e.g. a malformed request), internal file paths and error stack details are never exposed on screen — only a safe generic message is shown; full details go to the server log only (global error handler added 2026-07-27)</li>
+<li>Data stays safe even with several Claude Code windows open at once (verified 2026-09-11: many concurrent creates and concurrent edits on the same record, no corruption or crash; a wait-then-retry safeguard was added)</li>
 </ul>
 <p>Security headers applied: <code>Content-Security-Policy</code> (same-origin resources only) · <code>X-Content-Type-Options: nosniff</code> · <code>X-Frame-Options: DENY</code> (blocks iframe embedding) · <code>Referrer-Policy: no-referrer</code>.</p>
 <hr>
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
 <details open>
+<summary><b>2026-09-11 — Dependency security patches (3 newly discovered), live-tested concurrency and mobile rendering, hardened multi-session safety, added a mobile UI hint</b></summary><ul>
+<li><strong>Dependency vulnerabilities: 7 → 4</strong>: During a routine check, besides the already-known adm-zip issue (GitHub issue #1, CVE-2026-39244), 3 newly disclosed vulnerabilities turned up — fast-uri (high) and hono/qs (moderate) — and were resolved safely via <code>npm audit fix</code>. adm-zip was pinned to the latest release (0.6.0), which fixed the &quot;unbounded memory allocation&quot; issue; the remaining &quot;symlink-following&quot; issue has no fix even in the latest release, so it stays open with its severity downgraded from high to moderate (waiting on an upstream fix; confirmed directly that it can&#39;t currently be avoided). The remaining 4 (sharp, onnxruntime-node, 2 issues via the AI embedding library, and the 1 residual symlink issue) were all directly confirmed to have no upstream fix yet.</li>
+<li><strong>Live-tested concurrent requests (race conditions)</strong>: Simulated several Claude Code windows using O-Brain at the same moment by running 20 concurrent creates, 10 concurrent edits on the very same memory, and a mixed delete/read/create load against a real running server. Everything was handled correctly with no data corruption, no conflicts, and no server errors.</li>
+<li><strong>Hardened multi-session safety</strong>: The test above didn&#39;t reproduce a failure, but a theoretical gap was found — if two windows write at the exact same instant, an operation could previously fail immediately — so a safeguard was added proactively: wait up to 5 seconds and retry instead of failing right away.</li>
+<li><strong>Live-tested the mobile layout</strong>: Rendered the real page at 375px (a standard phone width) in an actual browser and confirmed everything displays correctly, with no horizontal scrolling and nothing cut off-screen.</li>
+<li><strong>Added a scroll hint to the mobile filter bar</strong>: The filter row (sort, importance, date range, etc.) is deliberately horizontally scrollable on narrow screens, but had no visual hint — during live testing this looked like a bug (content cut off) rather than intended behavior. Added a subtle fade at the right edge (purely visual, no functional change).</li>
+<li>Re-ran the self-check (<code>npm run selftest</code>) after all the above — all 14 checks still pass.</li>
+</ul>
+</details>
+<details>
 <summary><b>2026-08-31~09-01 — Fixed a gap in the secret filter, fixed a search-ranking defect, hardened auto-save reliability, passed a pre-deployment full review</b></summary><ul>
 <li><strong>Fixed a gap in the secret filter</strong>: The filter that&#39;s supposed to strip passwords/API keys before saving was missing environment-variable-style names with underscores, like <code>DATABASE_PASSWORD=xxx</code>. Fixed. Common key formats like <code>sk-...</code> and <code>AKIA...</code> were already being caught correctly.</li>
 <li><strong>Fixed occasional search-ranking mix-ups</strong>: Even when a memory matched the search query exactly, a different, less-relevant memory with higher importance/confidence could sometimes outrank it. Fixed — an exact match is now always prioritized.</li>
