@@ -350,7 +350,13 @@
     .search { order:3; flex-basis:100%; max-width:none; margin-left:0; }
     .htools { margin-left:auto; }
     .segmented button span { display:none; } .segmented button { padding:7px 10px; }
-    .subbar { padding:8px 12px; } section.view { padding:12px; }
+    .subbar { padding:8px 12px;
+      /* 가로 스크롤 힌트(2026-09-11): 우측 필터가 화면 밖으로 잘려 보여 버그로 오인되던 것 발견 —
+         실제 콘텐츠는 지우지 않고 시각적으로만 옅게 페이드해 "더 있음"을 암시(스크롤 위치 무관하게 고정). */
+      -webkit-mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+      mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    }
+    section.view { padding:12px; }
     aside { width:100%; max-width:100%; }
     .legend { display:none; } #g3d { display:none; }
     /* 터치 타깃 ≥44px (모바일 탭 편의 — 데스크톱 외형 불변) */

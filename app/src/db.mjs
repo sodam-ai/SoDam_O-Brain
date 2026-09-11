@@ -17,6 +17,7 @@ export function openDb() {
   mkdirSync(DATA_DIR, { recursive: true });
   const db = new Database(join(DATA_DIR, 'obrain.db'));
   db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000'); // 여러 세션이 동시에 쓸 때 SQLITE_BUSY로 즉시 실패하지 않고 최대 5초 대기 후 재시도(WAL만으론 미보장)
   sqliteVec.load(db);
   db.exec(`
     CREATE TABLE IF NOT EXISTS memory(
