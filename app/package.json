@@ -24,5 +24,8 @@
     "express": "^5.2.1",
     "force-graph": "^1.51.4",
     "sqlite-vec": "^0.1.9"
+  },
+  "overrides": {
+    "adm-zip": "^0.6.0"
   }
 }
