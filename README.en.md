@@ -245,6 +245,7 @@ npm run seed       # Add sample data (for testing)
 |----------|---------|-------------|
 | `OBRAIN_PORT` | `7740` | Server port number |
 | `OBRAIN_DATA_DIR` | `./data` | Data storage folder |
+| `OBRAIN_CAPTURE_SDK` | (off) | Set to `1` to also auto-save conversations from sessions launched by programs (`claude -p`, Agent SDK, etc.). By default **only text a person typed** is saved |
 
 ---
 
@@ -292,6 +293,17 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-10-20 — Auto-save now remembers only what a person actually typed</b></summary>
+
+- **What was wrong**: Analyzing 282 real conversation logs showed that about 71% of auto-save candidates were written by programs (conversations started by other tools via `claude -p` / the Agent SDK), and even inside sessions a person opened, about 23% were not typed by a person (sub-agent reports, notifications). That is how README sentences and code fragments ended up saved as "decisions" or "rules" (the candidates confirmed to be typed by a person were only ~3% of the total, and nearly all of them were fine).
+- **What changed**: The conversation log already carries markers (entry point `entrypoint`, sender `origin`, `isMeta`). O-Brain now reads them and only treats text a person typed as memory candidates. Sessions launched by programs are skipped by default, and the reason and count of what was skipped are printed in the hook log. Older logs without markers, and marker kinds it does not recognize, are handled exactly as before (so memories never vanish silently).
+- **How to turn it back on**: To also remember conversations started by programs, add `OBRAIN_CAPTURE_SDK=1` to `app/.env.local`.
+- **Effect (measured on the same 283 logs)**: memory candidates dropped from 524 to 35 (−93%). What disappeared was program-written text, not human decisions, so the lower volume is expected. Memories already saved are not changed; cleanup stays human-confirmed as before.
+- The self-check (`npm run selftest`) grew from 14 to 20 items and all pass.
+
+</details>
+
+<details>
 <summary><b>2026-09-11 — Dependency security patches (3 newly discovered), live-tested concurrency and mobile rendering, hardened multi-session safety, added a mobile UI hint</b></summary>
 
 - **Dependency vulnerabilities: 7 → 4**: During a routine check, besides the already-known adm-zip issue (GitHub issue #1, CVE-2026-39244), 3 newly disclosed vulnerabilities turned up — fast-uri (high) and hono/qs (moderate) — and were resolved safely via `npm audit fix`. adm-zip was pinned to the latest release (0.6.0), which fixed the "unbounded memory allocation" issue; the remaining "symlink-following" issue has no fix even in the latest release, so it stays open with its severity downgraded from high to moderate (waiting on an upstream fix; confirmed directly that it can't currently be avoided). The remaining 4 (sharp, onnxruntime-node, 2 issues via the AI embedding library, and the 1 residual symlink issue) were all directly confirmed to have no upstream fix yet.

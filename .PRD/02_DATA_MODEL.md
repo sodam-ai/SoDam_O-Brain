@@ -41,7 +41,7 @@ AI와의 한 번의 대화. 언제, 어떤 도구로 했는지.
 |------|------|------|------|
 | id | 고유 식별자 (자동) | sess_def456 | O |
 | project_id | 어느 프로젝트인지 | proj_abc123 | O |
-| tool | 어떤 AI 도구 | "claude-code" / "codex" | O |
+| tool | 어떤 AI 도구 | "claude-code" / "codex"(미구현·보류) / "claude-code-sdk"(프로그램이 호출한 세션 — [확인됨, 2026-10-20] 기억 후보를 만들지 않고 구분용으로만 기록) | O |
 | ended_at | 종료 시각 (자동) | 2026-06-20 14:40 | O |
 | summary | 세션 한 줄 요약 (AI 생성) | "포트·DB 설정 논의" | X |
 

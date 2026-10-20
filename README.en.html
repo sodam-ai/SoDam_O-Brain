@@ -400,6 +400,11 @@ npm run seed       # Add sample data (for testing)
 <td><code>./data</code></td>
 <td>Data storage folder</td>
 </tr>
+<tr>
+<td><code>OBRAIN_CAPTURE_SDK</code></td>
+<td>(off)</td>
+<td>Set to <code>1</code> to also auto-save conversations from sessions launched by programs (<code>claude -p</code>, Agent SDK, etc.). By default <strong>only text a person typed</strong> is saved</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="workflow">Workflow</h2>
@@ -433,6 +438,17 @@ npm run seed       # Add sample data (for testing)
 <h2 id="changelog">Changelog</h2>
 <p>Most recent entries first. Click any entry to expand it.</p>
 <details open>
+<summary><b>2026-10-20 — Auto-save now remembers only what a person actually typed</b></summary>
+
+<ul>
+<li><strong>What was wrong</strong>: Analyzing 282 real conversation logs showed that about 71% of auto-save candidates were written by programs (conversations started by other tools via <code>claude -p</code> / the Agent SDK), and even inside sessions a person opened, about 23% were not typed by a person (sub-agent reports, notifications). That is how README sentences and code fragments ended up saved as &quot;decisions&quot; or &quot;rules&quot; (the candidates confirmed to be typed by a person were only ~3% of the total, and nearly all of them were fine).</li>
+<li><strong>What changed</strong>: The conversation log already carries markers (entry point <code>entrypoint</code>, sender <code>origin</code>, <code>isMeta</code>). O-Brain now reads them and only treats text a person typed as memory candidates. Sessions launched by programs are skipped by default, and the reason and count of what was skipped are printed in the hook log. Older logs without markers, and marker kinds it does not recognize, are handled exactly as before (so memories never vanish silently).</li>
+<li><strong>How to turn it back on</strong>: To also remember conversations started by programs, add <code>OBRAIN_CAPTURE_SDK=1</code> to <code>app/.env.local</code>.</li>
+<li><strong>Effect (measured on the same 283 logs)</strong>: memory candidates dropped from 524 to 35 (−93%). What disappeared was program-written text, not human decisions, so the lower volume is expected. Memories already saved are not changed; cleanup stays human-confirmed as before.</li>
+<li>The self-check (<code>npm run selftest</code>) grew from 14 to 20 items and all pass.</li>
+</ul>
+</details>
+<details>
 <summary><b>2026-09-11 — Dependency security patches (3 newly discovered), live-tested concurrency and mobile rendering, hardened multi-session safety, added a mobile UI hint</b></summary><ul>
 <li><strong>Dependency vulnerabilities: 7 → 4</strong>: During a routine check, besides the already-known adm-zip issue (GitHub issue #1, CVE-2026-39244), 3 newly disclosed vulnerabilities turned up — fast-uri (high) and hono/qs (moderate) — and were resolved safely via <code>npm audit fix</code>. adm-zip was pinned to the latest release (0.6.0), which fixed the &quot;unbounded memory allocation&quot; issue; the remaining &quot;symlink-following&quot; issue has no fix even in the latest release, so it stays open with its severity downgraded from high to moderate (waiting on an upstream fix; confirmed directly that it can&#39;t currently be avoided). The remaining 4 (sharp, onnxruntime-node, 2 issues via the AI embedding library, and the 1 residual symlink issue) were all directly confirmed to have no upstream fix yet.</li>
 <li><strong>Live-tested concurrent requests (race conditions)</strong>: Simulated several Claude Code windows using O-Brain at the same moment by running 20 concurrent creates, 10 concurrent edits on the very same memory, and a mixed delete/read/create load against a real running server. Everything was handled correctly with no data corruption, no conflicts, and no server errors.</li>
