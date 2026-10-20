@@ -76,9 +76,33 @@ export function detectProject(transcriptPath, fallback = null) {
   } catch { return fallback; }
 }
 
+// ── 사람이 쓴 글만 기억 후보로 ──────────────────────────────────────────────
+// 2026-10-20 실측(최근 대화 기록 282개): 후보의 71.5%가 프로그램이 호출한 세션(entrypoint=sdk-*)에서,
+// 23.1%가 사람 세션 안의 비사람 턴(origin≠human·isMeta)에서 나왔고 대부분 README 문장·코드 diff·보고서 조각이었다.
+// 사람이 친 것으로 확인된 후보는 3.3%뿐이었다(품질 의심 0건). 대화 기록에는 구분 표식이 이미 있는데 읽지 않고 있었다.
+// 원칙: 표식이 없는 구버전 기록은 그대로 통과(하위호환), 알 수 없는 origin 종류도 통과시키되 개수를 남긴다
+// (신버전이 새 종류를 만들어도 기억이 조용히 사라지지 않게 — PRD 05 §3 silent failure 금지).
+const NON_HUMAN_ORIGINS = new Set(['peer', 'task-notification']);
+// 프로그램이 호출한 세션(claude -p, Agent SDK)까지 기억하고 싶을 때만 app/.env.local에 OBRAIN_CAPTURE_SDK=1.
+export const captureSdkEnabled = () => process.env.OBRAIN_CAPTURE_SDK === '1';
+// user 레코드가 사람이 친 글이 아니면 이유를 돌려주고, 사람(또는 판별 불가)이면 null.
+// entrypoint는 'sdk-*'만 제외 — 'cli'·'claude-desktop' 등 사람이 쓰는 진입점은 건드리지 않는다.
+export function nonHumanReason(rec, { allowSdk = captureSdkEnabled() } = {}) {
+  if (!rec || typeof rec !== 'object') return null;
+  if (!allowSdk && typeof rec.entrypoint === 'string' && rec.entrypoint.startsWith('sdk')) return 'sdk';
+  if (rec.isMeta === true) return 'meta';
+  if (rec.isSidechain === true) return 'sidechain';
+  const kind = rec.origin && rec.origin.kind;
+  if (typeof kind === 'string' && NON_HUMAN_ORIGINS.has(kind)) return 'origin:' + kind;
+  return null;
+}
+// parseTranscript가 채우는 집계: 제외한 이유별 개수 / 알 수 없는 origin 종류 / 남긴 user 텍스트 턴 수.
+export const newParseStats = () => ({ dropped: {}, unknownOrigins: {}, keptUser: 0 });
+
 // transcript .jsonl(줄별 JSON) → user/assistant 텍스트 교환 목록.
 // tool_use/tool_result 등 잡음 제외, {type:'text'}만 취함(Explore 확인 스키마).
-export function parseTranscript(path, { tailLines = 600 } = {}) {
+// humanOnly(기본 true): 사람이 친 글이 아닌 user 턴을 제외. stats를 넘기면 제외 내역을 채운다.
+export function parseTranscript(path, { tailLines = 600, humanOnly = true, stats = null } = {}) {
   let lines = readTail(path).split('\n').filter(l => l.trim());
   if (lines.length > tailLines) lines = lines.slice(-tailLines); // 대용량 방지: 최근 위주
   const exchanges = [];
@@ -94,7 +118,17 @@ export function parseTranscript(path, { tailLines = 600 } = {}) {
       text = msg.content.filter(p => p && p.type === 'text').map(p => p.text).join('\n');
     }
     text = (text || '').trim();
-    if (text) exchanges.push({ role: msg.role || o.type, text });
+    if (!text) continue;
+    if (o.type === 'user') {
+      const why = humanOnly ? nonHumanReason(o) : null;
+      if (why) { if (stats) stats.dropped[why] = (stats.dropped[why] || 0) + 1; continue; }
+      if (stats) {
+        stats.keptUser++;
+        const k = o.origin && o.origin.kind;
+        if (typeof k === 'string' && k !== 'human') stats.unknownOrigins[k] = (stats.unknownOrigins[k] || 0) + 1;
+      }
+    }
+    exchanges.push({ role: msg.role || o.type, text });
   }
   return exchanges;
 }
@@ -140,22 +174,26 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
   if (!transcriptPath || !String(transcriptPath).endsWith('.jsonl') || !existsSync(transcriptPath)) {
     return { exchanges: 0, candidates: 0, saved: [] };
   }
-  const exchanges = parseTranscript(transcriptPath);
+  const stats = newParseStats();
+  const exchanges = parseTranscript(transcriptPath, { stats });
+  // 프로그램이 호출한(sdk) 세션 — 사람이 남긴 user 턴이 하나도 없고 sdk 턴을 제외했다면 기억 후보를 만들지 않는다.
+  // (session 행은 남겨 KPI 분모를 설명 가능하게 하되 tool='claude-code-sdk'로 구분)
+  const sdkSession = (stats.dropped.sdk || 0) > 0 && stats.keptUser === 0;
   // 시크릿은 '추출(=AI 전송 가능) 전'에 제거 — 보안 발견사항 반영.
   for (const ex of exchanges) {
     ex.text = redact(ex.text).clean;
     if (ex.role === 'user') ex.text = stripInjected(ex.text); // 주입/시스템 텍스트 제거(노이즈 추출 방지)
   }
-  const memories = ruleExtract(exchanges);
-  // 프로젝트 = 실제 편집한 파일 기준 자동 탐지(없으면 클로드코드 시작 폴더 cwd).
-  const project = detectProject(transcriptPath, projectPath || null);
+  const memories = sdkSession ? [] : ruleExtract(exchanges);
+  // 프로젝트 = 실제 편집한 파일 기준 자동 탐지(없으면 클로드코드 시작 폴더 cwd). sdk 세션은 파일 스캔 생략.
+  const project = sdkSession ? (projectPath || null) : detectProject(transcriptPath, projectPath || null);
   const db = openDb();
   // 세션 레코드 생성(PRD 02) — 기억의 출처 세션을 추적한다.
   let session_id = null;
   try {
     const sessRow = db.prepare(
-      "INSERT INTO session(project, tool, ended_at) VALUES (?, 'claude-code', datetime('now'))"
-    ).run(project || null);
+      "INSERT INTO session(project, tool, ended_at) VALUES (?, ?, datetime('now'))"
+    ).run(project || null, sdkSession ? 'claude-code-sdk' : 'claude-code');
     session_id = Number(sessRow.lastInsertRowid) || null;
   } catch {}
   // scope: project 탐지 시 'project', 없으면 'global' (PRD 02 확정: Phase 1은 전부 project)
@@ -172,5 +210,7 @@ export async function captureSession({ transcriptPath, projectPath } = {}) {
     }
   }
   db.close();
-  return { exchanges: exchanges.length, candidates: memories.length, saved, project, session_id };
+  // dropped/unknownOrigins는 훅이 stderr에 남긴다 — 무엇이 왜 제외됐는지 사람이 볼 수 있게(은폐 금지).
+  return { exchanges: exchanges.length, candidates: memories.length, saved, project, session_id,
+    skipped: sdkSession ? 'sdk-session' : undefined, dropped: stats.dropped, unknownOrigins: stats.unknownOrigins };
 }

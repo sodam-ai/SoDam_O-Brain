@@ -2,7 +2,7 @@
 // 실제 기억은 건드리지 않도록 임시 DB 사용 후 정리.
 process.env.OBRAIN_DATA_DIR = './spike/_selftest'; // db.mjs import 전에 설정(중요)
 
-import { rmSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -19,6 +19,7 @@ const {
 } = await import('./store.mjs');
 const { search } = await import('./search.mjs');
 const { buildGraph } = await import('./graph.mjs');
+const { captureSession } = await import('./extract-session.mjs');
 
 let pass = true;
 const check = (name, ok) => { console.log(`${ok ? '✅' : '❌'} ${name}`); if (!ok) pass = false; };
@@ -89,6 +90,43 @@ const dupB = await addMemory(db, { content: dupContent, type: '지식', project:
 const dupResult = findExactDuplicates(db, 30, 100);
 const dupIds = new Set(dupResult.pairs.flatMap(p => [p.a.id, p.b.id]));
 check('11. 완전일치 중복 쌍이 탐지됨', dupIds.has(dupA.id) && dupIds.has(dupB.id));
+
+// 12~16. 사람이 쓴 글만 기억 후보로(2026-10-20) — 합성 대화 기록(.jsonl)을 격리 폴더에 만들어 captureSession을 끝까지 실행.
+// 실제 측정: 후보의 71.5%가 프로그램 호출(sdk) 세션, 23.1%가 사람 세션 안의 비사람 턴(origin≠human·isMeta)에서 나왔다.
+delete process.env.OBRAIN_CAPTURE_SDK; // .env.local에 켜져 있어도 이 테스트는 "기본값(꺼짐)"을 검사해야 하므로 고정
+const txDir = join(testDir, 'tx'); mkdirSync(txDir, { recursive: true });
+const urec = (text, extra = {}) => ({ type: 'user', message: { role: 'user', content: [{ type: 'text', text }] }, ...extra });
+const arec = (text) => ({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } });
+const writeTx = (name, recs) => { const p = join(txDir, name + '.jsonl'); writeFileSync(p, recs.map(r => JSON.stringify(r)).join('\n') + '\n'); return p; };
+const savedText = r => r.saved.map(s => s.content).join(' | ');
+
+const sdkTx = writeTx('sdk', [urec('셀프테스트 SDK: 로그 폴더는 절대 지우지 마', { entrypoint: 'sdk-py' }), arec('알겠습니다')]);
+const r12 = await captureSession({ transcriptPath: sdkTx, projectPath: 'C:\\selftest\\sdk' });
+check('12. 프로그램이 호출한(sdk) 세션은 기억 후보를 만들지 않음(기본)', r12.skipped === 'sdk-session' && r12.candidates === 0 && r12.saved.length === 0);
+check('12-1. 그 세션 행은 tool=claude-code-sdk로 구분 기록됨', db.prepare('SELECT tool FROM session WHERE id=?').get(r12.session_id)?.tool === 'claude-code-sdk');
+
+process.env.OBRAIN_CAPTURE_SDK = '1';
+const r13 = await captureSession({ transcriptPath: sdkTx, projectPath: 'C:\\selftest\\sdk' });
+delete process.env.OBRAIN_CAPTURE_SDK;
+check('13. OBRAIN_CAPTURE_SDK=1이면 sdk 세션도 현행처럼 저장', !r13.skipped && savedText(r13).includes('로그 폴더'));
+
+const mixTx = writeTx('mixed', [
+  urec('셀프테스트 사람: 백업 폴더는 매일 확인하기로 했다', { entrypoint: 'cli', origin: { kind: 'human' } }),
+  urec('셀프테스트 동료: 배포는 금요일에 하지 마', { entrypoint: 'cli', origin: { kind: 'peer' }, isMeta: true }),
+  urec('셀프테스트 알림: 캐시는 절대 지우지 마', { entrypoint: 'cli', origin: { kind: 'task-notification' } }),
+]);
+const r14 = await captureSession({ transcriptPath: mixTx, projectPath: 'C:\\selftest\\mixed' });
+check('14. 사람 세션 안의 동료(peer)·알림·isMeta 턴은 제외하고 사람 턴만 저장',
+  savedText(r14).includes('백업 폴더') && !savedText(r14).includes('배포는 금요일') && !savedText(r14).includes('캐시는') &&
+  r14.dropped.meta === 1 && r14.dropped['origin:task-notification'] === 1);
+
+const legacyTx = writeTx('legacy', [urec('셀프테스트 구버전: 캐시 폴더 이름은 tmp로 정했다'), arec('네')]);
+const r15 = await captureSession({ transcriptPath: legacyTx, projectPath: 'C:\\selftest\\legacy' });
+check('15. 표식이 없는 구버전 기록은 현행 그대로 저장(하위호환)', savedText(r15).includes('구버전') && Object.keys(r15.dropped).length === 0);
+
+const unkTx = writeTx('unknown', [urec('셀프테스트 미지: 알림음은 끄기로 정했다', { entrypoint: 'cli', origin: { kind: 'voice-input' } })]);
+const r16 = await captureSession({ transcriptPath: unkTx, projectPath: 'C:\\selftest\\unknown' });
+check('16. 알 수 없는 origin 종류는 사람으로 간주해 저장하고 개수를 남김', savedText(r16).includes('알림음') && r16.unknownOrigins['voice-input'] === 1);
 
 db.close();
 try { rmSync(testDir, { recursive: true, force: true }); } catch {}

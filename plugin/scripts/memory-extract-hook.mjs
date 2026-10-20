@@ -21,7 +21,12 @@ process.stdin.on('end', async () => {
 
     const { captureSession } = await import(appUrl('extract-session.mjs'));
     const r = await captureSession({ transcriptPath, projectPath: payload.cwd });
-    console.error(`[o-brain] 캡처: 대화 ${r.exchanges} → 후보 ${r.candidates} → 저장 ${r.saved.length}건`);
+    if (r.skipped) console.error('[o-brain] 프로그램이 호출한(sdk) 세션 — 기억 후보 추출을 건너뜀 (켜려면 app/.env.local에 OBRAIN_CAPTURE_SDK=1)');
+    else console.error(`[o-brain] 캡처: 대화 ${r.exchanges} → 후보 ${r.candidates} → 저장 ${r.saved.length}건`);
+    // 무엇이 왜 제외됐는지 숨기지 않는다(PRD 05 §3). 알 수 없는 origin 종류는 사람으로 간주해 통과시킨 것.
+    const fmt = (o) => Object.entries(o || {}).map(([k, v]) => `${k} ${v}`).join(', ');
+    if (fmt(r.dropped)) console.error(`[o-brain] 사람이 쓴 글이 아니라 제외한 턴: ${fmt(r.dropped)}`);
+    if (fmt(r.unknownOrigins)) console.error(`[o-brain] 알 수 없는 origin 종류(사람으로 간주해 통과): ${fmt(r.unknownOrigins)}`);
   } catch (e) {
     console.error('[o-brain] 캡처 실패(무시하고 종료):', e?.message || e);
   }
