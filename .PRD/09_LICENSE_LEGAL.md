@@ -65,6 +65,11 @@
 - **요구사항 충족(2026-08-09~10)**: npm 의존성 8개(직접 7 + 네이티브 바이너리 서브패키지 1) + 모델
   1개(all-MiniLM-L6-v2) 전부 허용형 실측 확인, 카피레프트 0건 — §12 Must "의존성 라이선스 허용형
   확인" **완전히 충족**.
+- **[정정, 2026-10-20]** 위 "카피레프트 0건"은 **직접 의존성 기준**이다. 설치할 때 함께 깔리는 `@img/sharp-win32-x64`(sharp 바이너리, `@huggingface/transformers` 경유)는 라이선스가 **`Apache-2.0 AND LGPL-3.0-or-later`**(약한 카피레프트)로 표기돼 있다(설치 트리 `package.json` 실측). 수정 없이 라이브러리로만 쓰므로 개인·내부 사용엔 통상 문제가 없지만, **재배포·고객사 납품 전에는 [전문가 검토 필요]**. README(한/영)도 같은 내용으로 정정했다.
+- **[갱신, 2026-10-21 — 설치 트리 전수 실측]** 위 표는 직접 의존성 기준이었다. 이번에는 `npm ci`로 설치한 **전체 213개 패키지**(중첩 포함)의 `package.json` `license`를 전수 집계했다: MIT 151 · ISC 27 · BSD-3-Clause 19 · Apache-2.0 7 · `MIT OR Apache-2.0` 2(sqlite-vec 계열) · 그 밖의 허용형 표기 5(BSD-2-Clause, 0BSD, `(MIT OR WTFPL)`, `(MIT OR CC0-1.0)`, `(BSD-2-Clause OR MIT OR Apache-2.0)`) · **`Apache-2.0 AND LGPL-3.0-or-later`(+MIT) 2**(`@img/sharp-win32-x64`, `@img/sharp-wasm32`). **라이선스 미표기 0건, GPL·AGPL·SSPL·상용 제한 0건.**
+- **[정정, 2026-10-21]** sharp 바이너리의 내용물: 바로 위 "LGPL 1건"은 부정확했다. `@img/sharp-win32-x64`는 패키지 README에서 스스로 **LGPLv3 라이브러리 8개**(libvips·glib·pango·fribidi·libexif·libheif·librsvg·proxy-libintl)와 **MPL-1.1**(cairo), aom(BSD-2-Clause + AOM 특허 라이선스) 등을 포함한다고 밝히고 있다. O-Brain은 이미지 처리를 쓰지 않고 이 바이너리를 저장소에 싣지도 않지만(npm이 설치 시점에 내려받음), **`node_modules`를 묶어 재배포·납품하면 LGPL·MPL 조건이 걸리므로 [전문가 검토 필요]**. Linux·macOS에서는 `@img/sharp-libvips-*` 계열이 대신 깔린다(lock 파일 기준 확인, 실설치 확인은 이 PC(Windows)만). `NOTICE`에 같은 내용을 반영했다.
+- **[확인됨, 2026-10-21]** 모델: 앱이 실제로 내려받는 `Xenova/all-MiniLM-L6-v2`(ONNX 변환본)와 원본 `sentence-transformers/all-MiniLM-L6-v2` 둘 다 Hugging Face 공개 API 조회에서 `license: apache-2.0`, 접근 제한(gated) 없음. 앱은 **최초 실행 때 모델을 인터넷에서 내려받는다**(`app/src/embed.mjs`, `allowRemoteModels = true`) — "100% 로컬"은 저장·검색·화면이 로컬이라는 뜻이며, 최초 1회 모델 다운로드에는 인터넷이 필요하다.
+- **[확인됨, 2026-10-21]** LICENSE 본문: 공식 Apache-2.0 원문(apache.org/licenses/LICENSE-2.0.txt, 201줄)과 줄 단위로 대조 — 부록의 `Copyright [yyyy] [name of copyright owner]` 한 줄만 `Copyright 2026 SoDam AI Studio`로 채운 것 외에 **동일**. `app/package.json`·`plugin/.claude-plugin/plugin.json`의 `license`도 `Apache-2.0`.
 
 ---
 
@@ -155,6 +160,8 @@ README에 명확히 안내: 사용자가 O-Brain를 **수정 · 복제 · 포크
 
 - 예제 데이터·샘플 계정·데모 이미지·더미 텍스트·테스트 파일·문서 스크린샷에 **실제 개인정보·저작권 자료·비공개 정보 포함 금지**.
 - 데모는 **합성 더미**만(예: "테스트 포트 1601" 같은 가공 예). 실제 키·실명·고객사명 금지.
+- **[확인됨, 2026-10-21]** 저장소의 문서 스크린샷 5장(`assets/screenshots/`)을 육안 확인 — 전부 합성 데모 기억 8건이며 실제 프로젝트명·경로·이메일·키 없음. 다만 **옛 화면**(설정 화면에 백업 영역이 있던 시절)이라 최신 UI와 다르다 — 문서 최신성 문제이지 권리·개인정보 문제는 아님.
+- **[추가, 2026-10-21 — 가져오기·내보내기·백업]** 사용자가 만드는 **내보내기·백업 파일에는 클로드코드 대화에서 모은 개인·고객사·업무 정보가 그대로 들어갈 수 있다.** 이 파일을 메신저·메일·클라우드·저장소에 올리면 그 순간 외부에 공개된 것으로 봐야 하므로 공유 전에 사용자가 내용을 확인해야 한다(O-Brain은 파일을 어디에도 자동 전송하지 않는다). 반대로 **남이 만든 파일을 가져올 때** 그 안의 글에 대한 저작권·개인정보 책임은 가져오는 사용자에게 있다(O-Brain이 하는 것은 저장 전 시크릿 가림, "검토 필요"(신뢰도 40%) 표시, 자동 주입 제외까지다). 이 한계는 README(한/영)에도 같은 문구로 적었다.
 
 ---
 

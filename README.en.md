@@ -14,7 +14,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 1. [Key Features](#key-features)
 2. [Prerequisites](#prerequisites)
 3. [How to Download](#how-to-download)
-4. [Installation (2 Steps)](#installation-2-steps)
+4. [Installation (2 Steps)](#installation-2-steps) · [Updating](#updating)
 5. [Claude Code Plugin (Optional)](#claude-code-plugin-optional)
 6. [MCP Tool Integration (Claude Code)](#mcp-tool-integration-claude-code)
 7. [Quick Start](#quick-start)
@@ -42,7 +42,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Time Travel** | Query memories that were "alive" on any past date |
 | **Confidence Decay** | AI-extracted memories auto-decay with a 30-day half-life |
 | **Security Filter** | API keys and passwords auto-removed before saving (`[REDACTED]`) |
-| **Auto Backup** | Snapshot created automatically on server start and before bulk delete |
+| **Auto Backup + Backup card** | Automatic copies on server start and right before delete / merge / import (each kind kept separately). In the header ⬇ **Data** screen's Backup card: list (kind, date, memory count, "opened and verified"), "Create backup now" (.db), "Portable backup" (.json.gz, for moving to another PC), download; restore with `npm run restore` |
 | **MCP Integration** | 7 tools for saving/searching/linking memories directly from Claude Code |
 | **Orphan Node Visual** | Memories with no user-defined relations shown with a dashed ring |
 | **Multi-select & Bulk Delete** | Select multiple memories and delete at once + 10-second undo |
@@ -56,7 +56,8 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | **Low-Confidence Filter** | On the List tab, filter to show only memories with low auto-extraction confidence (below 50%) for review |
 | **Noise Memory Filter** | On the List tab, filter out memories that look like conversation summaries or quotes accidentally saved as memories, then bulk-clean them with "Select All" |
 | **Relation Suggestion Queue** | On the Overview tab, review memories with no relations one at a time and decide whether to link them to a similar memory (never auto-linked) |
-| **Full Backup Export** | From the header's export menu, save your entire memory set (including relations) to a JSON or Markdown file — separate from the existing "visible items only" export |
+| **6 Export Formats** | In the header ⬇ **Data** screen, export to JSON, JSON Lines, CSV (Excel), Markdown, Text or HTML (print → PDF) — everything / current list / selection / one project, leave out folder paths (default), compression (.gz), download or save to a folder on this PC |
+| **Import** | Drop a file in the formats above (JSON, JSONL, CSV, TSV, Markdown, TXT, also as .gz) → **preview** (new, duplicates, masked secrets, errors) → confirm → automatic backup → progress bar → undo within 30 minutes. Files from outside arrive as "needs review" and are not injected into new chats automatically |
 
 ---
 
@@ -65,7 +66,7 @@ O-Brain is the **auto-notepad** you keep next to that AI — it writes down what
 | Item | Requirement |
 |------|-------------|
 | OS | Windows 10 / 11 (64-bit) |
-| Node.js | 20.x LTS or higher (free from [nodejs.org](https://nodejs.org)) |
+| Node.js | **26.7.x** (from [nodejs.org](https://nodejs.org)). This project is pinned to the 26.7 line by `engines` (`~26.7.0`) in `app/package.json` and `app/.nvmrc`. With a different Node version, saving memories can fail silently |
 | Storage | 500 MB+ (includes ~90 MB embedding model) |
 | RAM | 4 GB+ (8 GB+ recommended) |
 | Browser | Chrome, Edge, Firefox, etc. |
@@ -81,11 +82,11 @@ If you're reading this, the O-Brain files are already on your computer. Just loc
 If using Git (for developers):
 
 ```bash
-git clone [repository URL]
-cd [folder name]
+git clone https://github.com/sodam-ai/SoDam_O-Brain.git
+cd SoDam_O-Brain
 ```
 
-> Access permission is required if the repository is private.
+> The repository is public, so no special permission is needed to download it. (If it ever becomes private, access permission is required.)
 
 ---
 
@@ -116,6 +117,19 @@ http://127.0.0.1:7740
 
 > **First run:** automatically downloads the AI embedding model (~90 MB). Takes 1–3 minutes. All subsequent runs start instantly.
 
+### Updating
+
+After you get a new version, follow these steps. Windows cannot replace files that are in use, so **shutting everything down first** matters.
+
+1. In the terminal where the O-Brain server is running, press `Ctrl+C` to stop it, and **close every Claude Code window**.
+2. Get the new version — `git pull` if you used git, or overwrite with the newly downloaded files if you used a zip. (Your memories inside `app/data/` are not touched.)
+3. In a terminal, go to the `app` folder and run `npm ci` — it installs **exactly the verified versions** listed in the repository's `package-lock.json` (safer than `npm install`). It can take a few minutes.
+4. Run `npm run selftest` (a long list of ✅ ending with 🎉 means it is healthy), then start the server with `npm start`.
+5. If you use the Claude Code plugin, run `npm run plugin:pin` once, then update it with `/plugin` in a new Claude Code window.
+6. If a browser tab with **an O-Brain screen opened earlier** is still around, it may show "The server seems to have restarted". Just press the **Reload page** button (or `F5`).
+
+> Every time the server starts, the memory database is backed up automatically and its structure is brought up to date. If something looks wrong, `npm run restore` in "Troubleshooting" below takes you back.
+
 ---
 
 ## Claude Code Plugin (Optional)
@@ -128,6 +142,8 @@ If you use Claude Code, you can also install it as a plugin. **You must run this
 ```
 
 > Example: `/plugin marketplace add C:\Tools\O-Brain\plugin`
+
+> ⚠️ **Once, before installing or updating**: installing with `/plugin` **copies** the plugin files into Claude Code's cache folder, so the `app` folder is no longer next to them. **Before** installing or updating, open a terminal in the `app` folder and run `npm run plugin:pin` once to register where O-Brain lives (one line is saved in `.obrain/root` inside your user folder). If you skip this, a session start shows "could not find the app folder" — just run the same command then.
 
 Restart Claude Code after installation → slash commands become available:
 
@@ -213,6 +229,39 @@ Stop the server: `Ctrl + C` in the terminal.
 **Settings tab — 5 adjustable controls**
 ![Settings tab](assets/screenshots/settings.png)
 
+### Data screen — Export · Import · Backup
+
+Open it with the **⬇ button** at the right of the header (or `Ctrl+K` → "Data management"). It has three cards, top to bottom: **Export · Import · Backup**.
+
+**① Export** — take your memories out as a file (the originals stay where they are).
+
+| What you want | Pick this format |
+|---------------|------------------|
+| View in Excel / Google Sheets | **CSV** (Korean text stays readable; relations are left out) |
+| Move to another PC / keep a full copy | **JSON** (includes relations; can be imported again) |
+| Obsidian, Notion and other note apps | **Markdown (.md)** |
+| Read, print, make a PDF | **HTML** (open it, press `Ctrl+P` → "Save as PDF") |
+| Developers / data analysis | **JSON Lines** (one memory per line) |
+| Paste into Notepad or a chat app | **Text (.txt)** |
+
+Choose the scope from *everything / what is loaded in the list now / what you selected in the list / one project*. **"Leave out folder paths" is on by default** (safe when you share the file; turn it off when moving to your own other PC). "Download" saves through the browser; "Save to this PC" writes into `app/data/export/` and tells you where. A compression (.gz) option is available too.
+
+**② Import** — bring memories in from a file.
+
+1. Drop a file or press "Choose file" — `JSON`, `JSON Lines`, `CSV`, `TSV`, `Markdown`, `Text`, or any of these compressed as `.gz` (up to 5 MB and 5,000 memories). For Excel `.xlsx`, use "Save as → CSV UTF-8" first. Korean-Windows CSV (CP949) is read as well.
+2. **Preview** — shows how many memories are new, how many are skipped because they already exist, lines that could not be read, and memories where secrets were masked. Nothing is saved at this step.
+3. Press "Import": your current memories are **backed up automatically** first, then saved (a progress bar is shown; if it stops midway, nothing is saved).
+4. For **30 minutes afterwards, "Undo"** removes only what you just imported.
+
+> ⚠️ A file from someone else could contain sentences that try to act like instructions to the AI, so by default imported memories arrive as **"needs review" (40% confidence)** and are **not injected automatically into new chats**. Open a memory, check it and save it, and it becomes a normal memory. If you made the file yourself (for example a JSON exported from this screen), tick "I trust this file" — the source and confidence written in the file are kept. Anything that looks like a password or API key is masked on import too.
+
+**③ Backup** — copies for when something goes wrong.
+
+- **Automatic**: made when the server starts and right before you delete, merge or import. Each kind is kept separately (7 server-start copies · 7 before-risky-action copies).
+- **Manual**: "Create backup now" (`.db`, up to 10) and "Portable backup" (`.json.gz`, up to 10 — to move to another PC, upload it to the new PC's "Import"). Manual backups are never pushed out by automatic ones.
+- The list shows kind, date, size, memory count and "opened and verified ✔"; **Download** lets you keep a copy elsewhere (USB, cloud).
+- **Restoring** is done in a terminal, not on screen (overwriting a data file that is in use can corrupt it). Close the server and every Claude Code window, run `npm run restore` in the `app` folder → pick a number → type `yes`. Your current data is backed up first, and the original file is not deleted — it is kept next to the new one.
+
 ---
 
 ## Key Commands
@@ -221,8 +270,12 @@ Stop the server: `Ctrl + C` in the terminal.
 # Run from the app/ folder
 npm start          # Start server (port 7740)
 npm run selftest   # Run self-diagnostics
-npm run backup     # Manual backup
-npm run status     # View DB stats
+npm run backup     # Manual backup (.db)
+npm run backup -- --portable   # Portable backup (.json.gz, for moving to another PC)
+npm run restore    # Restore from a backup (close the server and all Claude Code windows first)
+npm run status     # View DB stats (incl. last auto-save result and semantic-search state)
+npm run reindex    # Fill in missing search data for memories (after semantic search was down)
+npm run plugin:pin # Register where O-Brain lives for the /plugin install (once, before installing/updating)
 npm run seed       # Add sample data (for testing)
 ```
 
@@ -233,11 +286,14 @@ npm run seed       # Add sample data (for testing)
 | Item | Location |
 |------|----------|
 | Memory database | `app/data/obrain.db` |
-| Auto backups | `app/data/backup/` (keeps latest 7) |
+| Backups | `app/data/backup/` (kept per kind: 7 server-start · 7 before-risky-action · 10 manual .db · 10 portable .json.gz) |
+| Exported files | `app/data/export/` (when you choose "Save to this PC") |
 | API token file | `app/data/.api-token` (regenerated each run) |
 | Personal settings | `app/.env.local` (uses defaults if absent) |
 | This document | Project root (`README.md`/`README.en.md` and each `.html`) |
 | `app/web/graph.html` | **Intentionally kept early prototype file** (the current screen is `index.html`). It's dead code referenced nowhere, but kept as-is to preserve early development history rather than deleted |
+
+> ⚠️ **Stop and check**: before you **delete, move or overwrite** the `app/data` folder (the memory DB), run `npm run backup` first. Deleted memories cannot be brought back. Do not keep the DB inside a cloud-sync folder such as OneDrive — it can get corrupted.
 
 ### Environment Variables (`app/.env.local`)
 
@@ -246,6 +302,7 @@ npm run seed       # Add sample data (for testing)
 | `OBRAIN_PORT` | `7740` | Server port number |
 | `OBRAIN_DATA_DIR` | `./data` | Data storage folder |
 | `OBRAIN_CAPTURE_SDK` | (off) | Set to `1` to also auto-save conversations from sessions launched by programs (`claude -p`, Agent SDK, etc.). By default **only text a person typed** is saved |
+| `OBRAIN_EMBED_DISABLE` | (off) | Set to `1` to turn off semantic search (the embedding model) and use keyword search only — for diagnosis or low-spec PCs. While it is on, new memories get no search data; turn it back on and run `npm run reindex` to fill it in |
 
 ---
 
@@ -276,15 +333,24 @@ Tech stack: Node.js ES Modules · Express.js v5 · SQLite (better-sqlite3) · sq
 ## Security Overview · Data Flow
 
 - Server binds **only to 127.0.0.1 (your PC)** — not reachable from external devices
-- **API keys and passwords auto-removed** before saving (processed by redact.mjs)
+- **API keys and passwords auto-removed** before saving (processed by redact.mjs) — this covers GitHub, Slack and Stripe tokens, JWTs, passwords inside database URLs, and Korean phrases like "the password is …". It does **not guarantee every password is caught** (an arbitrary string written without a keyword, or a password with no digits or symbols, can slip through) — the safest habit is to not type sensitive values into a chat at all
+- The server only accepts requests addressed to an allowed host (`127.0.0.1` or `localhost` plus the server port) — this blocks "DNS rebinding", where a malicious web page tricks the browser into reading your local server (2026-10-20)
+- If the semantic-search model cannot be used, a **warning banner** appears at the top of the page; memories are still saved and keyword search keeps working (it never silently returns misleading results)
 - New **local API token** auto-generated each server start (crypto.randomBytes)
 - `data/`, `.env.local`, `*.sqlite` are in `.gitignore` — never committed to Git
 - No external cloud communication. Embedding model runs entirely locally
 - Input validation: invalid IDs, out-of-range numbers, and disallowed CORS origins are all safely rejected by the server with 400/403/404 (verified by testing)
 - Even on an unexpected server error (e.g. a malformed request), internal file paths and error stack details are never exposed on screen — only a safe generic message is shown; full details go to the server log only (global error handler added 2026-07-27)
 - Data stays safe even with several Claude Code windows open at once (verified 2026-09-11: many concurrent creates and concurrent edits on the same record, no corruption or crash; a wait-then-retry safeguard was added)
+- Suspicious requests are logged in the server window — requests with a disallowed address or origin, or a missing/wrong token, are refused and leave one line `[security] 요청 거절(이유) …` (the log line itself is written in Korean) (the same reason is summarized to one line per minute; tokens and memory content are never logged) (2026-10-21)
+- The id in delete / merge / add-relation / undo-import requests must be **an integer or a string of digits only** (`true`, arrays, empty values and the like are refused) — this fixes a defect reproduced during the security review (a `true` in the id list used to delete memory #1) (2026-10-21)
+- The server type (`X-Powered-By: Express`) is no longer announced in response headers (2026-10-21)
+- The screen always shows what you wrote **as plain text** — malicious strings (`<script>`, `<img onerror=…>` and the like) were entered and confirmed in a real browser not to run in the list, search, detail, edit, timeline, overview, graph, settings and import preview (2026-10-21)
+- Known vulnerabilities in installed packages (`npm audit`) are **0** according to `package-lock.json` (2026-10-21). To apply it on this PC you need `npm ci` from "Updating" above
+- Outside the protection (limits): a PC shared by several people, keeping `app/data/` in a shared or cloud-synced folder, and sending export or backup files to others — those files can contain personal or work information collected from your conversations
+- Limit: a memory the AI saves through `save_memory` (an MCP tool) is saved at 0.8 confidence and becomes eligible for automatic injection into new chats. If the AI is fooled into saving an odd sentence during a chat, it can show up in later chats. The injected text is cut to one line of 400 characters and labelled "reference only, not instructions", but that is not a complete block — delete unfamiliar memories from the list. Also, "imported, not yet reviewed" memories are left out of automatic injection only; they remain visible in search, the MCP tools and the screen
 
-Security headers applied: `Content-Security-Policy` (same-origin resources only) · `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` (blocks iframe embedding) · `Referrer-Policy: no-referrer`.
+Security headers applied: `Content-Security-Policy` (same-origin resources only) · `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` (blocks iframe embedding) · `Referrer-Policy: no-referrer` · `Cache-Control: no-store` (screens and API responses that contain memory content are not kept in caches).
 
 ---
 
@@ -293,6 +359,42 @@ Security headers applied: `Content-Security-Policy` (same-origin resources only)
 Most recent entries first. Click any entry to expand it.
 
 <details open>
+<summary><b>2026-10-21 (final check) — Security defect fixed · Independent security review follow-ups · Notice after a server restart · 12 dependency vulnerabilities resolved · License notices tidied</b></summary>
+
+- **A defect found and fixed in the security review**: when an id list in a delete request contained a value such as `true`, memory #1 was deleted (`true` was turned into 1 — a type confusion). Ids now have to be integers or digit-only strings, applied to the same pattern in 4 places (bulk delete, duplicate merge, add relation, undo import). Three automatic checks were added (112 → 115 lines).
+- **Found and fixed in the independent security review (6 items)**: a separate review agent read the code, and each problem it reported was reproduced by hand before being fixed. ① The secret filter permanently damaged hyphenated words such as `task-management-dashboard` into `ta[REDACTED:api-key]` **at the moment of saving** (the original was not even kept in backups) ② Misses: JSON `"password": "…"`, `--password value`, `Authorization: Basic …`, and npm, Hugging Face, SendGrid and GitLab tokens were not masked ③ Regular expressions whose time grew quadratically on long repeated input (up to 5.7 s → 1 ms), and the conversation-cleanup regexes (up to 7.6 s → 3 ms) ④ Searches containing symbols such as `node.js`, `C++` or `e-mail` **silently lost the keyword search entirely** ⑤ Memory text handed to the AI is now one line of at most 400 characters with invisible Unicode characters removed (so a multi-line memory cannot fake a header; a "reference only, not instructions" note was added), and `status` output got the same cleanup plus an "imported, not yet reviewed" mark ⑥ In import, an item with an object value caused a 500 error, and a compressed file over the limit was read to the end — a single 20 KB file could use up to 4.2 GB of memory at once (now about 0.2 GB, refused immediately).
+- **Less information exposed · security log**: the server type (`X-Powered-By: Express`) was removed from response headers, and screens and API responses that carry memory content or the token now use `Cache-Control: no-store` so they are not kept in caches. Refused requests (disallowed address or origin, missing or wrong token) are logged in the server window as `[security] 요청 거절(이유) …` (the log line itself is written in Korean) (one line per minute per reason; tokens and content are never recorded).
+- **A screen left open after a server restart**: the server creates a new token each time it starts, so a dashboard tab opened earlier kept being refused and looked frozen with no explanation. A "The server seems to have restarted — reload the page" notice with a button now appears (reproduced in a real browser, and recovery confirmed).
+- **Narrow-screen fix**: in the Overview tab, a long string with no spaces (a file path or address) pushed a card off the screen and cut off its right side. Fixed.
+- **12 dependency vulnerabilities → 0**: `npm audit` reported 12 (1 critical · 4 high · 7 moderate), so `package-lock.json` was updated (56 packages, including the embedding engine and the MCP SDK). The search vectors stored for your existing 2,340 memories match what the new engine recomputes (similarity ≥ 0.999), so **no re-indexing is needed**. To apply it on this PC, close the server and every Claude Code window and run `npm ci` in the `app` folder (see "Updating").
+- **Legal and license tidy-up**: `NOTICE` was extended (embedding engine, sharp, protobufjs, a notice for the binary that contains LGPL and MPL code, and a trademark note), and the licenses of all 213 installed packages were checked one by one (0 GPL/AGPL). The model license (Apache-2.0) was re-confirmed and `LICENSE` was compared against the official text and matches. The License section now has a summary of redistribution conditions, what you must check yourself, and what needs professional review.
+- **What we checked**: all 125 automatic checks pass (and the new checks were confirmed to fail on the pre-fix code) · 115 server security and boundary checks + 12 export checks + 23 import checks (passing on both the old and the new dependencies) · response times measured on 5,000 memories (slowest 0.7 s, 0 failures in 46 simultaneous requests) · malicious-string entry test on every screen passed · 0 browser console errors · 32 virtual-screen checks. **What we could not check**: running export and import on the real database (2,340 memories) — only synthetic databases were used; operating systems other than Windows; a real touch device (checked only with a narrow window); actually installing the new versions into this PC's `node_modules` (tested in a copy only), and the memory-use improvement in import, which was confirmed by measurement rather than by an automatic check.
+</details>
+
+<details>
+<summary><b>2026-10-21 — New Data screen: 6 export formats · Import (preview and undo) · Better backups (portable copy, restore command)</b></summary>
+
+- **6 export formats (new Data screen)**: the header ⬇ button now opens a "Data" screen instead of a small menu. Export as JSON, JSON Lines, CSV (for Excel — a UTF-8 BOM keeps Korean readable, and cells starting with `=`, `+`, `-` or `@` get a leading `'` so they are never run as formulas), Markdown, Text, or HTML (no scripts, execution blocked, meant for print → PDF). Choose the scope (everything, the current list, a selection, one project), whether to leave out folder paths (on by default), compression (.gz), and download or save-to-folder. The old "visible items only (max 500, no relations)" menu is folded into the "loaded in the list" scope, and it now includes relations.
+- **Import (new)**: reads JSON, JSON Lines, CSV, TSV, Markdown and Text (plus `.gz`). Upload safeguards: extension, MIME and content checks (renamed executables, archives, PDFs and databases are refused), limits of 5 MB, 5,000 memories and 5,000 characters each, protection against decompression bombs; Korean encodings (CP949, UTF-16), Excel-style semicolon CSV and a hint for `.xlsx` are supported. The flow is **preview (nothing saved yet) → confirm → automatic backup → progress bar → undo within 30 minutes**, and saving is all-or-nothing (0 saved if it fails midway).
+- **Protection from outside files**: imported memories arrive as "needs review" (40% confidence) by default and are **excluded from automatic injection into new chats** (a safeguard against sentences in someone else's file acting like instructions to the AI). Open and save a memory to make it a normal memory; with "I trust this file" the source and confidence from the file are kept. Anything that looks like a password or API key is masked before saving on import as well.
+- **Backup improvements + a defect fixed**: until now a backup you created yourself followed the same "latest 7" rule as the server-start backups, so it could be deleted automatically after a few days. Backups are now kept per kind (7 server-start · 7 before-risky-action · 10 manual `.db` · 10 portable `.json.gz`). Added: portable backup, kind / memory count / "opened and verified" / download in the backup list, `npm run backup -- --portable`, and a backup line in `npm run status`.
+- **Restore command `npm run restore`**: it refuses to start while the server is running, opens the backup and checks its integrity, backs up the current data first, asks you to type `yes`, then swaps files by renaming — the original file is kept beside the new one, not deleted (if another program holds the file, nothing is changed and you get a message; if the restored file will not open, it rolls back). To undo a restore, restore the "before restore (automatic)" backup. The old manual "rename the file yourself" instructions are replaced by this command.
+- **What we checked**: re-importing an exported file restores content, type, importance, project, relations and saved time exactly (JSON, JSONL, CSV, Markdown, gz); malicious input is refused (renamed binaries, decompression bombs, broken files, prototype-pollution attempts); importing 5,000 memories takes about 24 seconds (5,001 are refused); a failure midway saves 0; a real file-swap restore was tested in a separate folder (including Windows' open-file protection). All 112 automatic checks pass.
+</details>
+
+<details>
+<summary><b>2026-10-20 (follow-up) — Stronger secret filter · semantic-search outage alert · server hardening · steadier plugin install · better graph links</b></summary>
+
+- **Secret filter coverage**: we ran the filter on real examples and found it did not mask GitHub, Slack and Stripe tokens, JWTs, passwords inside database URLs (`postgres://user:password@host`) or Korean phrases like "the password is …" before saving — all fixed. Running the new rules over the 2,340 real memories changed none (no false alarms, and nothing had leaked), and explanatory sentences such as "passwords are hashed with bcrypt" are left untouched. The forms it cannot catch are stated honestly in the Security overview above.
+- **Semantic-search outages are no longer hidden**: before, if the embedding model failed to load, memories kept being saved with meaningless values without any notice. Now the memory is saved and only the search data is skipped, with a warning banner, `npm run status` and an MCP notice. Recovery is `npm run reindex` (the 2,340 stored search vectors were all confirmed to match the current model, so nothing was polluted).
+- **Server hardening**: any request whose `Host` is not allowed (`127.0.0.1` or `localhost` plus the server port) is refused for the first page, the API and static files (DNS-rebinding defence).
+- **Steadier plugin**: installing or updating with `/plugin` copies the files into a cache, which could leave the hooks, MCP server and commands unable to find O-Brain. Fixed (run `npm run plugin:pin` once). The **last success/failure** of auto-save is shown by `npm run status`, and each session start tells you "N memories loaded". `/o-brain:open` no longer mistakes a running server for a stopped one.
+- **Graph links**: with more than 1,500 memories the graph used to show only lines joining "the same kind" regardless of meaning; it now joins **pairs that are similar in meaning** among the nodes on screen (about 0.13 s for 600 nodes, checked on the real screen).
+- The self-check (`npm run selftest`) grew from 20 to 35 items and all pass. **To apply it**, restart the running server once (the auto-save hook applies immediately).
+
+</details>
+
+<details>
 <summary><b>2026-10-20 — Auto-save now remembers only what a person actually typed</b></summary>
 
 - **What was wrong**: Analyzing 282 real conversation logs showed that about 71% of auto-save candidates were written by programs (conversations started by other tools via `claude -p` / the Agent SDK), and even inside sessions a person opened, about 23% were not typed by a person (sub-agent reports, notifications). That is how README sentences and code fragments ended up saved as "decisions" or "rules" (the candidates confirmed to be typed by a person were only ~3% of the total, and nearly all of them were fine).
@@ -464,16 +566,23 @@ The complete milestone-by-milestone history is in the project's `CHECKPOINT.md` 
 | Graph is empty | Run `npm run seed` to add sample data |
 | Browser won't connect | Confirm `npm start` is running → check address is `http://127.0.0.1:7740` |
 | Embedding download fails | Check internet connection · allow Node.js through firewall |
-| Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, restore from the latest `.db` file in `app/data/backup/` |
+| Accidentally deleted a memory | Click "Undo" on screen within 10 seconds. If it's too late, close the server and every Claude Code window, then run `npm run restore` in a terminal (app folder) and pick the automatic backup made right before the deletion |
 | Changed a count in Settings but the graph didn't change | This is expected — the Graph tab uses a separate "node count" setting (different from the list page size) |
 | Downloaded folder/file is blocked or won't open | This is often an antivirus or "downloaded from another PC" warning. Right-click the file (or the zip) → **Properties → check "Unblock" → OK**. If antivirus keeps blocking it, add this folder as an exception |
-| `better-sqlite3`-related error during `npm install` | This usually resolves itself since a prebuilt binary is used. If it still fails, **reinstall Node.js 20.x LTS** and run `npm install` again |
+| "Windows protected your PC" (SmartScreen) appears | This warning can appear the first time you run an unsigned program. Click "More info → Run anyway" **only if you downloaded this project yourself and trust it**. If you are not sure where it came from, **stop and do not run it** |
+| Setup or running asks for administrator rights | Administrator rights are not needed. Install inside your **own user folder** (for example `C:\Users\yourname\Tools\O-Brain`) |
+| A "Semantic search is temporarily down" banner appears at the top | Your memories are safe and keyword search still works. In the `app` folder run `npm run status` to see the reason (internet connection, Node version). After fixing it, run `npm run reindex` to fill in the missing search data — the banner then disappears |
+| At session start you see "O-Brain: could not find the app folder" | A `/plugin` install does not know where O-Brain lives. In O-Brain's `app` folder, run `npm run plugin:pin` once |
+| `better-sqlite3`-related error during `npm install` | This usually resolves itself since a prebuilt binary is used. If it still fails, **reinstall Node.js 26.7.x** (see `app/.nvmrc`) and run `npm install` again |
 | Memories suddenly stop being saved / the graph stops growing, with no visible error | If Windows auto-updates Node.js, the already-installed `better-sqlite3` binary can silently mismatch (no on-screen error — this is inherent to the auto-save feature). Run `cd app` then `npm rebuild better-sqlite3`, then confirm with `npm run status`. Checking `npm run status` occasionally is recommended |
 | `/plugin install` gives a "Marketplace not found" error | You **must run it in two separate steps** — follow the [Claude Code Plugin](#claude-code-plugin-optional) order above again (`marketplace add` first, `install` second) |
 | Errors when the install path has spaces or non-English characters | Some tools can't handle spaces or non-ASCII characters in the folder path. We recommend installing to a path with **no spaces and ASCII-only characters** (e.g. `C:\Tools\O-Brain`) |
 | 3D graph doesn't show or keeps stuttering | Older PCs or some browsers render 3D (WebGL) slowly. **Switch to 2D** on the Graph tab, or lower "Graph node count" in ⚙ Settings |
 | Search returns zero results | If you just started the server, the AI embedding model may still be downloading (1–3 minutes, first run only). If it's still empty, you may not have any memories saved yet — run `npm run seed` to check with sample data |
-| Behavior looks wrong after updating to a new version | Restarting the server **automatically upgrades** the database structure to the latest version (auto-migration). If something still looks wrong, restore from the most recent file in `app/data/backup/` (an automatic backup is made before every update) |
+| Behavior looks wrong after updating to a new version | Restarting the server **automatically upgrades** the database structure to the latest version (auto-migration). If something still looks wrong, close the server and every Claude Code window, then run `npm run restore` to go back to the most recent backup (an automatic backup is made before every update) |
+| After restarting the server, an open screen shows "The server seems to have restarted" | This is normal. The server creates a new access key (token) every time it starts, so a screen opened earlier cannot be used for a moment. Press **Reload page** (or `F5`) in the notice and you can continue right away — your memories are unchanged |
+| `npm audit` shows vulnerabilities | The repository's `package-lock.json` is already updated to fixed versions. Close the server and every Claude Code window, then run `npm ci` in the `app` folder to install them (see "Updating" above) |
+| In the Overview tab, text at the right edge of a card is cut off | That was a problem in an earlier version (a long path or address with no spaces made the card overflow). Update to the latest version |
 
 ---
 
@@ -504,11 +613,17 @@ A. No. In the ⚙ Settings page, "page size" applies only to List/Timeline/Overv
 | Warranty | **None (AS-IS, No Warranty)** — you are fully responsible for the outcomes of use |
 | External services | Claude / Anthropic and other external services are governed by **their own terms of service**, separate from O-Brain (see below) |
 
-- Bundled open-source libraries (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, 3d-force-graph, express, @modelcontextprotocol/sdk) and the local AI model (all-MiniLM-L6-v2) have all been confirmed to use **permissive licenses (MIT/Apache-2.0)** — no copyleft/GPL-family licenses are involved, so commercial use is unaffected.
+- Every external package installed along with it — **all 213** (2026-10-21, the `license` field of each package checked one by one) — declares a license, and most are permissive (MIT 151 · ISC 27 · BSD 19 · Apache-2.0 7 and others). There are **0 GPL/AGPL packages**. The libraries used directly (better-sqlite3, sqlite-vec, @huggingface/transformers, force-graph, 3d-force-graph, express, @modelcontextprotocol/sdk) and the local AI model (all-MiniLM-L6-v2, Apache-2.0) are all permissive (MIT/Apache-2.0). However, the Windows binary of the image-processing tool (sharp) that is installed along with them (`@img/sharp-win32-x64`) bundles **several LGPL-3.0 libraries and MPL-1.1 (cairo)**, so weak-copyleft conditions apply to it. O-Brain does not use image processing, does not put this binary in the repository (npm downloads it at install time) and does not modify it, so personal and internal use is normally unaffected — but **if you redistribute `node_modules` or deliver it to a client, professional review is recommended** (this is not legal advice). The detailed list is in the `NOTICE` file.
 - **Ownership of output generated via Claude Code/Anthropic API**: per the text of Anthropic's Commercial Terms of Service, outputs belong to **the user**, and conversation content is not used to train Anthropic's models (verified against anthropic.com/legal/commercial-terms, 2026-08-10). Specific plan details and usage policies can vary by account, so please check the terms directly for anything account-specific — that's set by Anthropic, not O-Brain.
 - "Claude", "Anthropic", "Codex", and "OpenAI" are trademarks of their respective owners. O-Brain has **no official affiliation or certification** with them and does not use their logos or brand assets. (Saying "works with Claude Code" is fine; presenting O-Brain as an officially certified product is not.)
 - The product name "O-Brain" is a personal-project working name. Whether it is formally trademarked elsewhere has not been confirmed — if you plan to register a trademark or use this name prominently in a commercial context, we recommend checking an official trademark database separately first.
 - **AI-generated content — verify before use**: The code and documentation in this project (including design documents) were produced with AI assistance. Before deploying, redistributing, selling, or delivering this project to a company/client commercially, **please personally verify copyright attribution, provenance, commercial-use eligibility, and similarity to existing copyrighted works (code snippets in particular)** for any AI-generated code, documents, or images included — this project does not warrant that verification on your behalf.
+- **What to do when you redistribute (Apache-2.0 summary)**: ① include a copy of `LICENSE` ② mark files you changed as changed ③ keep the original copyright, patent, trademark and attribution notices ④ keep the contents of `NOTICE`. This summary is only an aid to understanding — the `LICENSE` text itself is what counts.
+- **What the license does not give you**: removing copyright or license notices, using the names "SoDam AI Studio" or "O-Brain" as if they implied affiliation or endorsement (Apache-2.0 grants no trademark rights), and using other people's trademarks or logos.
+- **The part that needs the internet on first run**: the embedding model (`Xenova/all-MiniLM-L6-v2`, about 90 MB) is downloaded from Hugging Face **once** (Apache-2.0, confirmed from public information on 2026-10-21). After that, saving, searching and the screen work only inside your PC.
+- **Export, backup and import files**: exported files and backups can contain **personal, client and work information exactly as collected** from your Claude Code conversations. Treat anything you upload to a messenger, email, cloud or repository as made public, and check the contents first (O-Brain never sends files anywhere automatically). Conversely, when you import a file made by someone else, the copyright and personal-data responsibility for its text lies with the person importing it.
+- **What you must check yourself**: the pricing, usage policies and terms of AI services such as Claude and Anthropic (separate from O-Brain), model usage policies, other external-service terms, and the license of any font, image or icon you add. The screen currently uses only system fonts and hand-placed inline SVG, with no external fonts, images or CDN (searched in full on 2026-10-21). The screenshots in the documents contain only synthetic demo memories.
+- **What needs legal or professional review**: ① redistributing or delivering `node_modules` that contains the LGPL/MPL binary ② the trademark status of the name "O-Brain" ③ copyright ownership and similarity to other works for AI-generated code and documents ④ the legal effect of the disclaimer and limitation-of-liability wording ⑤ whether the "competing products" clause in Anthropic's terms applies to your use.
 - **This README/license section is not legal advice.** If you're planning an actual commercial deployment, contract, or redistribution, treat the above as reference only and consult a qualified professional (e.g. a lawyer) as needed.
 - Full license text: `LICENSE` file · Full dependency notices: `NOTICE` file
 

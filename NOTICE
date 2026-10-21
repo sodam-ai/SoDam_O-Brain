@@ -22,9 +22,15 @@ Copyright 2024 Alex Garcia
 https://github.com/asg017/sqlite-vec
 License: MIT OR Apache-2.0
 
-all-MiniLM-L6-v2 (임베딩 모델, npm 패키지 아님)
+all-MiniLM-L6-v2 (임베딩 모델, npm 패키지 아님 — 최초 실행 시 Hugging Face에서 내려받음)
 Copyright sentence-transformers
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+내려받는 파일은 ONNX 변환본 Xenova/all-MiniLM-L6-v2 (원본 모델과 같은 Apache-2.0 표기, 2026-10-21 Hugging Face 공개 API로 확인)
+License: Apache-2.0
+
+sharp (@huggingface/transformers가 함께 설치)
+Copyright 2013 Lovell Fuller and others
+https://github.com/lovell/sharp
 License: Apache-2.0
 
 -----------------------------------------------------------------------
@@ -55,3 +61,45 @@ License: MIT
 Copyright 2017 Vasco Asturiano
 https://github.com/vasturiano/3d-force-graph
 License: MIT
+
+onnxruntime-node, onnxruntime-web (ONNX Runtime — 임베딩 모델 실행 엔진, @huggingface/transformers가 함께 설치)
+https://github.com/Microsoft/onnxruntime
+License: MIT (패키지 메타데이터 기준)
+
+-----------------------------------------------------------------------
+BSD-3-Clause
+-----------------------------------------------------------------------
+
+protobufjs (간접 의존성)
+Copyright (c) 2016, Daniel Wirtz
+https://github.com/protobufjs/protobuf.js
+License: BSD-3-Clause
+
+-----------------------------------------------------------------------
+설치할 때 함께 깔리는 네이티브 바이너리 — 약한 카피레프트(LGPL·MPL) 포함
+-----------------------------------------------------------------------
+
+@img/sharp-win32-x64 (sharp의 Windows용 미리 빌드 바이너리. 다른 운영체제에서는 @img/sharp-libvips-* 등 같은 계열 패키지가 깔림)
+https://github.com/lovell/sharp-libvips
+License: Apache-2.0 AND LGPL-3.0-or-later
+이 바이너리는 libvips·glib·pango·fribidi·libexif·libheif·librsvg·proxy-libintl(LGPLv3)과
+cairo(Mozilla Public License 1.1) 등을 포함한다고 패키지가 직접 밝히고 있습니다
+(전체 목록: node_modules/@img/sharp-win32-x64/README.md).
+O-Brain은 이 바이너리를 수정하지 않고, 이 저장소에 포함하지도 않으며(npm이 설치 시점에 내려받음),
+이미지 처리 기능은 사용하지 않습니다. node_modules를 함께 묶어 재배포하거나 납품하려면
+LGPL·MPL 조건을 별도로 지켜야 하므로 [전문가 검토 필요].
+
+-----------------------------------------------------------------------
+그 밖의 간접 의존성
+-----------------------------------------------------------------------
+
+위 목록 밖의 간접 의존성(MIT·ISC·BSD·Apache-2.0 등 허용형)은 각자의 라이선스를 따르며,
+라이선스 파일이 각 패키지 폴더(node_modules/<이름>)에 함께 들어 있습니다.
+2026-10-21 설치 트리 213개 패키지 전수 실측 결과는 .PRD/09_LICENSE_LEGAL.md §3에 있습니다.
+
+-----------------------------------------------------------------------
+상표
+-----------------------------------------------------------------------
+
+"Claude", "Claude Code", "Anthropic", "Codex", "OpenAI", "Hugging Face", "GitHub" 등은 각 소유자의 상표입니다.
+O-Brain은 이들과 제휴·후원·보증 관계가 없으며, 호환성을 설명하기 위해 이름만 사용합니다.
