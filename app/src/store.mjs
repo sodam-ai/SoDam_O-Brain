@@ -3,6 +3,13 @@ import { redact } from './redact.mjs';
 import { embed, toBlob } from './embed.mjs';
 import { classify } from './classify.mjs';
 
+// 요청 본문에서 온 id 검증 — Number()만 쓰면 true→1, [5]→5, ''→0 처럼 엉뚱한 값이 id가 된다(타입 혼동).
+// 양의 정수이거나 숫자만 든 문자열일 때만 인정하고, 아니면 null.
+export function strictId(v) {
+  const n = typeof v === 'number' ? v : (typeof v === 'string' && /^[1-9]\d{0,14}$/.test(v) ? Number(v) : NaN);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
 export async function addMemory(db, { content, type = '지식', importance = 3, source = 'ai', confidence = 0.6, project = null, category = null, scope = 'global', session_id = null }) {
   // 호출부(HTTP/MCP)가 이미 클램프하지만, 함수 자체도 방어(향후 새 호출부의 클램프 누락 대비 — 07-11 비대칭 결함과 같은 유형 재발 방지).
   importance = Math.min(5, Math.max(1, Number.isFinite(Number(importance)) ? Math.round(Number(importance)) : 3));
@@ -18,7 +25,10 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
   ).get(clean, project);
   if (dup) return { id: dup.id, redactedHits: hits, skipped: true };
   const cat = category || classify(clean);          // 1.5) 분류(온톨로지 v1) — 미지정 시 규칙 자동
-  const vec = toBlob(await embed(clean));           // 2) 임베딩
+  // 2) 임베딩 — 모델을 못 쓰는 상황(PRD 05 §3)에서도 기억은 저장한다. 의미 없는 대체 벡터로 속이지 않고 벡터만 생략
+  //    (키워드 검색은 동작, `npm run reindex`로 나중에 채움). 결과의 vectorSkipped로 호출자에게 가시화.
+  let vec = null;
+  try { vec = toBlob(await embed(clean)); } catch (e) { if (e?.code !== 'EMBED_UNAVAILABLE') throw e; }
   const sid = session_id ? Number(session_id) : null;
   const today = new Date().toISOString().slice(0, 10); // valid_from = 저장 날짜(YYYY-MM-DD)
   const tx = db.transaction(() => {                 // 3) 원자적 저장
@@ -26,10 +36,10 @@ export async function addMemory(db, { content, type = '지식', importance = 3, 
       `INSERT INTO memory(content, type, importance, confidence, source, project, category, scope, session_id, valid_from) VALUES (?,?,?,?,?,?,?,?,?,?)`
     ).run(clean, type, importance, confidence, source, project, cat, scope || 'global', sid, today).lastInsertRowid);
     db.prepare(`INSERT INTO memory_fts(rowid, content) VALUES (?, ?)`).run(id, clean);
-    db.prepare(`INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)`).run(BigInt(id), vec);
+    if (vec) db.prepare(`INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)`).run(BigInt(id), vec);
     return id;
   });
-  return { id: tx(), redactedHits: hits };
+  return { id: tx(), redactedHits: hits, ...(vec ? {} : { vectorSkipped: true }) };
 }
 
 const MEM_COLS = 'id, content, type, importance, confidence, source, project, category, scope, access_count, created_at, session_id';
@@ -261,18 +271,22 @@ export async function updateMemory(db, id, { content, type, importance } = {}) {
   if (!sets.length) throw new Error('변경할 내용이 없어요');
   sets.push("source = 'user'", 'confidence = 1.0');   // 사람이 확인·수정함 → 검증됨 표시
 
-  const vec = cleanContent != null ? toBlob(await embed(cleanContent)) : null; // 내용 변경 시에만 재임베딩
+  let vec = null, vectorSkipped = false;                // 내용 변경 시에만 재임베딩
+  if (cleanContent != null) {
+    try { vec = toBlob(await embed(cleanContent)); } catch (e) { if (e?.code !== 'EMBED_UNAVAILABLE') throw e; vectorSkipped = true; }
+  }
   const tx = db.transaction(() => {
     db.prepare(`UPDATE memory SET ${sets.join(', ')} WHERE id = ?`).run(...vals, mid);
     if (cleanContent != null) {                         // 키워드(FTS)+벡터 동기화 — addMemory와 동일 패턴
       try { db.prepare('DELETE FROM memory_fts WHERE rowid = ?').run(mid); } catch {}
       db.prepare('INSERT INTO memory_fts(rowid, content) VALUES (?, ?)').run(mid, cleanContent);
+      // 옛 내용의 벡터는 어떤 경우에도 지운다(남기면 바뀐 글과 안 맞는 벡터가 검색에 쓰임). 새 벡터가 없으면 reindex가 채운다.
       try { db.prepare('DELETE FROM memory_vec WHERE rowid = ?').run(BigInt(mid)); } catch {}
-      db.prepare('INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)').run(BigInt(mid), vec);
+      if (vec) db.prepare('INSERT INTO memory_vec(rowid, embedding) VALUES (?, ?)').run(BigInt(mid), vec);
     }
   });
   tx();
-  return { ok: true, redactedHits };
+  return { ok: true, redactedHits, ...(vectorSkipped ? { vectorSkipped: true } : {}) };
 }
 
 // 조회 1회 기록 — 자주 본 기억(글로우) 신호. PRD 02 access_count·§8.1.
@@ -285,10 +299,13 @@ export function touchMemory(db, id) {
 // 기억 1건 삭제 — 본체+FTS+벡터+관계를 원자적으로 제거(사용자 요청 삭제. 서버시작 백업이 안전망).
 export function deleteMemory(db, id) {
   const tx = db.transaction(() => {
+    // 이 기억이 다른 기억을 '번복'했다면, 삭제 뒤 그 옛 기억이 영영 무효로 남지 않게 되살린다(아래 관계 정리 뒤에 복구).
+    const supersededIds = db.prepare("SELECT to_id FROM relation WHERE type = 'SUPERSEDES' AND from_id = ?").all(id).map(r => r.to_id);
     const info = db.prepare(`DELETE FROM memory WHERE id = ?`).run(id);
     try { db.prepare(`DELETE FROM memory_fts WHERE rowid = ?`).run(id); } catch {}
     try { db.prepare(`DELETE FROM memory_vec WHERE rowid = ?`).run(BigInt(id)); } catch {}
     try { db.prepare(`DELETE FROM relation WHERE from_id = ? OR to_id = ?`).run(id, id); } catch {} // 고아 관계 정리
+    for (const t of supersededIds) reviveSuperseded(db, t);
     return info.changes;
   });
   return tx();
@@ -297,8 +314,8 @@ export function deleteMemory(db, id) {
 // ── 관계(사용자 수동 연결) ── 자동추론 X. type ∈ SUPERSEDES/SUPPORTS/INFLUENCES/CONTRADICTS
 const REL_TYPES = ['SUPERSEDES', 'SUPPORTS', 'INFLUENCES', 'CONTRADICTS'];
 export function addRelation(db, { from_id, to_id, type }) {
-  const a = Number(from_id), b = Number(to_id);
-  if (!Number.isInteger(a) || !Number.isInteger(b) || a === b) throw new Error('잘못된 대상');
+  const a = strictId(from_id), b = strictId(to_id);
+  if (a === null || b === null || a === b) throw new Error('잘못된 대상');
   if (!REL_TYPES.includes(type)) throw new Error('잘못된 관계 유형');
   // 두 기억이 실제로 존재하는지 확인(고아 관계 방지)
   const ok = db.prepare('SELECT COUNT(*) n FROM memory WHERE id IN (?, ?)').get(a, b).n;
@@ -315,8 +332,21 @@ export function addRelation(db, { from_id, to_id, type }) {
 export function listRelations(db) {
   return db.prepare('SELECT id, from_id, to_id, type, created_at FROM relation ORDER BY id DESC').all();
 }
+// 번복(SUPERSEDES) 관계가 사라진 뒤의 정리 — addRelation()이 옛 기억에 채운 valid_until·invalidated_by를 짝을 맞춰 되돌린다.
+// 다른 번복이 아직 남아 있으면 무효 상태를 유지(주체만 교체), 없으면 다시 유효로. (이전엔 관계를 지워도 옛 결정이 영영 "무효"로 남았다.)
+function reviveSuperseded(db, toId) {
+  const other = db.prepare("SELECT from_id FROM relation WHERE type = 'SUPERSEDES' AND to_id = ? ORDER BY id LIMIT 1").get(toId);
+  if (other) db.prepare('UPDATE memory SET invalidated_by = ? WHERE id = ?').run(other.from_id, toId);
+  else db.prepare('UPDATE memory SET valid_until = NULL, invalidated_by = NULL WHERE id = ?').run(toId);
+}
 export function deleteRelation(db, id) {
-  return db.prepare('DELETE FROM relation WHERE id = ?').run(Number(id)).changes;
+  const rid = Number(id);
+  return db.transaction(() => {
+    const rel = db.prepare('SELECT to_id, type FROM relation WHERE id = ?').get(rid);
+    const changes = db.prepare('DELETE FROM relation WHERE id = ?').run(rid).changes;
+    if (changes && rel && rel.type === 'SUPERSEDES') reviveSuperseded(db, rel.to_id);
+    return changes;
+  })();
 }
 
 // AI가 관계를 따라가게 — 특정 기억의 직접 연결(1-hop) 이웃 + 관계 유형·방향. 읽기 전용.

@@ -6,12 +6,17 @@ import { embed, toBlob } from './embed.mjs';
 const VEC_GATE = Number(process.env.OBRAIN_VEC_GATE || 0.92);
 
 // 한국어 보정(스파이크 검증): 각 토큰에 접두 * 부착 → '포트'가 '포트는'을 잡음.
-function ftsQuery(q) {
+// 토큰은 따옴표로 감싸 FTS5에 "글자 그대로" 넘긴다(2026-10-21 독립 검토 재현). 따옴표 없이 보내면 `.` `-` `+` `:` `/` `#` `%` 같은 기호나 AND/OR/NOT가
+// 들어간 흔한 개발 검색어(node.js, C++, e-mail, 7740/tcp)가 FTS5 문법 오류가 되고, 그 오류가 search()의 catch에서 삼켜져 키워드 검색이 조용히 통째로 사라졌다.
+// 접두 `*`는 따옴표 바깥에 붙인다("포트"* → '포트는'도 잡음). 글자·숫자가 하나도 없는 토큰(".", "--")은 버린다. 따옴표(")만 지우면 어떤 입력도 문법에 맞는다.
+export function ftsQuery(q) {
   return String(q).trim().split(/\s+/).filter(Boolean)
-    .map(t => t.replace(/["*()]/g, '') + '*').filter(t => t.length > 1).join(' OR ');
+    .map(t => t.replace(/[\u0000-\u001f"]/g, '')).filter(t => /[\p{L}\p{N}]/u.test(t))
+    .map(t => `"${t}"*`).join(' OR ');
 }
 
-export async function search(db, query, k = 10, projectFilter = null) {
+// includeSuperseded: 번복(대체)된 기억도 포함할지 — 기본 false(PRD 07 §5 "유효성: valid_until이 지난 기억은 기본 제외, 시간여행 요청 시 포함").
+export async function search(db, query, k = 10, projectFilter = null, { includeSuperseded = false } = {}) {
   // 프로젝트 우선 시 후보를 넉넉히 뽑아 필터 후에도 충분하게(미지정이면 기존과 동일)
   const fetchK = projectFilter ? Math.max(k * 4, 40) : k;
   // 키워드 (FTS5)
@@ -26,13 +31,14 @@ export async function search(db, query, k = 10, projectFilter = null) {
     } catch { kw = []; }
   }
   // 의미 (sqlite-vec KNN) — LIMIT은 내부 정수라 리터럴 보간(주입 아님)
-  let vec = [];
+  // 의미 쪽이 실패하면(모델 로드 실패·확장 오류 등) 키워드 결과만 돌려주되 degraded로 호출자에게 알린다(PRD 05 §3 — 조용한 우회 금지).
+  let vec = [], degraded = false;
   try {
     const qv = toBlob(await embed(query));
     vec = db.prepare(
       `SELECT rowid AS id, distance FROM memory_vec WHERE embedding MATCH ? ORDER BY distance LIMIT ${Number(fetchK)}`
     ).all(qv).filter(r => r.distance <= VEC_GATE); // 관련도 문턱 적용(먼 결과 제외)
-  } catch { vec = []; }
+  } catch { vec = []; degraded = true; }
 
   // RRF (Reciprocal Rank Fusion, agentmemory 방식)
   const C = 60;
@@ -41,13 +47,18 @@ export async function search(db, query, k = 10, projectFilter = null) {
   vec.forEach((r, i) => score.set(r.id, (score.get(r.id) || 0) + 1 / (C + i + 1)));
 
   const ids = [...score.keys()];
-  if (!ids.length) return [];
+  if (!ids.length) { const none = []; none.degraded = degraded; return none; }
   const rows = db.prepare(
-    `SELECT id, content, type, importance, confidence, source, project, category, scope, created_at
+    `SELECT id, content, type, importance, confidence, source, project, category, scope, created_at, valid_until, invalidated_by
      FROM memory WHERE id IN (${ids.map(() => '?').join(',')})`
   ).all(...ids);
   const byId = new Map(rows.map(r => [r.id, r]));
   let out = ids.map(id => ({ ...byId.get(id), _score: score.get(id) }));   // _score = 순수 RRF 관련도(보존)
+  // 번복(대체)된 기억은 기본 제외 — 옛 결정이 최신 결정과 나란히 "정답"처럼 나오지 않게(타임라인·get_timeline·시간여행은 별도 경로라 그대로 보임).
+  if (!includeSuperseded) {
+    const today = new Date().toISOString().slice(0, 10); // SQLite date('now')와 같은 UTC 날짜
+    out = out.filter(m => m.invalidated_by == null && (!m.valid_until || m.valid_until > today));
+  }
   // 현재 프로젝트 우선 — 지정 시 현재 프로젝트 + 전역(NULL)만 남겨 타 프로젝트에 묻히지 않게(재랭크 전에 적용)
   if (projectFilter) out = out.filter(m => m.project === projectFilter || m.project == null);
 
@@ -82,5 +93,6 @@ export async function search(db, query, k = 10, projectFilter = null) {
   }
   const sliced = out.slice(0, k);
   sliced.total = out.length; // 잘려나간 개수를 호출자가 알 수 있게(배열이라 JSON.stringify·기존 소비자는 영향 없음)
+  sliced.degraded = degraded; // true면 의미검색 없이 키워드 결과만(같은 방식으로 호출자에게 전달)
   return sliced;
 }

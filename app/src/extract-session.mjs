@@ -136,16 +136,32 @@ export function parseTranscript(path, { tailLines = 600, humanOnly = true, stats
 // 주입/시스템 텍스트 제거 — 클로드코드 전사의 user 턴에는 훅 주입·system-reminder·스킬/페르소나 마커·코드펜스가
 // 섞여 들어온다. 이를 추출 대상에서 빼서 '실제 사용자가 타이핑한 결정'만 남긴다(노이즈 기억 방지).
 // 사용자의 진짜 발화는 이 마커들과 무관하므로 안전(과필터 위험 낮음).
+// `열기 … 닫기` 블록을 공백 하나로 바꾼다. 결과는 `/열기[\s\S]*?닫기/g` 치환과 같지만, 닫는 태그가 없는 열기 태그가 반복되는 입력에서
+// 정규식은 시작점마다 끝까지 훑어 시간이 제곱으로 늘었다(2026-10-21 독립 검토 재현: 62만 자에 5~7초). 닫기가 한 번도 안 나오면 그 뒤에도 없으므로 거기서 멈춘다.
+function stripBlocks(text, openSrc, closeSrc) {
+  const open = new RegExp(openSrc, 'gi'), close = new RegExp(closeSrc, 'gi');
+  let out = '', pos = 0, m;
+  while ((m = open.exec(text))) {
+    close.lastIndex = m.index + m[0].length;
+    const e = close.exec(text);
+    if (!e) break;
+    out += text.slice(pos, m.index) + ' ';
+    pos = e.index + e[0].length;
+    open.lastIndex = pos;
+  }
+  return out + text.slice(pos);
+}
+
 export function stripInjected(text) {
   let t = String(text || '');
-  t = t.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/gi, ' '); // 훅/리마인더 블록
-  t = t.replace(/```[\s\S]*?```/g, ' ');                                 // 코드펜스(설정·로그 등)
-  t = t.replace(/<command-[\s\S]*?<\/command-[a-z]*>/gi, ' ');           // 슬래시명령 래퍼
+  t = stripBlocks(t, '<system-reminder>', '</system-reminder>');         // 훅/리마인더 블록
+  t = stripBlocks(t, '```', '```');                                       // 코드펜스(설정·로그 등)
+  t = stripBlocks(t, '<command-', '</command-[a-z]*>');                   // 슬래시명령 래퍼
   // 로컬 명령(!... 실행) 결과·주의문구 래퍼 — command-*는 걸렀는데 local-command-*는 빠져있던 틈
   // (2026-08-10 실측: 다른 프로젝트 실transcript 200개 재감사에서 <local-command-stdout>/<local-command-caveat>
   // 태그 원문이 그대로 남아 close-miss 후보에 섞이는 것을 발견. CUES엔 안 걸려 저장까진 안 됐지만
   // 방어선이 완전하지 않았음 — system-reminder·command-* 래퍼와 같은 이유로 동일하게 제거).
-  t = t.replace(/<local-command-[\s\S]*?<\/local-command-[a-z]*>/gi, ' ');
+  t = stripBlocks(t, '<local-command-', '</local-command-[a-z]*>');
   const drop = /(📌|O-Brain 자동 주입|O-Brain 로컬 기억|페르소나 v5|\[페르소나|persona_core|MANDATORY SKILL|hookSpecificOutput|additionalContext|UserPromptSubmit hook|SessionStart hook|SessionEnd hook|Skill\()/i;
   // 대화 인용 노이즈(2026-07-26 실DB 감사: 노이즈 표본 20/20이 이 형태) — 압축요약/전사에 박힌
   // "**Claude:**"/"Assistant:"/"User:" 인용은 '지금 사용자가 한 말'이 아니라 세션 요약 조각이 user 턴에

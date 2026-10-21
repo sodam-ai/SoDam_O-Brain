@@ -64,6 +64,8 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       ? { results: slim, shown: slim.length, total_matches: res.total,
           note: `관련 기억이 ${res.total - slim.length}건 더 있어요 — limit을 높이거나(최대 50) 더 구체적인 검색어로 다시 찾아보세요.` }
       : { results: slim, shown: slim.length, total_matches: res.total };
+    // 의미검색을 못 쓴 경우를 숨기지 않는다(PRD 05 §3) — AI가 "관련 기억 없음"으로 오해하지 않게.
+    if (res.degraded) payload.warning = '의미검색을 쓸 수 없어 키워드 일치 결과만 보여드려요. 표현을 바꿔 다시 검색하면 더 찾을 수 있어요.';
     return { content: [{ type: 'text', text: JSON.stringify(payload) }] };
   }
   if (name === 'save_memory') {
@@ -77,7 +79,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     // PRD 02 "Phase 1 기본값=project·자동 전역화 금지" 준수) — 명시적 'global'/'project'는 그대로 존중.
     const scope = args.scope === 'project' || args.scope === 'global' ? args.scope : (project ? 'project' : 'global');
     const r = await addMemory(db, { content, type, importance, source: 'ai', confidence: 0.8, project, scope, category });
-    return { content: [{ type: 'text', text: JSON.stringify({ saved: !r.skipped, id: r.id, skipped: !!r.skipped, note: r.skipped ? '동일 내용 기억이 이미 있어 새로 저장하지 않음(중복)' : undefined, redacted: r.redactedHits }) }] };
+    return { content: [{ type: 'text', text: JSON.stringify({ saved: !r.skipped, id: r.id, skipped: !!r.skipped, note: r.skipped ? '동일 내용 기억이 이미 있어 새로 저장하지 않음(중복)' : undefined, redacted: r.redactedHits, warning: r.vectorSkipped ? '기억은 저장됐지만 의미검색용 정보는 만들지 못했어요(키워드로만 검색됨). 나중에 `npm run reindex`로 채울 수 있어요.' : undefined }) }] };
   }
   if (name === 'get_memory') {
     const m = db.prepare('SELECT * FROM memory WHERE id = ?').get(Number(args.id));
