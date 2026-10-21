@@ -14,6 +14,9 @@
     "status": "node --env-file-if-exists=.env.local src/status.mjs",
     "selftest": "node --env-file-if-exists=.env.local src/selftest.mjs",
     "backup": "node --env-file-if-exists=.env.local src/backup-cli.mjs",
+    "restore": "node --env-file-if-exists=.env.local src/restore-cli.mjs",
+    "reindex": "node --env-file-if-exists=.env.local src/reindex.mjs",
+    "plugin:pin": "node src/plugin-pin.mjs",
     "start": "node --env-file-if-exists=.env.local src/server.mjs"
   },
   "dependencies": {

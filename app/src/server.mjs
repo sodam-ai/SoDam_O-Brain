@@ -2,16 +2,18 @@
 import express from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, createReadStream } from 'node:fs';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { openDb, DATA_DIR } from './db.mjs';
 import { search } from './search.mjs';
-import { addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates, findShortestPath } from './store.mjs';
-import { initEmbedder, embedMode } from './embed.mjs';
+import { strictId, addMemory, listMemories, countMemories, getMemory, getSimilar, getStats, deleteMemory, updateMemory, addRelation, listRelations, deleteRelation, touchMemory, listCategories, applyConfidenceDecay, findDuplicateCandidates, findExactDuplicates, findShortestPath } from './store.mjs';
+import { initEmbedder, embedMode, readEmbedDegraded } from './embed.mjs';
 import { buildGraph } from './graph.mjs';
-import { backupOnce, listBackups } from './backup.mjs';
-import { exportMemories } from './export.mjs';
+import { backupOnce, listBackups, portableBackup, backupDir } from './backup.mjs';
+import { exportMemories, buildExport, FORMATS } from './export.mjs';
+import { parseImportFile, makePreview, startImport, getJob, undoImport } from './import.mjs';
 import { CATEGORIES } from './classify.mjs';
+import { isAllowedHost } from './hostguard.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.OBRAIN_PORT || 7740);
@@ -33,10 +35,32 @@ function isValidToken(token) {
   return buf.length === API_TOKEN_BUF.length && timingSafeEqual(buf, API_TOKEN_BUF);
 }
 
+// 사용자에게 보여줄 오류 문구 — 우리가 일부러 던진 한글 안내("내용이 비어 있어요" 등)만 그대로, 그 밖(SQLite·파일 오류 등)은 경로·내부 정보가
+// 섞일 수 있어 일반 문구로 바꾼다(PRD 08 §7: 운영에서 상세 에러 비노출). 상세는 서버 로그에만 남는다.
+const friendlyError = (e, fallback) => (e && /[가-힣]/.test(String(e.message || '')) ? String(e.message) : fallback);
+
+// 거절된 요청 기록(보안 로그, ASVS V7) — 이유·메서드·경로만 남기고 토큰·헤더 값·쿼리·본문은 절대 남기지 않는다.
+// 서버 재시작 뒤 열려 있던 옛 화면이 폴링으로 반복 거절될 수 있어, 같은 이유는 분당 1줄(누적 횟수 포함)로 줄인다.
+const deniedLog = new Map();
+function logDenied(reason, req) {
+  const s = deniedLog.get(reason) || { last: 0, n: 0 };
+  s.n++; deniedLog.set(reason, s);
+  const now = Date.now(); if (now - s.last < 60000) return;
+  console.warn(`[security] 요청 거절(${reason}) ${req.method} ${String(req.originalUrl || req.url || '').split('?')[0].slice(0, 60)} — 최근 ${s.n}회`);
+  s.last = now; s.n = 0;
+}
+
 const app = express();
+app.disable('x-powered-by'); // 서버 종류(Express)를 응답 헤더로 알리지 않는다(정보 노출 최소화)
+// 맨 첫 미들웨어 — '/'(토큰이 박힌 HTML)·정적 파일·/api 전부에 적용. DNS 리바인딩 방어(PRD 08 §2): 허용한 Host 외엔 거부.
+app.use((req, res, next) => {
+  if (!isAllowedHost(req.headers.host, PORT)) { logDenied('허용되지 않은 Host', req); return res.status(403).json({ error: 'forbidden host' }); }
+  next();
+});
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    logDenied('허용되지 않은 Origin', req);
     return res.status(403).json({ error: 'forbidden origin' });
   }
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -45,19 +69,26 @@ app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
   next();
 });
-app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
 // 로컬 API 토큰 검증(PRD 08 §2 Should) — 지금까지는 발급만 하고 검증을 안 해 장식이었음.
 // index.html이 이미 모든 /api/ 요청에 헤더를 자동 첨부하도록 되어 있어(541-549줄 fetch 몽키패치) 안전하게 켤 수 있음.
+// [M77] 본문 파서보다 '앞'에 둔다 — 토큰 없는 요청이 큰 본문을 읽게 만들지 않기 위해(내보내기·가져오기는 본문 한도가 더 큼).
 app.use('/api', (req, res, next) => {
-  if (!isValidToken(req.headers['x-obrain-token'])) return res.status(403).json({ error: '허용되지 않은 요청' });
+  res.setHeader('Cache-Control', 'no-store'); // 기억 내용이 담긴 응답이 브라우저/중간 캐시에 남지 않게
+  if (!isValidToken(req.headers['x-obrain-token'])) { logDenied('토큰 없음·불일치', req); return res.status(403).json({ error: '허용되지 않은 요청' }); }
   next();
 });
+// 내보내기 요청만 본문 한도를 늘림(화면에 불러온 기억 id 목록을 보낼 수 있어야 함). 먼저 읽힌 본문은 아래 전역 파서가 다시 읽지 않는다.
+app.use('/api/export', express.json({ limit: '1mb' }));
+// 가져오기 파일은 원시 바이트로 받는다(JSON 포장·base64 없이). 한도 6MB는 "5MB 초과" 안내 문구를 import.mjs가 낼 수 있게 한 여유분.
+app.use('/api/import/preview', express.raw({ type: () => true, limit: '6mb' }));
+app.use(express.json({ limit: '64kb' })); // POST 본문 파싱(관계 추가). 로컬 전용·길이 제한.
 
 // health + 가벼운 변경 신호(total·lastId) — 대시보드 자동 새로고침 폴링용(추가/삭제·신규 캡처 감지)
 app.get('/api/health', (req, res) => {
   let total = 0, lastId = 0;
   try { const s = db.prepare('SELECT COUNT(*) c, COALESCE(MAX(id),0) m FROM memory').get(); total = s.c; lastId = s.m; } catch {}
-  res.json({ ok: true, embed: embedMode(), port: PORT, total, lastId });
+  // embedDegraded: 의미검색이 중단된 적이 있고 아직 안 풀림(다른 프로세스=훅·MCP가 남긴 표식 포함) — 대시보드 배너용. 사유는 경로가 섞일 수 있어 응답에 싣지 않는다(08 §7).
+  res.json({ ok: true, embed: embedMode(), embedDegraded: !!readEmbedDegraded(), port: PORT, total, lastId });
 });
 // 목록 — 페이지네이션(대량 대비). limit 1~500, offset≥0. 총계는 /api/stats 또는 헤더.
 app.get('/api/memories', (req, res) => {
@@ -126,15 +157,34 @@ function graphFingerprint() {
   ).get();
   return `${r.mc}:${r.mid}:${r.rc}`;
 }
-// 백업 목록(읽기 전용) — PRD 05 §4 "Phase 1에도 DB 파일 복사 안내 제공" 요건의 최소 구현.
-// 자동 복원(기존 DB 덮어쓰기)은 아직 없음 — 데이터를 덮어쓰는 유일한 항목이라 별도 승인 뒤 단계적으로 추가 예정.
+// 백업 목록(읽기 전용) — 종류(자동/위험 작업 직전/직접/이식용)·기억 건수·열림 확인(ok)을 함께 돌려준다.
+// 되돌리기(DB 교체)는 화면이 아니라 터미널 `npm run restore`로만 한다 — 서버가 쥔 데이터 파일을 덮어쓰면 손상될 수 있어서(PRD 05 §4).
 app.get('/api/backups', (req, res) => {
-  try { res.json({ dir: join(DATA_DIR, 'backup'), items: listBackups() }); } catch (e) { res.status(500).json({ error: '백업 목록 조회 실패' }); }
+  try { res.json({ dir: backupDir(), items: listBackups() }); } catch (e) { res.status(500).json({ error: '백업 목록 조회 실패' }); }
 });
-// 지금 백업 만들기 — 기존 데이터를 전혀 건드리지 않는 순수 추가 동작(새 스냅샷 파일만 생성).
+// 지금 백업 만들기 — 기존 데이터를 전혀 건드리지 않는 순수 추가 동작(새 파일만 생성). body.kind==='portable'이면 이식용(.json.gz).
 app.post('/api/backups', async (req, res) => {
-  try { const r = await backupOnce({ tag: 'manual' }); res.json({ ok: true, ...r }); }
-  catch (e) { res.status(500).json({ error: '백업 생성 실패' }); }
+  const portable = (req.body || {}).kind === 'portable';
+  try { const r = portable ? portableBackup() : await backupOnce({ tag: 'manual' }); res.json({ ok: true, ...r }); }
+  catch (e) {
+    if (e && e.code === 'EMPTY') return res.status(400).json({ error: '백업할 기억이 아직 없어요' });
+    console.error('[backup]', e); res.status(500).json({ error: '백업 생성 실패' });
+  }
+});
+// 백업 파일 내려받기 — 목록에 있는 이름만(경로조작 불가, 08 §3/§4). 다른 PC로 옮기거나 클라우드에 따로 보관하려는 용도.
+app.get('/api/backups/download', (req, res) => {
+  const it = listBackups({ inspect: false }).find(x => x.file === String(req.query.file || ''));
+  if (!it) return res.status(404).json({ error: '없는 백업 파일이에요' });
+  res.set({
+    'Content-Type': 'application/octet-stream',
+    'Content-Length': String(it.size),
+    'Content-Disposition': `attachment; filename="obrain-backup${it.file.slice(it.file.indexOf('.'))}"; filename*=UTF-8''${encodeURIComponent(it.file)}`,
+    'X-Obrain-Filename': encodeURIComponent(it.file),
+    'Cache-Control': 'no-store',
+  });
+  const s = createReadStream(join(backupDir(), it.file));
+  s.on('error', () => { if (!res.headersSent) res.status(500).json({ error: '백업 파일을 읽지 못했어요' }); else res.destroy(); });
+  s.pipe(res);
 });
 // 중복 후보 조회(읽기 전용) — 실제 삭제·병합 엔드포인트는 아직 없음(사람 확인 UI 마련 후 별도 추가 예정, PRD의
 // "자동 삭제 금지·확인 게이트 필수" 원칙상 탐지와 실행을 분리해 위험을 낮춤).
@@ -144,9 +194,9 @@ app.get('/api/duplicates', (req, res) => {
 // 중복 정리 실행 — 사람이 화면에서 내용을 보고 확인한 뒤에만 호출됨(자동 실행 없음, PRD 준수).
 // 삭제 전 자동 백업 필수(배치삭제와 동일 안전장치) + 되돌리기용 원본 스냅샷 반환.
 app.post('/api/duplicates/merge', async (req, res) => {
-  const keepId = Number((req.body || {}).keepId), dropId = Number((req.body || {}).dropId);
+  const keepId = strictId((req.body || {}).keepId), dropId = strictId((req.body || {}).dropId);
   const mode = (req.body || {}).mode === 'combine' ? 'combine' : 'keep';
-  if (!Number.isInteger(keepId) || !Number.isInteger(dropId) || keepId === dropId)
+  if (keepId === null || dropId === null || keepId === dropId)
     return res.status(400).json({ error: '잘못된 대상' });
   const keepMem = getMemory(db, keepId), dropMem = getMemory(db, dropId);
   if (!keepMem || !dropMem) return res.status(404).json({ error: '없는 기억' });
@@ -184,12 +234,64 @@ app.post('/api/duplicates/clean-exact', async (req, res) => {
   }
   res.json({ ok: true, deleted, failed });
 });
-// 내보내기(Markdown/JSON) — 읽기 전용 스냅샷. 경로는 항상 data/export/ 고정(사용자 지정 경로 없음, 08 §3/§4 경로조작 방지).
-// 응답엔 파일 경로·건수만 담고 본문 전체는 담지 않음(대량 내보내기 시 프리징 방지 — 서버가 파일로 직접 씀).
+// 내보내기(JSON·JSONL·CSV·마크다운·TXT·HTML, 선택 gzip) — 읽기 전용 스냅샷. 저장 경로는 항상 data/export/ 고정(사용자 지정 경로 없음, 08 §3/§4 경로조작 방지).
+// body: { format, scope:{mode:'all'|'ids'|'project', ids?, project?}, stripProject, gzip, mode:'save'|'download' }
+//  - 'save'(기본, 기존 동작 호환): 서버가 파일로 직접 써서 경로·건수만 응답(대량 내보내기 시 프리징 방지).
+//  - 'download': 파일 내용을 그대로 응답(브라우저가 내려받기). 이름·건수는 X-Obrain-* 헤더로.
 app.post('/api/export', (req, res) => {
-  const format = (req.body || {}).format === 'md' ? 'md' : 'json';
-  try { res.json({ ok: true, ...exportMemories(db, { format }) }); }
-  catch (e) { console.error('[export]', e); res.status(500).json({ error: '내보내기 실패' }); } // 08 §7: 상세는 로컬 로그만
+  const b = req.body || {};
+  const opts = {
+    format: Object.hasOwn(FORMATS, b.format) ? b.format : 'json',
+    scope: b.scope && ['all', 'ids', 'project'].includes(b.scope.mode) ? b.scope : { mode: 'all' },
+    stripProject: b.stripProject === true,
+    gzip: b.gzip === true,
+  };
+  try {
+    if (b.mode === 'download') {
+      const r = buildExport(db, opts);
+      res.set({
+        'Content-Type': r.mime + (r.gzip ? '' : '; charset=utf-8'),
+        'Content-Disposition': `attachment; filename="obrain-export${r.filename.slice(r.filename.indexOf('.'))}"; filename*=UTF-8''${encodeURIComponent(r.filename)}`,
+        'X-Obrain-Filename': encodeURIComponent(r.filename),
+        'X-Obrain-Count': String(r.count),
+        'X-Obrain-Relations': String(r.relationCount),
+        'Cache-Control': 'no-store',
+      });
+      return res.send(r.bytes);
+    }
+    res.json({ ok: true, ...exportMemories(db, opts) });
+  } catch (e) {
+    if (e && e.code === 'EMPTY') return res.status(400).json({ error: e.message });
+    console.error('[export]', e); res.status(500).json({ error: '내보내기 실패' }); // 08 §7: 상세는 로컬 로그만
+  }
+});
+// ── 가져오기(JSON·JSONL·CSV·TSV·마크다운·TXT, .gz 포함) ──
+// PRD 08 §4: 확장자·MIME·크기 화이트리스트와 실행 차단은 import.mjs가 담당. 흐름은 미리보기(DB 무변경) → 확인 → 자동 백업 → 저장 → 되돌리기.
+const headerText = v => { try { return decodeURIComponent(String(v || '')); } catch { return String(v || ''); } };
+const importFail = (res, e, label) => {
+  if (e && e.code === 'IMPORT') return res.status(400).json({ error: e.message }); // 우리가 쓴 한글 안내만 그대로
+  console.error(label, e); res.status(500).json({ error: '가져오기에 실패했어요' }); // 08 §7: 상세는 로컬 로그만
+};
+app.post('/api/import/preview', (req, res) => {
+  const bytes = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+  try {
+    const parsed = parseImportFile({ bytes, filename: headerText(req.headers['x-obrain-filename']), mime: String(req.headers['x-obrain-mime'] || ''), split: req.query.split === 'line' ? 'line' : 'paragraph' });
+    res.json({ ok: true, ...makePreview(db, parsed) });
+  } catch (e) { importFail(res, e, '[import:preview]'); }
+});
+app.post('/api/import/commit', (req, res) => {
+  const b = req.body || {};
+  try { res.status(202).json({ ok: true, ...startImport(db, { previewId: String(b.previewId || ''), keepTrust: b.keepTrust === true }) }); }
+  catch (e) { importFail(res, e, '[import:commit]'); }
+});
+app.get('/api/import/status', (req, res) => {
+  const j = getJob(String(req.query.job || ''));
+  if (!j) return res.status(404).json({ error: '진행 중인 가져오기를 찾지 못했어요' });
+  res.json(j);
+});
+app.post('/api/import/undo', async (req, res) => {
+  try { res.json({ ok: true, ...(await undoImport(db, (req.body || {}).batchId)) }); }
+  catch (e) { importFail(res, e, '[import:undo]'); }
 });
 app.get('/api/graph', (req, res) => {
   const limit = Math.min(2000, Math.max(50, Number(req.query.limit) | 0 || 600)); // 노드 상한(대량 프리즈 방지) — 소수 입력 시 정수화(better-sqlite3 LIMIT 바인딩 방어)
@@ -216,7 +318,7 @@ app.delete('/api/memory/:id', (req, res) => {
 app.post('/api/memory/batch-delete', async (req, res) => {
   const { ids } = req.body || {};
   if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'ids 배열 필수' });
-  const validIds = ids.map(Number).filter(n => Number.isInteger(n) && n > 0);
+  const validIds = [...new Set(ids.map(strictId).filter(n => n !== null))]; // true·[5]·''처럼 Number()로 엉뚱한 id가 되는 값은 걸러낸다
   if (!validIds.length) return res.status(400).json({ error: '유효한 id가 없어요' });
   try { await backupOnce({ tag: 'before-delete' }); }
   catch (e) { console.error('[memory:batch-delete]', e); return res.status(500).json({ error: '백업 실패로 삭제 중단' }); } // 08 §7: 상세는 로컬 로그만(2026-08-02 정보노출 수정 — clean-exact와 동일 패턴)
@@ -252,7 +354,7 @@ app.patch('/api/memory/:id', async (req, res) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '잘못된 id' });
   const { content, type, importance } = req.body || {};
   try { res.json(await updateMemory(db, id, { content, type, importance })); }
-  catch (e) { console.error('[memory:update]', e); res.status(400).json({ error: e.message || '수정 실패' }); }
+  catch (e) { console.error('[memory:update]', e); res.status(400).json({ error: friendlyError(e, '수정 실패') }); }
 });
 
 // 조회 기록(자주 본 기억 글로우) — 상세 열람 시 1회 증가.
@@ -270,7 +372,7 @@ app.get('/api/relations', (req, res) => {
 app.post('/api/relation', (req, res) => {
   const { from_id, to_id, type } = req.body || {};
   try { res.json({ ok: true, ...addRelation(db, { from_id, to_id, type }) }); }
-  catch (e) { console.error('[relation:create]', e); res.status(400).json({ error: e.message || '관계 추가 실패' }); }
+  catch (e) { console.error('[relation:create]', e); res.status(400).json({ error: friendlyError(e, '관계 추가 실패') }); }
 });
 app.delete('/api/relation/:id', (req, res) => {
   const id = Number(req.params.id);
@@ -285,7 +387,7 @@ app.use('/vendor/3d-force-graph', express.static(join(HERE, '..', 'node_modules'
 app.get('/', (req, res) => {
   try {
     const html = readFileSync(join(HERE, '..', 'web', 'index.html'), 'utf8');
-    res.type('text/html').send(html.replace('__OBRAIN_TOKEN__', API_TOKEN));
+    res.type('text/html').set('Cache-Control', 'no-store').send(html.replace('__OBRAIN_TOKEN__', API_TOKEN)); // 토큰이 박힌 화면은 캐시에 남기지 않는다
   } catch { res.status(500).send('index.html 로딩 실패'); }
 });
 app.use(express.static(join(HERE, '..', 'web')));
@@ -297,7 +399,8 @@ app.use(express.static(join(HERE, '..', 'web')));
 app.use((err, req, res, next) => {
   console.error('[unhandled]', err);
   const status = (err && (err.status || err.statusCode)) || 500;
-  res.status(status).json({ error: '요청을 처리하지 못했어요' });
+  const tooBig = /^\/api\/import\//.test(req.originalUrl || '') ? '파일이 너무 커요(5MB 이하만 가져와요). 나눠서 올려 주세요.' : '보내는 내용이 너무 커요';
+  res.status(status).json({ error: status === 413 ? tooBig : '요청을 처리하지 못했어요' });
 });
 
 app.listen(PORT, HOST, () => {

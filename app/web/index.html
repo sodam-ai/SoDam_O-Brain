@@ -16,6 +16,7 @@
     --bg:#0A0C10; --bg2:#0D1015; --surface:#13161D; --surface2:#191D26;
     --border:#21262F; --border2:#2D3340; --text:#EAEEF5; --muted:#8E97A6; --faint:#69727F;
     --accent:#5B8CFF; --accent-weak:rgba(91,140,255,.14); --star:#F0B046;
+    --accent-fill:#3B6FE8; /* 흰 글자를 올리는 채움용 — #5B8CFF 위 흰 글자는 대비 3.16(AA 4.5 미달)이라 같은 색조에서 더 진하게(대비 4.5↑) */
     --ok:#2DD4A7; --danger:#F2555A;
     --r:11px; --r-sm:8px; --r-lg:16px;
     --fs-xs:11px; --fs-sm:12.5px; --fs-md:14px; --fs-lg:16px;
@@ -28,6 +29,7 @@
     --bg:#EBEEF4; --bg2:#FFFFFF; --surface:#FFFFFF; --surface2:#F3F6FA;
     --border:#E4E9F1; --border2:#D2DAE5; --text:#0E1726; --muted:#4A5568; --faint:#7A8699;
     --accent:#3A6BF5; --accent-weak:rgba(58,107,245,.09); --star:#D9942A;
+    --accent-fill:#3A6BF5;
     --shadow-sm:0 1px 2px rgba(15,23,42,.08);
     --shadow:0 16px 44px -14px rgba(15,23,42,.22), 0 4px 12px rgba(15,23,42,.08), 0 0 0 1px rgba(15,23,42,.04) inset;
   }
@@ -59,7 +61,7 @@
     backdrop-filter:saturate(1.3) blur(14px); -webkit-backdrop-filter:saturate(1.3) blur(14px);
     flex:none; position:relative; z-index:30; }
   .logo { width:27px; height:27px; border-radius:9px; flex:none;
-    background:var(--accent);
+    background:var(--accent-fill);
     box-shadow:0 0 0 1px rgba(255,255,255,.10);
     display:grid; place-items:center; color:#fff; font-weight:800; font-size:15px; }
   .brand { font-weight:700; font-size:15px; letter-spacing:.2px; }
@@ -86,21 +88,15 @@
   .icontop { background:var(--surface); border:1px solid var(--border); color:var(--muted); width:36px; height:36px;
     border-radius:var(--r); cursor:pointer; display:grid; place-items:center; line-height:0; transition:all var(--ease); position:relative; }
   .icontop:hover { color:var(--text); border-color:var(--border2); }
+  .icontop.on { color:var(--accent); border-color:var(--accent); background:var(--accent-weak); }
   .icontop svg { width:17px; height:17px; }
   .segmented { display:flex; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:3px; }
   .segmented button { display:flex; align-items:center; gap:6px; background:none; border:none; color:var(--muted);
     border-radius:7px; padding:6px 12px; cursor:pointer; font-size:12.5px; font-weight:500; transition:color var(--ease), background var(--ease); }
   .segmented button:hover { color:var(--text); }
-  .segmented button.on { background:var(--accent); color:#fff; }
+  .segmented button.on { background:var(--accent-fill); color:#fff; }
   .segmented svg { width:15px; height:15px; }
 
-  /* 내보내기 메뉴 */
-  .menu { position:absolute; top:42px; right:0; z-index:40; background:var(--surface); border:1px solid var(--border2);
-    border-radius:var(--r); box-shadow:var(--shadow); padding:5px; min-width:150px; display:none; }
-  .menu.open { display:block; }
-  .menu button { display:flex; align-items:center; gap:9px; width:100%; background:none; border:none; color:var(--text);
-    padding:8px 11px; border-radius:7px; cursor:pointer; font-size:13px; text-align:left; }
-  .menu button:hover { background:var(--surface2); }
   .menu-label { color:var(--muted); font-size:12px; padding:4px 9px 6px; }
   .set-group { background:var(--surface); border:1px solid var(--border2); border-radius:var(--r-lg); padding:18px 20px; }
   .set-group h3 { margin:0 0 14px; font-size:14px; font-weight:700; }
@@ -108,6 +104,82 @@
   .set-row:last-child { margin-bottom:0; }
   .set-row label.set-check { display:flex; align-items:center; gap:9px; font-size:13px; cursor:pointer; }
   .set-row .set-desc { color:var(--muted); font-size:12px; margin:4px 0 0 24px; line-height:1.5; }
+
+  /* ── 데이터 관리(내보내기·가져오기·백업) ── */
+  .dm-intro { color:var(--muted); font-size:13px; margin:0; line-height:1.6; }
+  .dm-card h3 { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .dm-card h3 small { color:var(--muted); font-weight:500; font-size:12px; }
+  .dm-field { border:0; padding:0; margin:0 0 16px; min-width:0; }
+  .dm-field legend { font-size:12.5px; font-weight:700; color:var(--text); padding:0; margin-bottom:8px; }
+  .dm-opts { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; }
+  .dm-opt { position:relative; display:flex; gap:10px; align-items:flex-start; min-height:44px; padding:10px 12px;
+    border:1px solid var(--border2); border-radius:var(--r); background:var(--surface2); cursor:pointer;
+    transition:border-color var(--ease), background var(--ease); }
+  .dm-opt:hover { border-color:var(--accent); }
+  .dm-opt input { margin:2px 0 0; accent-color:var(--accent-fill); flex:none; width:16px; height:16px; }
+  .dm-opt .t { font-size:13px; font-weight:600; color:var(--text); display:block; }
+  .dm-opt .d { font-size:12px; color:var(--muted); display:block; line-height:1.45; margin-top:2px; }
+  .dm-opt:has(input:checked) { border-color:var(--accent); background:var(--accent-weak); box-shadow:inset 0 0 0 1px var(--accent); }
+  .dm-opt:has(input:focus-visible) { outline:2px solid var(--accent); outline-offset:2px; }
+  .dm-opt.dis { opacity:.55; cursor:not-allowed; }
+  .dm-opt.dis:hover { border-color:var(--border2); }
+  .dm-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:8px; font-size:13px; }
+  .dm-row[hidden] { display:none; }
+  .dm-row select { min-height:36px; max-width:100%; }
+  .dm-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+  .dm-btn { min-height:44px; padding:0 18px; border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer;
+    border:1px solid var(--border2); background:var(--surface2); color:var(--text); transition:border-color var(--ease), filter var(--ease); }
+  .dm-btn:hover { border-color:var(--accent); }
+  .dm-btn.primary { background:var(--accent-fill); border-color:var(--accent-fill); color:#fff; }
+  .dm-btn.danger { background:var(--danger); border-color:var(--danger); color:#fff; }
+  .dm-btn:disabled { opacity:.55; cursor:not-allowed; }
+  .dm-sum { font-size:13px; color:var(--muted); margin:0 0 10px; }
+  .dm-sum b { color:var(--text); }
+  .dm-result { margin-top:12px; font-size:13px; line-height:1.65; }
+  .dm-result:empty { display:none; }
+  .dm-result.ok, .dm-result.err, .dm-result.info { border-radius:var(--r); padding:10px 12px; border:1px solid var(--border2); }
+  .dm-result.ok { border-color:rgba(45,190,158,.55); background:color-mix(in srgb, var(--ok) 10%, transparent); }
+  .dm-result.err { border-color:rgba(242,85,90,.6); background:color-mix(in srgb, var(--danger) 10%, transparent); }
+  .dm-result.info { background:var(--surface2); }
+  .dm-result code { font-family:ui-monospace,Consolas,monospace; font-size:12px; background:var(--surface2); padding:1px 5px; border-radius:4px; word-break:break-all; }
+  .dm-result ul { margin:6px 0 0; padding-left:20px; }
+  .dm-note { color:var(--muted); font-size:12px; margin:6px 0 0; line-height:1.55; }
+  .dm-chk { display:flex; gap:10px; align-items:flex-start; min-height:44px; padding:6px 2px; font-size:13px; cursor:pointer; }
+  .dm-chk input { margin:3px 0 0; accent-color:var(--accent-fill); flex:none; width:16px; height:16px; }
+  .dm-chk .dm-note { margin:2px 0 0; }
+  .dm-prog { width:100%; height:10px; accent-color:var(--accent-fill); }
+  .sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .dm-drop { display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; padding:22px 16px; margin-bottom:4px;
+    border:2px dashed var(--border2); border-radius:var(--r-lg); background:var(--surface2); transition:border-color var(--ease), background var(--ease); }
+  .dm-drop.over { border-color:var(--accent); background:var(--accent-weak); }
+  .dm-drop p { margin:0; color:var(--muted); font-size:13px; }
+  .dm-pv { margin-top:14px; border:1px solid var(--border2); border-radius:var(--r); padding:14px 16px; background:var(--surface2); }
+  .dm-pv h4 { margin:0 0 8px; font-size:14px; word-break:break-all; }
+  .dm-pv h4:focus, .dm-result:focus { outline:none; }
+  .dm-dl { display:grid; grid-template-columns:minmax(120px,max-content) 1fr; gap:6px 16px; margin:8px 0 12px; font-size:13px; }
+  .dm-dl dt { color:var(--muted); }
+  .dm-dl dd { margin:0; font-variant-numeric:tabular-nums; }
+  .dm-samples { list-style:none; margin:8px 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .dm-samples li { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.5; }
+  .dm-samples .txt { flex:1; min-width:0; word-break:break-word; white-space:pre-wrap; }
+  .dm-pv details { margin:8px 0; font-size:12.5px; }
+  .dm-pv summary { cursor:pointer; min-height:32px; display:flex; align-items:center; color:var(--text); }
+  .dm-pv ul.dm-err { margin:4px 0 0; padding-left:20px; color:var(--muted); }
+  .dm-pv h5 { margin:12px 0 4px; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .dm-h5 { margin:16px 0 4px; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .dm-bk-actions { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; margin:10px 0; }
+  .dm-bk-actions .dm-btn { height:auto; padding:10px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; }
+  .dm-bk-actions .dm-btn small { font-weight:500; opacity:.9; font-size:12px; }
+  .dm-bklist { list-style:none; margin:8px 0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .dm-bk { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:space-between; padding:8px 10px;
+    border:1px solid var(--border); border-radius:var(--r-sm); background:var(--surface2); font-size:12.5px; }
+  .dm-bk .main { display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; min-width:0; }
+  .dm-bad { color:var(--danger); font-weight:600; }                              /* 어두운 배경에서 대비 5:1 이상 */
+  :root[data-theme="light"] .dm-bad { color:#C42B31; }                           /* 밝은 배경에서는 #F2555A가 3.1~3.4:1이라 더 진한 빨강(5.2:1 이상)으로 */
+  .dm-help { margin:14px 0 0; border:1px solid var(--border2); border-radius:var(--r); padding:8px 14px; background:var(--surface2); font-size:13px; line-height:1.7; }
+  .dm-help summary { cursor:pointer; min-height:36px; display:flex; align-items:center; font-weight:600; }
+  .dm-help ol { margin:6px 0; padding-left:20px; }
+  .dm-help code { font-family:ui-monospace,Consolas,monospace; font-size:12px; background:var(--bg2); padding:1px 5px; border-radius:4px; word-break:break-all; }
 
   /* ── 서브바(통계 + 필터 + 정렬) ── */
   .subbar { display:flex; align-items:center; gap:8px; padding:9px 18px; border-bottom:1px solid var(--border);
@@ -170,7 +242,7 @@
   .gbar { top:14px; left:14px; display:flex; gap:6px; align-items:center; padding:5px; }
   .gbtn { background:none; border:none; color:#8B93A3; border-radius:7px; padding:6px 12px; cursor:pointer; font-size:12.5px; font-weight:500; transition:all var(--ease); }
   .gbtn:hover { color:#E7EBF2; }
-  .gbtn.on { background:var(--accent); color:#fff; }
+  .gbtn.on { background:var(--accent-fill); color:#fff; }
   .gcount { color:#8B93A3; font-size:11.5px; margin:0 8px; }
   .legend { top:14px; right:18px; display:flex; flex-wrap:wrap; gap:6px 13px; justify-content:flex-end; padding:9px 13px; font-size:11px; color:#8B93A3; max-width:60vw; pointer-events:none; }
   .legend span { display:inline-flex; align-items:center; }
@@ -224,7 +296,7 @@
   .dedit .redactnote svg { flex:none; margin-top:1px; color:var(--ok); }
   .dedit .eact { display:flex; gap:8px; margin-top:14px; }
   .dedit .eact button { border-radius:9px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:filter var(--ease), background var(--ease); }
-  .dedit .save { flex:1; background:var(--accent); color:#fff; border:none; }
+  .dedit .save { flex:1; background:var(--accent-fill); color:#fff; border:none; }
   .dedit .save:hover { filter:brightness(1.08); }
   .dedit .save:disabled { opacity:.6; cursor:not-allowed; }
   .dedit .cancel { background:var(--surface2); color:var(--muted); border:1px solid var(--border2); }
@@ -288,6 +360,11 @@
   .introbar .ib-x { background:none; border:none; color:var(--faint); cursor:pointer; padding:4px 8px; border-radius:6px; line-height:0; flex:none; }
   .introbar .ib-x:hover { color:var(--text); background:var(--surface2); }
   .introbar[hidden] { display:none; }
+  .introbar.warn { background:color-mix(in srgb, var(--danger) 14%, transparent); }   /* 의미검색 일시 중단 경고(PRD 05 §3) */
+  .introbar.warn .ib-ico { color:var(--danger); }
+  /* 눌림(active) 표현 — 클릭하는 순간 살짝 어둡게(PRD 06 §13). 비활성 버튼은 제외. */
+  button:not(:disabled):active { filter:brightness(.88); }
+  .introbar.warn .ib-txt code { font-family:ui-monospace,Consolas,monospace; font-size:12px; background:var(--surface2); padding:1px 5px; border-radius:4px; }
 
   /* ── 관계 섹션(상세 패널) ── */
   .drel { margin-top:18px; border-top:1px solid var(--border); padding-top:14px; }
@@ -299,7 +376,7 @@
   .reltag { font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:6px; white-space:nowrap; }
   .reladd { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
   .reladd select { flex:1; min-width:96px; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:7px 8px; font-size:12px; }
-  .reladd button { background:var(--accent); border:none; color:#fff; border-radius:7px; padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer; }
+  .reladd button { background:var(--accent-fill); border:none; color:#fff; border-radius:7px; padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer; }
   .reladd button:hover { filter:brightness(1.08); }
   .relempty { color:var(--faint); font-size:12px; padding:2px 0 6px; }
   .reladd .hint { flex-basis:100%; color:var(--faint); font-size:11px; margin-top:2px; }
@@ -322,7 +399,7 @@
   .ov-stat:nth-child(4){animation-delay:.15s}
   .ov-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; }
   .ov-card h4 { margin:0 0 13px; font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px; }
-  .ov-row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .ov-row2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; } /* minmax(0,…): 공백 없는 긴 글(경로·URL)이 칸을 밀어내 카드가 잘리는 것 방지 */
   .ov-bar { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:12.5px; }
   .ov-bar:last-child { margin-bottom:0; }
   .ov-bar .bl { width:92px; flex:none; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -333,7 +410,7 @@
   .ov-hub { display:flex; gap:11px; align-items:flex-start; cursor:pointer; padding:11px 12px; border-radius:9px; background:var(--surface2); border:1px solid var(--border); transition:border-color var(--ease), transform var(--ease); }
   .ov-hub:hover { border-color:var(--border2); }
   .ov-hub:last-child { margin-bottom:0; }
-  .ov-hub .hubt { flex:1; min-width:0; font-size:13px; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ov-hub .hubt { flex:1; min-width:0; overflow-wrap:anywhere; font-size:13px; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .ov-hub .hubn { flex:none; color:var(--accent); font-size:11.5px; font-weight:700; }
   .ov-mut { color:var(--faint); font-size:12px; }
   .ov-stat.ov-orphan { cursor:pointer; transition:border-color var(--ease), transform var(--ease); }
@@ -342,7 +419,7 @@
   .loadmore { width:100%; max-width:880px; margin:2px auto 0; display:block; background:var(--surface); border:1px solid var(--border); color:var(--muted);
     border-radius:var(--r); padding:12px; font-size:13px; font-weight:600; cursor:pointer; transition:all var(--ease); font-variant-numeric:tabular-nums; }
   .loadmore:hover { background:var(--surface2); border-color:var(--border2); color:var(--text); }
-  @media (max-width:820px){ .ov-grid{grid-template-columns:repeat(2,1fr)} .ov-row2{grid-template-columns:1fr} }
+  @media (max-width:820px){ .ov-grid{grid-template-columns:repeat(2,1fr)} .ov-row2{grid-template-columns:minmax(0,1fr)} }
 
   /* ── 반응형(모바일 375px) ── */
   @media (max-width:640px) {
@@ -411,15 +488,7 @@
     <div class="htools">
       <button class="icontop" id="refreshBtn" aria-label="새로고침 (새 기억 반영)" title="새로고침 — 새 기억·프로젝트 반영"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6"/><path d="M21 13a9 9 0 0 1-15 6.7L3 16M3 11a9 9 0 0 1 15-6.7L21 8"/></svg></button>
       <button class="icontop" id="themeBtn" aria-label="밝게/어둡게 전환" title="밝게/어둡게 전환"></button>
-      <div style="position:relative">
-        <button class="icontop" id="exportBtn" aria-label="내보내기" title="내보내기" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></button>
-        <div class="menu" id="exportMenu" role="menu">
-          <button data-fmt="json" role="menuitem" title="지금 화면에 불러온 기억만(최대 500건, 관계 미포함)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>JSON으로 저장(화면 것만)</button>
-          <button data-fmt="md" role="menuitem" title="지금 화면에 불러온 기억만(최대 500건, 관계 미포함)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>마크다운으로 저장(화면 것만)</button>
-          <button data-full="json" role="menuitem" title="지금까지 모은 기억 전체(관계 포함) — data/export 폴더에 파일로 저장. ⚠️ project 항목에 로컬 경로가 포함될 수 있어요"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>JSON 전체 백업(서버 저장)</button>
-          <button data-full="md" role="menuitem" title="지금까지 모은 기억 전체(관계 포함) — data/export 폴더에 파일로 저장. ⚠️ project 항목에 로컬 경로가 포함될 수 있어요"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>마크다운 전체 백업(서버 저장)</button>
-        </div>
-      </div>
+      <button class="icontop" id="exportBtn" aria-label="데이터 관리 — 내보내기·가져오기·백업" title="데이터 관리 — 내보내기·가져오기·백업"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></button>
       <button class="icontop" id="settingsBtn" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="segmented" role="tablist" aria-label="보기 전환">
         <button id="t-graph" class="on" role="tab" aria-selected="true" aria-controls="view-graph" data-tab="graph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="9" r="2.4"/><circle cx="9" cy="18" r="2.4"/><path d="M7 7.5 16.5 9M8 16l2-6M17 11l-6.5 5.2"/></svg><span>그래프</span></button>
@@ -434,6 +503,16 @@
     <span class="ib-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg></span>
     <span class="ib-txt"><b>클로드코드 대화에서 자동으로 모은 기억</b>이에요. 카드를 누르면 자세히 보고, 지우거나 기억끼리 연결할 수 있어요.</span>
     <button class="ib-x" id="introX" aria-label="안내 닫기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="introbar warn" id="embedbar" role="status" hidden>
+    <span class="ib-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg></span>
+    <span class="ib-txt"><b>의미검색이 일시 중단됐어요.</b> 키워드 검색은 그대로 되고, 새 기억 일부에는 의미검색용 정보가 빠질 수 있어요. 기억은 안전하게 저장돼 있어요. 원인을 확인한 뒤 터미널(app 폴더)에서 <code>npm run status</code>로 상태를, <code>npm run reindex</code>로 빠진 정보를 채울 수 있어요.</span>
+  </div>
+
+  <div class="introbar warn" id="stalebar" role="alert" hidden>
+    <span class="ib-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg></span>
+    <span class="ib-txt"><b>서버가 다시 시작된 것 같아요.</b> 이 화면은 이전 연결 정보로 열려 있어서 지금은 저장·삭제가 안 돼요. 기억은 안전하게 저장돼 있어요. 화면을 새로고침(F5)하면 바로 이어서 쓸 수 있어요.</span>
+    <button type="button" class="dm-btn primary" id="staleReload">화면 새로고침</button>
   </div>
 
   <div class="subbar" id="subbar"></div>
@@ -488,6 +567,8 @@
     <section id="view-timeline" class="view" role="tabpanel" aria-labelledby="t-timeline" hidden><div class="tl" id="tl"></div></section>
 
     <section id="view-settings" class="view" role="tabpanel" aria-labelledby="settingsBtn" hidden><div class="ov" id="settingsPage"></div></section>
+
+    <section id="view-data" class="view" role="tabpanel" aria-labelledby="exportBtn" hidden><div class="ov" id="dataPage"></div></section>
 
     <div class="scrim" id="scrim"></div>
     <aside id="detail" role="dialog" aria-modal="true" aria-labelledby="d-title" aria-hidden="true" tabindex="-1">
@@ -566,6 +647,11 @@
       window.fetch = (url, opts = {}) => {
         if (typeof url === 'string' && url.startsWith('/api/')) {
           opts = { ...opts, headers: { 'X-OBrain-Token': window.__OBT__, ...(opts.headers || {}) } };
+          // 서버를 다시 켜면 토큰이 바뀌어, 열려 있던 옛 화면은 계속 403을 받는다 → 원인 모를 먹통 대신 새로고침 안내를 띄운다.
+          return _f0(url, opts).then(r => {
+            if (r.status === 403) r.clone().json().then(j => { if (j && j.error === '허용되지 않은 요청') { const b = document.getElementById('stalebar'); if (b) b.hidden = false; } }).catch(() => {});
+            return r;
+          });
         }
         return _f0(url, opts);
       };
@@ -595,7 +681,6 @@
     try { if (localStorage.getItem('obrain-autorefresh') === '0') autoRefreshOn = false; } catch (e) {}
     let autoRefreshSec = 45; // 폴링 주기(초)
     try { const _as = Number(localStorage.getItem('obrain-autorefresh-sec')); if (_as >= 10 && _as <= 300) autoRefreshSec = _as; } catch (e) {}
-    let selectedBackup = null; // 설정 탭에서 사용자가 고른 백업 파일명(복원 안내 개인화용) — 자동 파일교체는 하지 않음
     const baseName = p => String(p||'').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
     // 기억 1건 얻기 — 로드된 all에 없으면(상한 밖) 서버에서 id로 가져옴(대량 대비)
     async function getMemById(id){ id=Number(id); const a=(all||[]).find(x=>x.id===id); if(a) return a;
@@ -610,7 +695,9 @@
 
     /* 날짜 */
     const pad = n => String(n).padStart(2,'0');
-    function parseDate(s){ if(!s) return null; const d=new Date(String(s).replace(' ','T')); return isNaN(d)?null:d; }
+    // SQLite datetime('now')("YYYY-MM-DD HH:MM:SS")는 UTC인데 시간대 표식이 없다 — 그대로 읽으면 현지 시각으로 오해해
+    // 한국에서는 방금 만든 기억이 "9시간 전"으로 보였다. 이 형식일 때만 UTC('Z')로 읽는다(날짜만·이미 표식 있는 값은 그대로).
+    function parseDate(s){ if(!s) return null; let t=String(s); if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(t)) t=t.replace(' ','T')+'Z'; const d=new Date(t.replace(' ','T')); return isNaN(d)?null:d; }
     function relTime(s){ const d=parseDate(s); if(!d) return '날짜 미상';
       const sec=Math.floor((Date.now()-d.getTime())/1000);
       if(sec<60) return '방금'; if(sec<3600) return Math.floor(sec/60)+'분 전';
@@ -662,7 +749,7 @@
       const lm=host.querySelector('#loadMore'); if(lm) lm.addEventListener('click', loadMore);
     }
     function emptyState(){
-      if(searchResults !== null || activeType) return `<div class="empty"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h4>결과가 없어요</h4><p>다른 검색어나 필터를 시도해 보세요.</p></div>`;
+      if(searchResults !== null || activeType || minImp || projectFilter || scopeFilter || period!=='all' || lowConfOnly || noiseOnly || orphanView || travelDate) return`<div class="empty"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h4>결과가 없어요</h4><p>다른 검색어나 필터를 시도해 보세요.</p></div>`;
       return `<div class="empty"><div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2"/></svg></div><h4>아직 기억이 없어요</h4><p>클로드코드에서 대화하고 세션을 끝내면, 결정·약속·금지 같은 내용이 여기에 자동으로 쌓입니다.</p></div>`;
     }
     function renderTimeline(mems){
@@ -764,7 +851,7 @@
         <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px"><b>[${esc(top.type)}]</b> ${esc(String(top.content).slice(0,90))}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <select id="relqType" aria-label="관계 유형">${typeOpts}</select>
-          <button id="relqConnect" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;font-size:13px">연결</button>
+          <button id="relqConnect" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--accent-fill);color:#fff;cursor:pointer;font-size:13px">연결</button>
           <button id="relqSkip" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px">건너뛰기</button>
         </div>`;
       host.querySelector('#relqSkip').addEventListener('click', ()=>{ relQueueIdx++; showNextRelSuggestion(host); });
@@ -1000,15 +1087,10 @@
       </div>
 
       <div class="set-group">
-        <h3>백업</h3>
+        <h3>백업 · 내보내기 · 가져오기</h3>
         <div class="set-row">
-          <div class="set-desc">기억이 실수로 사라지는 걸 막기 위해, 서버를 시작할 때마다 자동으로 사본(스냅샷)을 남겨요. 최근 7개만 보관돼요.</div>
-          <div id="backupList" class="set-desc" style="margin-top:8px">불러오는 중…</div>
-          <button id="backupNowBtn" style="margin-top:8px">지금 백업 만들기</button>
-        </div>
-        <div class="set-row">
-          <div class="menu-label" style="padding:0 0 6px">문제가 생겼을 때 되돌리는 방법 (수동)</div>
-          <div class="set-desc" id="backupRestoreHelp">불러오는 중…</div>
+          <div class="set-desc" style="margin-left:0">백업을 만들고 되돌리는 방법, 기억을 파일로 꺼내거나 다른 파일에서 들여오는 기능은 <b>데이터</b> 화면으로 모았어요.</div>
+          <button type="button" class="dm-btn primary" id="goDataBtn" style="margin-top:10px">데이터 화면 열기</button>
         </div>
       </div>
 
@@ -1051,57 +1133,7 @@
 
       body.querySelector('#introChk').addEventListener('change', e=>{ setIntroVisible(e.target.checked); });
 
-      body.querySelector('#backupNowBtn').addEventListener('click', async e=>{
-        const btn=e.target; btn.disabled=true; btn.textContent='만드는 중…';
-        try{ const r=await fetch('/api/backups',{method:'POST'}); const j=await r.json();
-          if(!r.ok||!j.ok) throw new Error(j.error||'실패');
-          toast('백업을 만들었어요','ok'); await renderBackupList();
-        }catch{ toast('백업 만들기 실패','err'); }
-        finally{ btn.disabled=false; btn.textContent='지금 백업 만들기'; }
-      });
-      renderBackupList();
-    }
-
-    // 백업 목록 + 수동 복원 안내 — 읽기 전용(기존 데이터 무변경). PRD 05 §4 최소 요건.
-    // 선택 UI(2026-07-27 추가): 목록에서 백업 1개를 클릭하면 그 파일명이 반영된 안내로 개인화 + 이름 복사 버튼.
-    // 자동 파일교체(실제 DB 덮어쓰기)는 아직 만들지 않음 — 별도 승인 대상(위험도 높음, CHECKPOINT 참고).
-    async function renderBackupList(){
-      const list=document.getElementById('backupList'), help=document.getElementById('backupRestoreHelp');
-      if(!list) return;
-      let r; try{ r=await get('/api/backups'); }catch{ r=null; }
-      if(!r || !Array.isArray(r.items)){ list.textContent='불러오지 못했어요.'; if(help) help.textContent=''; return; }
-      if(!r.items.length){ list.textContent='아직 백업이 없어요(서버를 한 번 더 시작하면 생겨요).'; selectedBackup=null; }
-      else {
-        if(selectedBackup && !r.items.some(it=>it.file===selectedBackup)) selectedBackup=null;
-        const fmtSize = n => n<1024*1024 ? Math.round(n/1024)+'KB' : (n/1024/1024).toFixed(1)+'MB';
-        list.innerHTML = '보관된 백업 '+r.items.length+'개 (되돌리고 싶은 백업을 클릭해 선택하세요):<br>' + r.items.map(it => {
-          const sel = it.file===selectedBackup;
-          return '<button type="button" class="backup-item" data-file="'+esc(it.file)+'" style="display:block;width:100%;text-align:left;margin:4px 0;padding:6px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font:inherit;color:inherit;background:'+(sel?'var(--accent-weak)':'transparent')+';box-shadow:'+(sel?'inset 0 0 0 1px var(--accent)':'none')+'">'
-            + esc(new Date(it.mtime).toLocaleString('ko-KR')) + ' · ' + fmtSize(it.size) + ' · <code>'+esc(it.file)+'</code>'
-            + (sel?' <b>(선택됨)</b>':'') + '</button>';
-        }).join('');
-        list.querySelectorAll('.backup-item').forEach(btn=>{
-          btn.addEventListener('click', ()=>{ selectedBackup = (btn.dataset.file===selectedBackup) ? null : btn.dataset.file; renderBackupList(); });
-        });
-      }
-      if(!help) return;
-      if(!selectedBackup){
-        help.innerHTML = '위 목록에서 되돌리고 싶은 백업을 먼저 클릭해 선택하면, 그 파일 이름이 반영된 단계별 안내가 나와요.';
-        return;
-      }
-      help.innerHTML =
-        '선택한 백업: <code>'+esc(selectedBackup)+'</code> <button type="button" id="backupCopyNameBtn" style="margin-left:6px">파일 이름 복사</button><br><br>'+
-        '1) 오브레인 서버를 끕니다(터미널 창에서 Ctrl+C 또는 창 닫기).<br>'+
-        '2) 이 폴더를 엽니다: <code>'+esc(r.dir||'')+'</code><br>'+
-        '3) 그 안에서 <code>'+esc(selectedBackup)+'</code> 파일을 복사해 둡니다.<br>'+
-        '4) <code>data</code> 폴더 안 <code>obrain.db</code> 이름을 <code>obrain.db.old</code>로 바꿔 남겨둡니다(만약을 위해).<br>'+
-        '5) 복사해 둔 <code>'+esc(selectedBackup)+'</code> 파일 이름을 <code>obrain.db</code>로 바꿔 <code>data</code> 폴더에 넣습니다.<br>'+
-        '6) 서버를 다시 시작합니다(<code>npm start</code>).';
-      const cbtn=document.getElementById('backupCopyNameBtn');
-      if(cbtn) cbtn.addEventListener('click', async ()=>{
-        try{ await navigator.clipboard.writeText(selectedBackup); toast('파일 이름을 복사했어요','ok'); }
-        catch{ toast('복사하지 못했어요','err'); }
-      });
+      body.querySelector('#goDataBtn').addEventListener('click', ()=>showTab('data'));
     }
 
     /* 관계(사용자 수동 연결) */
@@ -1377,32 +1409,406 @@
       try { await navigator.clipboard.writeText(curDetail.content); toast('내용을 복사했어요','ok'); }
       catch { toast('복사하지 못했어요','err'); } }
 
-    /* 내보내기 */
-    function exportData(fmt){
-      const data=[...all].sort(sortFn);
-      let text, name, mime;
-      if(fmt==='json'){ text=JSON.stringify(data,null,2); name='obrain-memories.json'; mime='application/json'; }
-      else { text='# O-Brain 기억 내보내기\n\n'+data.map(m=>`- **[${m.type}]** (★${m.importance||0} · ${absTime(m.created_at)} · ${m.source||'-'})\n  ${String(m.content).replace(/\n/g,'\n  ')}`).join('\n'); name='obrain-memories.md'; mime='text/markdown'; }
-      try {
-        const blob=new Blob([text],{type:mime+';charset=utf-8'}); const url=URL.createObjectURL(blob);
-        const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),1500); toast('내보냈어요: '+name,'ok');
-      } catch(e){ toast('내보내기 실패','err'); }
-      document.getElementById('exportMenu').classList.remove('open');
-      document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+    /* ── 데이터 관리(내보내기·가져오기·백업) ──
+       예전 헤더 메뉴의 "화면 것만(≤500건, 관계 없음)" 내보내기는 서버 내보내기로 합쳤다: 범위 "지금 목록에 불러온 것"이 같은 역할이고, 관계도 함께 담긴다. */
+    const fmtBytes = n => n<1024 ? n+'B' : n<1024*1024 ? Math.round(n/1024)+'KB' : (n/1024/1024).toFixed(1)+'MB';
+    const DM_FORMATS = [
+      { id:'csv',   t:'CSV (엑셀)',          d:'엑셀·구글 시트에서 열어 보기. 한글이 안 깨져요. 관계는 빠져요.', tip:'엑셀에서 파일을 열면 한글이 그대로 보여요.' },
+      { id:'json',  t:'JSON (옮기기·보관)',   d:'다른 PC로 옮기거나 통째로 보관. 관계 포함, 나중에 다시 가져올 수 있어요.', tip:'이 파일은 아래 "가져오기"로 다시 불러올 수 있어요.' },
+      { id:'md',    t:'마크다운 (.md)',       d:'옵시디언·노션 같은 메모 앱에서 읽기. 관계 포함.', tip:'메모 앱에서 열거나, 아래 "가져오기"로 다시 불러올 수 있어요.' },
+      { id:'html',  t:'HTML (읽기·인쇄)',     d:'브라우저로 열어 읽기. 인쇄(Ctrl+P) → "PDF로 저장"하면 PDF가 돼요.', tip:'파일을 더블클릭해 브라우저로 열고, Ctrl+P → "PDF로 저장"을 고르면 PDF가 돼요.' },
+      { id:'jsonl', t:'JSON Lines (.jsonl)',  d:'개발자·데이터 분석용. 한 줄에 기억 하나.', tip:'한 줄이 기억 하나예요. 아래 "가져오기"로 다시 불러올 수도 있어요.' },
+      { id:'txt',   t:'텍스트 (.txt)',        d:'메모장·메신저에 붙여넣기용. 관계·세부 정보는 빠져요.', tip:'메모장으로 열 수 있어요. 유형은 [결정] 같은 말머리로 남아요.' },
+    ];
+    const dmExp = { scope:'all', project:'', format:'csv', strip:true, gzip:false };
+    let dmStats = null;
+    function dmShow(id, kind, html){ const el=document.getElementById(id); if(!el) return; el.className='dm-result'+(kind?' '+kind:''); el.innerHTML=html; }
+    function dmScopeCount(){
+      if(dmExp.scope==='all') return dmStats ? dmStats.total : statTotal;
+      if(dmExp.scope==='loaded') return currentSet().length;
+      if(dmExp.scope==='picked') return selectedIds.size;
+      if(dmExp.scope==='project'){ const p=((dmStats&&dmStats.byProject)||[]).find(x=>x.project===dmExp.project); return p?p.c:0; }
+      return 0;
     }
-
-    // 전체 백업 내보내기(서버) — 위 exportData()는 화면에 불러온 것만(최대 500건, 관계 미포함) 내보내는 반면,
-    // 이건 DB 전체(관계 포함)를 서버가 data/export/ 폴더에 파일로 직접 써서 큰 응답을 브라우저로 보내지 않음(프리징 방지).
-    async function exportFull(fmt){
-      try {
-        const r=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({format:fmt})});
-        const j=await r.json();
-        if(!r.ok||!j.ok) throw new Error(j.error||'실패');
-        toast('전체 백업 저장됨('+j.count+'건): '+j.file,'ok');
-      } catch(e){ toast('전체 백업 실패','err'); }
-      document.getElementById('exportMenu').classList.remove('open');
-      document.getElementById('exportBtn').setAttribute('aria-expanded','false');
+    function dmExportCardHtml(){
+      const total = dmStats ? dmStats.total : statTotal;
+      const loaded = currentSet().length, picked = selectedIds.size;
+      const projects = (dmStats && dmStats.byProject) || [];
+      if(dmExp.scope==='picked' && !picked) dmExp.scope='all';
+      if(dmExp.scope==='loaded' && !loaded) dmExp.scope='all';
+      if(dmExp.scope==='project'){ if(!projects.some(p=>p.project===dmExp.project)) dmExp.project=projects.length?projects[0].project:''; if(!projects.length) dmExp.scope='all'; }
+      const sc = (v,t,d,dis) => `<label class="dm-opt${dis?' dis':''}"><input type="radio" name="dmScope" value="${v}"${dmExp.scope===v?' checked':''}${dis?' disabled':''}><span><span class="t">${t}</span><span class="d">${d}</span></span></label>`;
+      const fm = f => `<label class="dm-opt"><input type="radio" name="dmFormat" value="${f.id}"${dmExp.format===f.id?' checked':''}><span><span class="t">${esc(f.t)}</span><span class="d">${esc(f.d)}</span></span></label>`;
+      return `
+      <div class="set-group dm-card" id="dm-export" role="group" aria-labelledby="dm-exp-h">
+        <h3 id="dm-exp-h">내보내기 <small>기억을 파일로 꺼내요 — 원본 기억은 그대로 남아요</small></h3>
+        <fieldset class="dm-field"><legend>1. 무엇을 내보낼까요?</legend>
+          <div class="dm-opts">
+            ${sc('all','전체',`기억 ${total}건 전부`)}
+            ${sc('loaded','지금 목록에 불러온 것',loaded?`${loaded}건 (목록 탭의 검색·필터 결과)`:'목록에 불러온 기억이 없어요',!loaded)}
+            ${sc('picked','고른 기억',picked?`${picked}건 (목록 탭의 "선택" 모드)`:'목록 탭에서 "선택"으로 먼저 고르세요',!picked)}
+            ${sc('project','프로젝트 하나만','한 작업 폴더의 기억만',!projects.length)}
+          </div>
+          <div class="dm-row" id="dmProjRow"${dmExp.scope==='project'?'':' hidden'}>
+            <label for="dmProject">프로젝트</label>
+            <select class="sortsel" id="dmProject">${projects.map(p=>`<option value="${esc(p.project)}" title="${esc(p.project)}"${p.project===dmExp.project?' selected':''}>${esc(baseName(p.project))} · ${p.c}건</option>`).join('')}</select>
+          </div>
+        </fieldset>
+        <fieldset class="dm-field"><legend>2. 어떻게 쓰실 건가요?</legend>
+          <div class="dm-opts">${DM_FORMATS.map(fm).join('')}</div>
+        </fieldset>
+        <fieldset class="dm-field"><legend>3. 옵션</legend>
+          <label class="dm-chk"><input type="checkbox" id="dmStrip"${dmExp.strip?' checked':''}><span><b>폴더 경로 빼기</b><span class="dm-note" style="display:block">남에게 보여줄 파일이면 켜 두세요. 내 다른 PC로 옮길 거라면 끄세요(프로젝트 구분이 같이 옮겨가요).</span></span></label>
+          <label class="dm-chk"><input type="checkbox" id="dmGzip"${dmExp.gzip?' checked':''}><span><b>압축(.gz)</b><span class="dm-note" style="display:block">파일이 작아져요. 대신 압축을 풀어야 엑셀·메모장으로 열 수 있어요.</span></span></label>
+        </fieldset>
+        <p class="dm-sum" id="dmExpSum"></p>
+        <div class="dm-actions">
+          <button type="button" class="dm-btn primary" id="dmExpDl">내려받기</button>
+          <button type="button" class="dm-btn" id="dmExpSave" title="이 PC의 data/export 폴더에 파일로 저장해요">이 PC 폴더에 저장</button>
+        </div>
+        <div class="dm-result" id="dmExpResult" role="status" aria-live="polite"></div>
+        <p class="dm-note">기억 내용에 이름·경로 같은 개인정보가 들어 있을 수 있어요. 남에게 보내기 전에 한 번 훑어보세요.</p>
+      </div>`;
+    }
+    function dmUpdateExpSum(){
+      const n=dmScopeCount(), f=DM_FORMATS.find(x=>x.id===dmExp.format)||DM_FORMATS[0];
+      const el=document.getElementById('dmExpSum'); if(!el) return;
+      el.innerHTML = n ? `내보낼 기억 <b>${n}건</b> · 형식 <b>${esc(f.t)}</b>${dmExp.gzip?' · 압축':''}${dmExp.strip?' · 폴더 경로 뺌':''}` : '<b>내보낼 기억이 없어요.</b> 범위를 바꿔 보세요.';
+      document.querySelectorAll('#dm-export .dm-actions .dm-btn').forEach(b=>{ b.disabled=!n; });
+    }
+    function dmBindExport(root){
+      root.querySelectorAll('input[name=dmScope]').forEach(r=>r.addEventListener('change',()=>{
+        dmExp.scope=r.value;
+        if(r.value==='project'){ const s=root.querySelector('#dmProject'); if(s&&s.value) dmExp.project=s.value; }
+        root.querySelector('#dmProjRow').hidden = dmExp.scope!=='project'; dmUpdateExpSum(); }));
+      root.querySelector('#dmProject').addEventListener('change', e=>{ dmExp.project=e.target.value; dmUpdateExpSum(); });
+      root.querySelectorAll('input[name=dmFormat]').forEach(r=>r.addEventListener('change',()=>{ dmExp.format=r.value; dmUpdateExpSum(); }));
+      root.querySelector('#dmStrip').addEventListener('change', e=>{ dmExp.strip=e.target.checked; dmUpdateExpSum(); });
+      root.querySelector('#dmGzip').addEventListener('change', e=>{ dmExp.gzip=e.target.checked; dmUpdateExpSum(); });
+      root.querySelector('#dmExpDl').addEventListener('click', ()=>dmDoExport('download'));
+      root.querySelector('#dmExpSave').addEventListener('click', ()=>dmDoExport('save'));
+    }
+    async function dmDoExport(mode){
+      const n=dmScopeCount();
+      if(!n){ dmShow('dmExpResult','err','내보낼 기억이 없어요. 범위를 바꿔 보세요.'); return; }
+      let scope={mode:'all'};
+      if(dmExp.scope==='loaded') scope={mode:'ids',ids:currentSet().map(m=>m.id)};
+      else if(dmExp.scope==='picked') scope={mode:'ids',ids:[...selectedIds]};
+      else if(dmExp.scope==='project') scope={mode:'project',project:dmExp.project};
+      const btns=[...document.querySelectorAll('#dm-export .dm-actions .dm-btn')]; btns.forEach(b=>{ b.disabled=true; });
+      dmShow('dmExpResult','info','만드는 중이에요…');
+      const f=DM_FORMATS.find(x=>x.id===dmExp.format)||DM_FORMATS[0];
+      const tip = '<br><span class="dm-note">'+esc(f.tip)+(dmExp.gzip?' (압축 파일이에요. 엑셀·메모장은 압축을 풀어야 열 수 있고, 아래 "가져오기"는 .gz를 그대로 읽어요.)':'')+'</span>';
+      try{
+        const r=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({format:dmExp.format,scope,stripProject:dmExp.strip,gzip:dmExp.gzip,mode})});
+        if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||'내보내기에 실패했어요'); }
+        if(mode==='download'){
+          const blob=await r.blob();
+          const name=decodeURIComponent(r.headers.get('X-Obrain-Filename')||'obrain-export');
+          const cnt=Number(r.headers.get('X-Obrain-Count'))||n;
+          const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(()=>URL.revokeObjectURL(url),4000);
+          dmShow('dmExpResult','ok',`✅ 내려받았어요 — <b>${esc(name)}</b><br>${cnt}건 · ${fmtBytes(blob.size)} · 브라우저의 다운로드 폴더에서 찾을 수 있어요.${tip}`);
+          toast('내려받았어요','ok');
+        } else {
+          const j=await r.json();
+          dmShow('dmExpResult','ok',`✅ 저장했어요 — ${j.count}건 · ${fmtBytes(j.size)}<br>위치: <code>${esc(j.path)}</code> <button type="button" class="dm-btn" id="dmCopyPath" style="min-height:36px;padding:0 12px;margin-left:6px">경로 복사</button>${tip}`);
+          const cp=document.getElementById('dmCopyPath');
+          if(cp) cp.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(j.path); toast('경로를 복사했어요','ok'); }catch{ toast('복사하지 못했어요','err'); } });
+          toast('저장했어요','ok');
+        }
+      }catch(e){
+        const msg = (e && e.name==='TypeError') ? '서버에 연결하지 못했어요. 서버가 켜져 있는지 확인해 주세요.' : (e && e.message) || '내보내기에 실패했어요';
+        dmShow('dmExpResult','err','❌ '+esc(msg)); toast('내보내기 실패','err');
+      }finally{ btns.forEach(b=>{ b.disabled=false; }); dmUpdateExpSum(); }
+    }
+    /* ── 가져오기: 파일 선택 → 미리보기(아직 저장 안 함) → 확인 → 자동 백업 → 진행률 → 결과 + 되돌리기(30분) ── */
+    const dmImp = { stage:'idle', split:'paragraph', file:null, pv:null, trust:false, job:null, result:null, err:null, canRetry:false, undone:0 };
+    let dmImpPoll = null;
+    const dmLive = msg => { const el=document.getElementById('dmImpLive'); if(el) el.textContent=msg; };   // 스크린리더용 짧은 안내(진행률 같은 잦은 갱신은 넣지 않음)
+    function dmImportCardHtml(){
+      return `
+      <div class="set-group dm-card" id="dm-import" role="group" aria-labelledby="dm-imp-h">
+        <h3 id="dm-imp-h">가져오기 <small>파일에서 기억을 들여와요 — 미리보기로 먼저 확인하고, 시작 전에 자동 백업해요</small></h3>
+        <p class="dm-note" style="margin:0 0 12px">읽을 수 있는 파일: <b>JSON · JSON Lines · CSV · TSV · 마크다운(.md) · 텍스트(.txt)</b>, 그리고 이걸 <b>.gz</b>로 압축한 파일 (최대 5MB · 5,000건). 엑셀 파일(.xlsx)은 엑셀에서 "다른 이름으로 저장 → CSV UTF-8"로 저장해서 올려 주세요.</p>
+        <fieldset class="dm-field"><legend>텍스트·마크다운 파일은 이렇게 나눠요</legend>
+          <div class="dm-opts">
+            <label class="dm-opt"><input type="radio" name="dmSplit" value="paragraph"${dmImp.split==='paragraph'?' checked':''}><span><span class="t">빈 줄로 나뉜 단락마다 하나</span><span class="d">보통의 메모·글에 알맞아요</span></span></label>
+            <label class="dm-opt"><input type="radio" name="dmSplit" value="line"${dmImp.split==='line'?' checked':''}><span><span class="t">줄마다 하나</span><span class="d">한 줄에 하나씩 적은 목록에 알맞아요</span></span></label>
+          </div>
+        </fieldset>
+        <div class="dm-drop" id="dmDrop">
+          <p>여기에 파일을 <b>끌어다 놓거나</b>, 아래 버튼으로 고르세요</p>
+          <button type="button" class="dm-btn primary" id="dmPick">파일 고르기</button>
+          <input type="file" id="dmFile" accept=".json,.jsonl,.ndjson,.csv,.tsv,.md,.markdown,.txt,.gz" hidden>
+        </div>
+        <div id="dmImpPanel"></div>
+        <div class="sr-only" id="dmImpLive" role="status" aria-live="polite"></div>
+      </div>`;
+    }
+    function dmPreviewHtml(){
+      const pv=dmImp.pv, c=pv.counts, skipped=c.dupDb+c.dupFile;
+      const row=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+      let dl = row('읽은 기억',`${c.parsed}건`) + row('새로 들어올 기억',`<b>${c.new}건</b>`)
+        + row('이미 있어서 건너뜀', skipped ? `${skipped}건 (이미 저장된 것 ${c.dupDb} · 파일 안 중복 ${c.dupFile})` : '없음')
+        + row('읽지 못한 줄', c.invalid ? `<b class="dm-bad">${c.invalid}개</b> (아래에서 확인)` : '없음')
+        + row('시크릿 가림', c.redactedRows ? `${c.redactedRows}건 — 비밀번호·API 키로 보이는 부분은 저장 전에 자동으로 가렸어요` : '해당 없음');
+      if(c.relationsInFile) dl += row('이어질 관계', `${c.relationsUsable}건 (파일에 ${c.relationsInFile}건)`);
+      const notes=(pv.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('');
+      const errs = pv.errorTotal ? `<details><summary>읽지 못한 줄 ${pv.errorTotal}개 보기${pv.errors.length<pv.errorTotal?` (처음 ${pv.errors.length}개)`:''}</summary><ul class="dm-err">${pv.errors.map(e=>`<li>${e.line}번째 줄·항목: ${esc(e.reason)}</li>`).join('')}</ul></details>` : '';
+      const samples = pv.samples.length ? `<h5>이렇게 들어와요 (앞쪽 ${pv.samples.length}건)</h5><ul class="dm-samples">${pv.samples.map(s=>`<li>${pill(s.type)}<span class="txt">${esc(s.content)}${s.content.length>=140?'…':''}</span></li>`).join('')}</ul>` : '';
+      const warnEmbed = pv.embedAvailable ? '' : `<p class="dm-result err" style="margin:8px 0">⚠️ 지금 의미검색이 꺼져 있어요. 기억은 저장되고 키워드 검색은 되지만 의미검색용 정보는 빠져요. 나중에 터미널(app 폴더)에서 <code>npm run reindex</code>로 채울 수 있어요.</p>`;
+      return `<div class="dm-pv"><h4 data-focus tabindex="-1">미리보기 — ${esc(pv.filename)}</h4>
+        <p class="dm-note" style="margin:0">형식: ${esc(pv.formatLabel)}${pv.gz?' (.gz 압축)':''} · 아직 아무것도 저장하지 않았어요.</p>
+        <dl class="dm-dl">${dl}</dl>${notes?`<ul class="dm-err">${notes}</ul>`:''}${errs}${samples}${warnEmbed}
+        <label class="dm-chk"><input type="checkbox" id="dmTrust"${dmImp.trust?' checked':''}><span><b>내가 직접 만들었거나 믿을 수 있는 파일이에요</b><span class="dm-note" style="display:block">체크하지 않으면 "검토 필요"(신뢰도 40%)로 들어와서 새 대화에 자동으로 불러오지 않아요. 남이 만든 파일 속 문장이 AI에게 지시처럼 섞이는 걸 막기 위해서예요. 기억을 열어 저장하면 정식 기억이 돼요. 체크하면 파일에 적힌 출처·신뢰도를 그대로 써요(없으면 80%).</span></span></label>
+        <div class="dm-actions"><button type="button" class="dm-btn primary" id="dmStart"${c.new?'':' disabled'}>새 기억 ${c.new}건 가져오기</button><button type="button" class="dm-btn" id="dmCancel">취소</button></div>
+        <p class="dm-note">시작하면 먼저 지금 기억을 자동으로 백업하고, 끝난 뒤 30분 안에는 되돌릴 수 있어요.${c.new?'':' 새로 가져올 기억이 없어서 시작할 수 없어요.'}</p></div>`;
+    }
+    const dmPhaseText = j => j.phase==='backup' ? '지금 기억을 먼저 백업하는 중이에요…' : j.phase==='embedding' ? `의미 검색용 정보를 만드는 중이에요… ${j.done} / ${j.total}` : '저장하는 중이에요…';
+    function dmRunningHtml(){
+      const j=dmImp.job||{phase:'backup',done:0,total:(dmImp.pv&&dmImp.pv.counts.new)||0};
+      return `<div class="dm-pv"><h4 data-focus tabindex="-1">가져오는 중이에요</h4>
+        <progress class="dm-prog" id="dmProgBar" max="${Math.max(1,j.total)}" value="${j.phase==='saving'?j.total:j.done}" aria-label="가져오기 진행 상황"></progress>
+        <p class="dm-note" id="dmProgTxt">${esc(dmPhaseText(j))}</p>
+        <p class="dm-note">창을 닫지 말고 잠시 기다려 주세요. 중간에 멈추면 아무것도 저장되지 않아요.</p></div>`;
+    }
+    function dmDoneHtml(){
+      const r=dmImp.result;
+      return `<div class="dm-result ok" data-focus tabindex="-1">✅ 가져왔어요 — 새 기억 <b>${r.inserted}건</b>${r.duplicates?` · 건너뜀 ${r.duplicates}건`:''}${r.relationsAdded?` · 관계 ${r.relationsAdded}건`:''}<br>
+        ${r.keepTrust ? '파일에 적힌 출처·신뢰도를 그대로 썼어요. 새 대화에 자동으로 불러올 수 있어요.' : '이 기억들은 <b>"검토 필요"(신뢰도 40%)</b>로 들어왔어요. 새 대화에 자동으로 불러오지 않고, 기억을 열어 내용을 확인한 뒤 저장하면 정식 기억이 돼요.'}
+        ${r.vectorSkipped ? `<br>⚠️ 의미검색용 정보 ${r.vectorSkipped}건이 빠졌어요(키워드 검색은 돼요). 터미널(app 폴더)에서 <code>npm run reindex</code>로 채울 수 있어요.` : ''}
+        <div class="dm-actions" style="margin-top:10px">
+          ${r.keepTrust ? '<button type="button" class="dm-btn primary" id="dmSeeList">목록에서 보기</button>' : '<button type="button" class="dm-btn primary" id="dmReview">검토 필요한 기억 보기</button>'}
+          <button type="button" class="dm-btn" id="dmUndo">되돌리기 (30분 안)</button>
+          <button type="button" class="dm-btn" id="dmAgain">다른 파일 가져오기</button>
+        </div><div class="dm-result" id="dmUndoMsg" role="alert"></div></div>`;
+    }
+    function dmImpPanelHtml(){
+      switch(dmImp.stage){
+        case 'loading': return '<div class="dm-result info">파일을 읽는 중이에요…</div>';
+        case 'error': return `<div class="dm-result err" data-focus tabindex="-1">❌ ${esc(dmImp.err)}${dmImp.canRetry&&dmImp.file?' <button type="button" class="dm-btn" id="dmRetry" style="min-height:36px;padding:0 12px;margin-left:6px">같은 파일로 다시 시도</button>':''}</div>`;
+        case 'preview': return dmPreviewHtml();
+        case 'running': return dmRunningHtml();
+        case 'done': return dmDoneHtml();
+        case 'undone': return `<div class="dm-result ok" data-focus tabindex="-1">↩️ 되돌렸어요 — 방금 가져온 기억 ${dmImp.undone}건을 지웠어요.<div class="dm-actions" style="margin-top:10px"><button type="button" class="dm-btn" id="dmAgain">다른 파일 가져오기</button></div></div>`;
+        default: return '';
+      }
+    }
+    function dmRenderImp(focus){
+      const el=document.getElementById('dmImpPanel'); if(!el) return;
+      el.innerHTML=dmImpPanelHtml(); dmBindImpPanel(el);
+      if(focus){ const f=el.querySelector('[data-focus]'); if(f) f.focus(); }
+    }
+    function dmBindImpPanel(el){
+      const on=(id,fn)=>{ const b=el.querySelector('#'+id); if(b) b.addEventListener('click',fn); };
+      on('dmStart', dmStartImport);
+      on('dmCancel', ()=>{ dmImp.stage='idle'; dmImp.pv=null; dmImp.file=null; dmRenderImp(); dmLive('가져오기를 취소했어요'); const p=document.getElementById('dmPick'); if(p) p.focus(); });
+      on('dmRetry', ()=>{ if(dmImp.file) dmImportFile(dmImp.file); });
+      on('dmAgain', ()=>{ dmImp.stage='idle'; dmImp.pv=null; dmImp.file=null; dmImp.result=null; dmRenderImp(); const p=document.getElementById('dmPick'); if(p) p.focus(); });
+      on('dmReview', ()=>{ lowConfOnly=true; showTab('list'); renderAll(); });
+      on('dmSeeList', ()=>showTab('list'));
+      on('dmUndo', dmUndoImport);
+      const t=el.querySelector('#dmTrust'); if(t) t.addEventListener('change', e=>{ dmImp.trust=e.target.checked; });
+    }
+    async function dmImportFile(file){
+      if(!file) return;
+      if(dmImp.stage==='running'){ toast('가져오는 중이에요. 끝난 뒤에 다시 해 주세요','err'); return; }
+      dmImp.file=file; dmImp.err=null; dmImp.canRetry=false; dmImp.pv=null; dmImp.stage='loading'; dmRenderImp();
+      try{
+        if(file.size>5*1024*1024) throw new Error('파일이 너무 커요(5MB 이하만 가져와요). 나눠서 올려 주세요.');
+        const buf=await file.arrayBuffer();
+        const r=await fetch('/api/import/preview?split='+encodeURIComponent(dmImp.split),{method:'POST',headers:{'Content-Type':'application/octet-stream','X-OBrain-Filename':encodeURIComponent(file.name),'X-OBrain-Mime':file.type||''},body:buf});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||'파일을 읽지 못했어요');
+        dmImp.pv=j; dmImp.trust=false; dmImp.stage='preview'; dmRenderImp(true);
+        dmLive(`미리보기가 준비됐어요. 새 기억 ${j.counts.new}건, 아직 저장하지 않았어요`);
+      }catch(e){
+        dmImp.stage='error'; dmImp.err=(e&&e.name==='TypeError') ? '서버에 연결하지 못했어요. 서버가 켜져 있는지 확인해 주세요.' : ((e&&e.message)||'파일을 읽지 못했어요');
+        dmRenderImp(true); dmLive(dmImp.err);
+      }
+    }
+    async function dmStartImport(){
+      const pv=dmImp.pv; if(!pv || !pv.counts.new) return;
+      const b=document.getElementById('dmStart'); if(b) b.disabled=true;
+      try{
+        const r=await fetch('/api/import/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewId:pv.previewId,keepTrust:dmImp.trust})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||'시작하지 못했어요');
+        dmImp.stage='running'; dmImp.job={phase:'backup',done:0,total:j.total}; dmRenderImp(true); dmLive('가져오기를 시작했어요. 먼저 백업해요');
+        dmPollJob(j.jobId);
+      }catch(e){
+        dmImp.stage='error'; dmImp.canRetry=true; dmImp.err=(e&&e.name==='TypeError') ? '서버에 연결하지 못했어요. 서버가 켜져 있는지 확인해 주세요.' : ((e&&e.message)||'시작하지 못했어요');
+        dmRenderImp(true); dmLive(dmImp.err);
+      }
+    }
+    function dmUpdateProg(){
+      const j=dmImp.job; if(!j) return;
+      const bar=document.getElementById('dmProgBar'), txt=document.getElementById('dmProgTxt');
+      if(bar){ bar.max=Math.max(1,j.total); bar.value=j.phase==='saving'?j.total:j.done; }
+      if(txt) txt.textContent=dmPhaseText(j);
+    }
+    function dmPollJob(id){
+      clearInterval(dmImpPoll);
+      let fails=0, lastPhase='backup';
+      dmImpPoll=setInterval(async ()=>{
+        let j;
+        try{ const r=await fetch('/api/import/status?job='+encodeURIComponent(id)); j=await r.json(); if(!r.ok) throw new Error(j.error||'상태 확인 실패'); fails=0; }
+        catch{
+          if(++fails>=15){ clearInterval(dmImpPoll); dmImp.stage='error'; dmImp.canRetry=false; dmImp.err='서버와 연결이 끊겼어요. 서버를 다시 켠 뒤 목록에서 확인해 주세요(중간에 멈췄다면 아무것도 저장되지 않아요).'; dmRenderImp(true); dmLive(dmImp.err); }
+          return;
+        }
+        dmImp.job=j;
+        if(j.phase==='done'){
+          clearInterval(dmImpPoll); dmImp.stage='done'; dmImp.result=j.result; dmRenderImp(true);
+          dmLive(`가져오기가 끝났어요. 새 기억 ${j.result.inserted}건`); toast('가져왔어요','ok'); dmAfterChange(); return;
+        }
+        if(j.phase==='error'){ clearInterval(dmImpPoll); dmImp.stage='error'; dmImp.canRetry=true; dmImp.err=j.error||'가져오기에 실패했어요'; dmRenderImp(true); dmLive(dmImp.err); return; }
+        if(j.phase!==lastPhase){ lastPhase=j.phase; dmLive(dmPhaseText({...j,done:0})); }
+        dmUpdateProg();
+      },400);
+    }
+    async function dmUndoImport(){
+      const r0=dmImp.result; if(!r0) return;
+      const btn=document.getElementById('dmUndo'); if(btn){ btn.disabled=true; btn.textContent='되돌리는 중…'; }
+      try{
+        const r=await fetch('/api/import/undo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({batchId:r0.batchId})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||'되돌리지 못했어요');
+        dmImp.stage='undone'; dmImp.undone=j.deleted; dmImp.result=null; dmRenderImp(true);
+        dmLive(`되돌렸어요. ${j.deleted}건을 지웠어요`); toast('되돌렸어요','ok'); dmAfterChange();
+      }catch(e){
+        if(btn){ btn.disabled=false; btn.textContent='되돌리기 (30분 안)'; }
+        dmShow('dmUndoMsg','err','❌ '+esc((e&&e.name==='TypeError') ? '서버에 연결하지 못했어요.' : ((e&&e.message)||'되돌리지 못했어요')));
+      }
+    }
+    // 기억이 바뀐 뒤: 목록·그래프·개수를 새로 불러오고, 자동 새로고침이 같은 변화를 또 알리지 않게 기준값도 맞춘다.
+    async function dmAfterChange(){
+      await softRefresh();
+      try{ const h=await get('/api/health'); _healthSig=(h.total??'')+':'+(h.lastId??''); }catch{}
+      try{ dmStats=await get('/api/stats'); }catch{}
+      if(document.getElementById('dmBkList')) dmLoadBackups();   // 가져오기·되돌리기 직전 자동 백업이 새로 생겼으니 목록도 갱신
+      const old=document.getElementById('dm-export');
+      if(old){ const keep=document.getElementById('dmExpResult'); const msg=keep?keep.outerHTML:'';
+        old.outerHTML=dmExportCardHtml(); const host=document.getElementById('dataPage'); dmBindExport(host); dmUpdateExpSum();
+        if(msg){ const n=document.getElementById('dmExpResult'); if(n) n.outerHTML=msg; } }
+    }
+    function dmBindImportCard(root){
+      const drop=root.querySelector('#dmDrop'), file=root.querySelector('#dmFile');
+      root.querySelector('#dmPick').addEventListener('click',()=>file.click());
+      file.addEventListener('change',()=>{ const f=file.files&&file.files[0]; file.value=''; if(f) dmImportFile(f); });
+      ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('over'); }));
+      ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('over'); }));
+      drop.addEventListener('drop',e=>{
+        const fs=(e.dataTransfer&&e.dataTransfer.files)||[]; if(!fs.length) return;
+        if(fs.length>1) toast('한 번에 파일 하나씩 가져와요. 첫 번째 파일만 읽었어요','err');
+        dmImportFile(fs[0]);
+      });
+      root.querySelectorAll('input[name=dmSplit]').forEach(r=>r.addEventListener('change',()=>{ dmImp.split=r.value; if(dmImp.file && dmImp.stage==='preview') dmImportFile(dmImp.file); }));
+      dmRenderImp();
+    }
+    /* ── 백업: 자동·직접·이식용 목록, 내려받기, 되돌리기 안내(DB 교체는 화면이 아니라 터미널 npm run restore) ── */
+    const dmBk = { items:null, dir:'', err:null };
+    function dmBackupCardHtml(){
+      return `
+      <div class="set-group dm-card" id="dm-backup" role="group" aria-labelledby="dm-bk-h">
+        <h3 id="dm-bk-h">백업 <small>사고에 대비한 사본이에요 — 알아서도 만들어져요</small></h3>
+        <p class="dm-note" style="margin:0 0 4px">O-Brain은 <b>서버를 켤 때</b>, 그리고 기억을 <b>지우거나 합치거나 가져오기 직전</b>에 자동으로 백업해요. 직접 만든 백업은 따로 10개까지 보관돼서 자동 백업에 밀려나지 않아요.</p>
+        <div class="dm-bk-actions">
+          <button type="button" class="dm-btn primary" id="dmBkManual">지금 백업 만들기<small>빠른 복구용 (.db) — 같은 PC에서 되돌릴 때</small></button>
+          <button type="button" class="dm-btn" id="dmBkPortable">이식용 백업 만들기<small>다른 PC로 옮길 때 (.json.gz) — 가져오기로 읽혀요</small></button>
+        </div>
+        <div class="dm-result" id="dmBkResult" role="status" aria-live="polite"></div>
+        <h5 class="dm-h5">보관 중인 백업 <span id="dmBkCount"></span></h5>
+        <div id="dmBkList"><p class="dm-note">불러오는 중…</p></div>
+        <details class="dm-help"><summary>되돌리고 싶을 때 (복원 방법)</summary>
+          <p class="dm-note" style="margin:6px 0">화면에서 바로 덮어쓰지 않고 터미널에서 해요. 서버가 쥐고 있는 데이터 파일을 덮어쓰면 망가질 수 있어서예요.</p>
+          <ol>
+            <li>O-Brain 서버를 켠 창과 <b>클로드코드 창을 모두 닫아요</b>.</li>
+            <li>터미널을 열고 O-Brain 폴더 안의 <code>app</code> 폴더로 이동해요.</li>
+            <li><code>npm run restore</code> <button type="button" class="dm-btn" id="dmCopyCmd" style="min-height:32px;padding:0 10px">명령 복사</button> 를 입력 → 목록에서 되돌릴 번호를 고르고 → <code>yes</code>를 입력해요.</li>
+            <li>서버를 다시 켜요(<code>npm start</code>).</li>
+          </ol>
+          <p class="dm-note">지금 데이터는 먼저 자동 백업되고, 원래 파일은 지워지지 않고 옆에 남아요. 되돌린 걸 취소하고 싶으면 "복원 직전 자동" 백업으로 다시 하면 돼요.</p>
+          <p class="dm-note"><b>이식용(.json.gz)</b>은 되돌리기가 아니라 <b>합치기</b>예요. 새 PC의 O-Brain → 데이터 → 가져오기에 올리세요(내가 만든 파일이니 "믿을 수 있는 파일" 체크).</p>
+          <p class="dm-note">백업 폴더: <code id="dmBkDir"></code> <button type="button" class="dm-btn" id="dmCopyDir" style="min-height:32px;padding:0 10px">경로 복사</button></p>
+        </details>
+      </div>`;
+    }
+    function dmRenderBkList(){
+      const host=document.getElementById('dmBkList'), cnt=document.getElementById('dmBkCount'); if(!host) return;
+      if(dmBk.err){ host.innerHTML=`<div class="dm-result err">❌ ${esc(dmBk.err)}</div>`; if(cnt) cnt.textContent=''; return; }
+      const items=dmBk.items;
+      if(!items){ host.innerHTML='<p class="dm-note">불러오는 중…</p>'; return; }
+      if(cnt) cnt.textContent=`(${items.length}개)`;
+      if(!items.length){ host.innerHTML='<p class="dm-note">아직 백업이 없어요. 위 버튼으로 만들거나, 서버를 한 번 더 켜면 자동으로 생겨요.</p>'; return; }
+      const row = it => {
+        const when=new Date(it.mtime).toLocaleString('ko-KR',{hour12:false});
+        const state = it.ok ? `${it.memories!=null?`기억 ${it.memories}건 · `:''}열어서 확인함 ✔` : '<span class="dm-bad">⚠️ 열리지 않아요(손상 의심)</span>';
+        return `<li class="dm-bk"><span class="main"><span class="tag">${esc(it.label)}</span><b>${esc(when)}</b><span class="dm-note" style="margin:0">${fmtBytes(it.size)} · ${state}</span></span><button type="button" class="dm-btn" style="min-height:36px;padding:0 12px" data-dl="${esc(it.file)}" aria-label="${esc(it.label)} ${esc(when)} 백업 내려받기">내려받기</button></li>`;
+      };
+      const head=items.slice(0,8), rest=items.slice(8);
+      host.innerHTML = `<ul class="dm-bklist">${head.map(row).join('')}</ul>`
+        + (rest.length ? `<details><summary class="dm-note" style="cursor:pointer;min-height:32px;display:flex;align-items:center">이전 백업 ${rest.length}개 더 보기</summary><ul class="dm-bklist">${rest.map(row).join('')}</ul></details>` : '');
+      host.querySelectorAll('[data-dl]').forEach(b=>b.addEventListener('click',()=>dmDownloadBackup(b.dataset.dl,b)));
+    }
+    async function dmLoadBackups(){
+      try{ const r=await fetch('/api/backups'); const j=await r.json(); if(!r.ok||!Array.isArray(j.items)) throw new Error('x'); dmBk.items=j.items; dmBk.dir=j.dir||''; dmBk.err=null; }
+      catch{ dmBk.items=null; dmBk.err='백업 목록을 불러오지 못했어요. 서버가 켜져 있는지 확인해 주세요.'; }
+      dmRenderBkList(); const d=document.getElementById('dmBkDir'); if(d) d.textContent=dmBk.dir;
+    }
+    async function dmMakeBackup(kind){
+      const btns=[...document.querySelectorAll('#dm-backup .dm-bk-actions .dm-btn')]; btns.forEach(b=>{ b.disabled=true; });
+      dmShow('dmBkResult','info', kind==='portable' ? '이식용 백업을 만드는 중이에요…' : '백업을 만드는 중이에요…');
+      try{
+        const r=await fetch('/api/backups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||!j.ok) throw new Error(j.error||'백업을 만들지 못했어요');
+        dmShow('dmBkResult','ok', kind==='portable'
+          ? `✅ 이식용 백업을 만들었어요 — 기억 ${j.count}건 · ${fmtBytes(j.size)}<br>아래 목록에서 <b>내려받기</b>를 눌러 파일을 받은 뒤 새 PC로 옮기세요.`
+          : `✅ 백업을 만들었어요 — 직접 만든 백업 ${j.total}개 보관 중`);
+        toast('백업을 만들었어요','ok');
+        await dmLoadBackups();
+      }catch(e){
+        dmShow('dmBkResult','err','❌ '+esc((e&&e.name==='TypeError') ? '서버에 연결하지 못했어요.' : ((e&&e.message)||'백업을 만들지 못했어요'))); toast('백업 만들기 실패','err');
+      }finally{ btns.forEach(b=>{ b.disabled=false; }); }
+    }
+    async function dmDownloadBackup(file, btn){
+      if(btn){ btn.disabled=true; btn.textContent='받는 중…'; }
+      try{
+        const r=await fetch('/api/backups/download?file='+encodeURIComponent(file));
+        if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||'내려받지 못했어요'); }
+        const blob=await r.blob(); const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download=file; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),4000);
+        toast('내려받았어요','ok');
+      }catch(e){ toast((e&&e.message)||'내려받지 못했어요','err'); }
+      finally{ if(btn){ btn.disabled=false; btn.textContent='내려받기'; } }
+    }
+    function dmBindBackupCard(root){
+      root.querySelector('#dmBkManual').addEventListener('click',()=>dmMakeBackup('manual'));
+      root.querySelector('#dmBkPortable').addEventListener('click',()=>dmMakeBackup('portable'));
+      const cp=(id,text,msg)=>{ const b=root.querySelector('#'+id); if(b) b.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(text()); toast(msg,'ok'); }catch{ toast('복사하지 못했어요','err'); } }); };
+      cp('dmCopyCmd', ()=>'npm run restore', '명령을 복사했어요');
+      cp('dmCopyDir', ()=>dmBk.dir||'', '폴더 경로를 복사했어요');
+      dmRenderBkList(); dmLoadBackups();
+    }
+    // 데이터 화면 열기 — 카드를 지정하면(명령 팔레트) 그 카드로 스크롤하고 첫 조작 요소에 포커스(키보드·스크린리더 사용자가 바로 이어서 쓰도록).
+    let dataRendering = null;
+    function openData(cardId){
+      showTab('data');
+      if(!cardId) return;
+      Promise.resolve(dataRendering).then(()=>{
+        const el=document.getElementById(cardId); if(!el) return;
+        el.scrollIntoView({behavior:'smooth',block:'start'});
+        const f=el.querySelector('button,input'); if(f) f.focus({preventScroll:true});
+      });
+    }
+    async function renderDataPage(){
+      const host=document.getElementById('dataPage'); if(!host) return;
+      try{ dmStats=await get('/api/stats'); }catch{ /* 통계를 못 받아도 화면은 연다 — 건수만 마지막 값으로 */ }
+      host.innerHTML = `<h2 class="sr-only">데이터 관리 — 내보내기 · 가져오기 · 백업</h2><p class="dm-intro">기억을 파일로 <b>꺼내고</b>, 다른 파일에서 <b>들여오고</b>, 사고에 대비해 <b>백업</b>하는 곳이에요. 어느 작업이든 기존 기억은 먼저 안전하게 지켜져요.</p>` + dmExportCardHtml() + dmImportCardHtml() + dmBackupCardHtml();
+      dmBindExport(host); dmUpdateExpSum(); dmBindImportCard(host); dmBindBackupCard(host);
     }
 
     /* 테마 */
@@ -1426,15 +1832,23 @@
       clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), dur||(undoFn?10000:2200)); }
 
     /* 탭 */
-    function showTab(t){ tab=t;
+    const TAB_KEYS=['overview','list','graph','timeline','settings','data'];
+    function showTab(t, fromUrl){ tab=t;
+      // 주소에 현재 화면을 반영 — 뒤로가기·새로고침이 보던 화면을 기억한다(PRD 06 §2). 주소에서 온 전환(fromUrl)은 다시 쓰지 않음.
+      if(!fromUrl && location.hash!=='#'+t){ try{ history.pushState(null,'','#'+t); }catch(e){} }
       for(const x of ['overview','list','graph','timeline']){
         document.getElementById('view-'+x).hidden=(x!==t);
         const b=document.getElementById('t-'+x); b.classList.toggle('on', x===t); b.setAttribute('aria-selected', x===t?'true':'false'); }
       document.getElementById('view-settings').hidden = (t!=='settings');
-      document.getElementById('subbar').style.display = (t==='overview'||t==='settings') ? 'none' : '';
+      document.getElementById('view-data').hidden = (t!=='data');
+      document.getElementById('exportBtn').classList.toggle('on', t==='data');
+      document.getElementById('subbar').style.display = (t==='overview'||t==='settings'||t==='data') ? 'none' : '';
       if(t==='overview') renderOverview();
+      if(t==='data') dataRendering=renderDataPage();
       if(t==='graph') initGraph().then(()=>{ if(lastPathIds && lastPathIds.length) setPathHighlight(lastPathIds); }); // drawGraph()가 지운 경로 강조 재적용(버그 수정)
       if(t==='settings') renderSettingsPage(); }
+
+    window.addEventListener('popstate', ()=>{ const h=location.hash.slice(1)||'graph'; if(TAB_KEYS.includes(h) && h!==tab) showTab(h,true); }); // 뒤로/앞으로 가기
 
     /* 검색 */
     let timer; const qEl=document.getElementById('q');
@@ -1503,11 +1917,7 @@
       }
     });
     document.getElementById('themeBtn').addEventListener('click',toggleTheme);
-    const exBtn=document.getElementById('exportBtn'), exMenu=document.getElementById('exportMenu');
-    exBtn.addEventListener('click', e=>{ e.stopPropagation(); const open=exMenu.classList.toggle('open'); exBtn.setAttribute('aria-expanded', open?'true':'false'); });
-    exMenu.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>exportData(b.dataset.fmt)));
-    exMenu.querySelectorAll('[data-full]').forEach(b=>b.addEventListener('click',()=>exportFull(b.dataset.full)));
-    document.addEventListener('click', e=>{ if(!e.target.closest('#exportBtn')&&!e.target.closest('#exportMenu')){ exMenu.classList.remove('open'); exBtn.setAttribute('aria-expanded','false'); } });
+    document.getElementById('exportBtn').addEventListener('click', ()=>showTab('data'));
     document.getElementById('settingsBtn').addEventListener('click', ()=>showTab('settings'));
     document.getElementById('selModeBtn').addEventListener('click', toggleSelMode);
     document.getElementById('selAll').addEventListener('click', toggleSelectAllVisible);
@@ -1519,7 +1929,7 @@
 
     /* 단축키 */
     document.addEventListener('keydown', e=>{
-      if(e.key==='Escape'){ exMenu.classList.remove('open'); closeDetail(); closeBatchDelModal(); if(selMode) exitSelMode(); }
+      if(e.key==='Escape'){ closeDetail(); closeBatchDelModal(); if(selMode) exitSelMode(); }
       else if(e.key==='/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||'')){ e.preventDefault(); qEl.focus(); } });
 
     /* ── 커맨드 팔레트 (⌘K / Ctrl+K) ── */
@@ -1533,10 +1943,10 @@
         {t:'타임라인 보기', ico:'≣', hint:'탭', run:()=>showTab('timeline')},
         {t:'설정 보기', ico:'⚙', hint:'탭', run:()=>showTab('settings')},
         {t:'밝게 / 어둡게 전환', ico:'◐', hint:'테마', run:()=>toggleTheme()},
-        {t:'JSON으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('json')},
-        {t:'마크다운으로 내보내기', ico:'⤓', hint:'내보내기', run:()=>exportData('md')},
-        {t:'JSON 전체 백업(서버 저장)', ico:'⤓', hint:'내보내기', run:()=>exportFull('json')},
-        {t:'마크다운 전체 백업(서버 저장)', ico:'⤓', hint:'내보내기', run:()=>exportFull('md')},
+        {t:'데이터 관리 (내보내기·가져오기·백업)', ico:'⤓', hint:'탭', run:()=>openData()},
+        {t:'기억 내보내기 (CSV·JSON·마크다운…)', ico:'⤓', hint:'내보내기', run:()=>openData('dm-export')},
+        {t:'파일에서 기억 가져오기', ico:'⤒', hint:'가져오기', run:()=>openData('dm-import')},
+        {t:'백업 만들기·목록 보기', ico:'⛁', hint:'백업', run:()=>openData('dm-backup')},
       ];
       function render(q){
         q=(q||'').trim().toLowerCase();
@@ -1694,7 +2104,7 @@
       const simpNote = gData.simplified ? ' · 유형별 연결(유사도 생략)' : '';
       const gc = document.getElementById('gcount');
       gc.textContent = data.nodes.length ? `${modeNote}노드 ${data.nodes.length} · 연결 ${data.links.length}${gData.relCount?` · 관계 ${gData.relCount}`:''}${capNote}${simpNote}` : (orphanView?'고립된 기억이 없어요 🎉':'');
-      gc.title = gData.simplified ? `기억이 ${gData.total}개로 많아, 성능 보호를 위해 의미 유사도 대신 유형(결정/제약 등)이 같은 기억끼리만 연결해 표시하고 있어요. 노이즈·중복 기억을 정리하면 다시 유사도 연결로 돌아올 수 있어요.` : '';
+      gc.title = gData.simplified ? `표시할 노드가 ${gData.shown}개로 많아(${gData.simBudget||1500}개 초과), 성능 보호를 위해 의미 유사도 대신 유형(결정/제약 등)이 같은 기억끼리만 연결해 표시하고 있어요. 설정에서 그래프 노드 개수를 줄이면 다시 유사도 연결로 돌아와요.` : '';
       if(!data.nodes.length){ el.innerHTML='<div class="empty"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="9" r="2.4"/><circle cx="9" cy="18" r="2.4"/></svg></div><h4>그릴 기억이 없어요</h4><p>대화가 쌓이면 비슷한 기억끼리 선으로 이어진 지도가 그려집니다.</p></div>'; _reapply=()=>{}; return; }
       const dim = n => { const h=effHi(); return h.size && !h.has(lid(n)); }; // hover 또는 검색으로 흐려짐
       // 링크 색: 직접강조>파랑, hover중 비강조>흐림, 검색중 양끝일치면 보통/아니면 흐림, 평소 관계색/기본
@@ -1768,7 +2178,9 @@
 
     /* 초기 로드 */
     Promise.all([ get('/api/memories?limit='+pageSize+'&offset=0'+(travelDate?'&at='+travelDate:'')), get('/api/relations').catch(()=>[]), get('/api/stats').catch(()=>null) ])
-      .then(([m,r,s])=>{ all=Array.isArray(m)?m:[]; rels=Array.isArray(r)?r:[]; if(s&&s.total) statTotal=s.total; renderAll(); if(tab==='graph') initGraph(); })
+      .then(([m,r,s])=>{ all=Array.isArray(m)?m:[]; rels=Array.isArray(r)?r:[]; if(s&&s.total) statTotal=s.total; renderAll();
+        const _ht=location.hash.slice(1);   // 새로고침·북마크로 열었을 때 주소에 적힌 화면으로(없으면 기본 그래프)
+        if(_ht && _ht!=='graph' && TAB_KEYS.includes(_ht)) showTab(_ht,true); else if(tab==='graph') initGraph(); })
       .catch(()=>{ document.getElementById('rows').innerHTML='<div class="empty"><h4>불러오지 못했어요</h4><p>서버가 켜져 있는지 확인해 주세요.</p></div>'; });
 
     /* ── 자동 새로고침 — 새 기억/프로젝트를 하드새로고침 없이 반영(가벼운 폴링) ── */
@@ -1789,10 +2201,13 @@
           || ((document.getElementById('q').value||'').trim() !== '')
           || (t.classList.contains('show') && t.querySelector('button.undo') != null); // 되돌리기 대기 중엔 자동알림이 토스트를 덮어쓰지 않게(버그: 삭제 직후 자동갱신 알림이 되돌리기 버튼을 지워버림)
     }
+    function applyEmbedBar(h){ const b=document.getElementById('embedbar'); if(b && h) b.hidden = !h.embedDegraded; } // 의미검색 중단 배너(PRD 05 §3 — 실패는 반드시 가시화)
+    document.getElementById('staleReload').addEventListener('click', ()=>location.reload());
     async function pollHealth(){
       if(!autoRefreshOn) return;
       if(document.visibilityState !== 'visible') return;
       let h; try{ h = await get('/api/health'); } catch { return; }
+      applyEmbedBar(h);
       const sig = (h.total ?? '') + ':' + (h.lastId ?? '');
       if(_healthSig === null){ _healthSig = sig; return; }    // 최초엔 기준값만 기록
       if(sig !== _healthSig){
@@ -1810,7 +2225,7 @@
       try{ const h=await get('/api/health'); _healthSig=(h.total??'')+':'+(h.lastId??''); }catch{}
       toast('새로고침했어요','ok');
     });
-    get('/api/health').then(h=>{ _healthSig=(h.total??'')+':'+(h.lastId??''); }).catch(()=>{}); // 로드 시 기준값
+    get('/api/health').then(h=>{ _healthSig=(h.total??'')+':'+(h.lastId??''); applyEmbedBar(h); }).catch(()=>{}); // 로드 시 기준값 + 의미검색 배너
   </script>
 </body>
 </html>
