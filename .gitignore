@@ -52,5 +52,8 @@ Thumbs.db
 # 로컬 전용 Claude Code 프로젝트 설정 (절대경로 포함 — 다른 PC에서 동작 안 함)
 .claude/
 
+# 브라우저 자동화 도구(Playwright MCP)가 남기는 화면·콘솔 기록 — 실제 기억 내용이 찍힐 수 있어 실수 커밋 방지(2026-10-21)
+.playwright-mcp/
+
 # 내부 계획·감사 문서 (저장소 불필요)
 PLAN_PRD_AUDIT.md
