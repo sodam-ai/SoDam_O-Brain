@@ -5,7 +5,7 @@
     {
       "name": "o-brain",
       "source": "./",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "O-Brain local memory (hooks + MCP)"
     }
   ]

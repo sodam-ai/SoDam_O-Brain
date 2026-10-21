@@ -5,7 +5,9 @@ description: O-Brain 기억을 지금 즉시 백업(안전 스냅샷)합니다
 사용자가 O-Brain 기억을 백업하려고 합니다. 아래 명령을 실행하고, 저장된 백업 파일 위치를 **쉬운 한국어**로 알려주세요.
 
 ```
-node --env-file-if-exists="${CLAUDE_PLUGIN_ROOT}/../app/.env.local" "${CLAUDE_PLUGIN_ROOT}/../app/src/backup-cli.mjs"
+node "${CLAUDE_PLUGIN_ROOT}/scripts/run-app.mjs" backup
 ```
 
-백업은 `app/data/backup/` 폴더에 안전 스냅샷으로 저장되며, 최신 7개가 자동 보관됩니다.
+백업은 `app/data/backup/` 폴더에 안전 스냅샷으로 저장됩니다. 직접 만든 백업은 최대 10개까지 따로 보관되어 자동 백업(서버 시작·삭제/병합/가져오기 직전)에 밀려나지 않습니다.
+다른 PC로 옮기려는 사용자에게는 O-Brain 화면의 "데이터" 화면(헤더 ⬇ 버튼)에서 "이식용 백업"을 만들고 내려받으라고 안내하세요. 되돌리기(복원)는 이 명령이 아니라, 서버·클로드코드 창을 모두 닫고 터미널(app 폴더)에서 `npm run restore`로 합니다 — 사용자가 되돌리고 싶다고 하면 이 절차를 쉬운 말로 알려 주세요(직접 실행하지는 마세요).
+`app 폴더를 찾지 못했어요` 같은 ⚠️ 메시지가 나오면 그대로 쉬운 말로 전하고, O-Brain의 app 폴더에서 `npm run plugin:pin`을 한 번 실행하라고 안내하세요.

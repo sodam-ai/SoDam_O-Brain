@@ -1,12 +1,15 @@
 // SessionStart 훅 — 이전 기억을 새 세션에 자동 주입.
 // stdout으로 {"continue":true,"hookSpecificOutput":{...}} JSON 출력해야 주입됨.
-import { appUrl } from './_root.mjs';
+// systemMessage는 사용자 화면에 보이는 한 줄 — "몇 건을 불러왔는지"와 실패를 숨기지 않는다(PRD 07 §7, 05 §3).
+import { appUrl, rootProblem } from './_root.mjs';
 
 let input = '';
 process.stdin.on('data', (d) => (input += d));
 process.stdin.on('end', async () => {
   const out = { continue: true };
   try {
+    const problem = rootProblem();
+    if (problem) { out.systemMessage = '⚠️ O-Brain: ' + problem; throw new Error(problem); }
     let project = '';
     let query = '';
     try {
@@ -32,12 +35,16 @@ process.stdin.on('end', async () => {
         } catch {}
       }
     } catch {}
-    const { buildInjection } = await import(appUrl('inject.mjs'));
+    const { buildInjection, injectedCount } = await import(appUrl('inject.mjs'));
     const ctx = await buildInjection({ project, query, max: 8 });
-    if (ctx) out.hookSpecificOutput = { hookEventName: 'SessionStart', additionalContext: ctx };
+    if (ctx) {
+      out.hookSpecificOutput = { hookEventName: 'SessionStart', additionalContext: ctx };
+      out.systemMessage = `O-Brain: 기억 ${injectedCount(ctx)}건을 이 대화에 불러왔어요`;
+    }
   } catch (e) {
-    // 조용히 폴백(주입 실패가 세션을 막으면 안 됨). 로그는 stderr.
+    // 세션을 막지는 않되(주입 실패가 세션을 막으면 안 됨) 사용자에게는 보이게 한다. 상세는 stderr.
     console.error('[o-brain] 주입 실패(무시):', e?.message || e);
+    if (!out.systemMessage) out.systemMessage = '⚠️ O-Brain: 기억을 불러오지 못했어요(' + String(e?.message || e).split('\n')[0].slice(0, 100) + ') — app 폴더에서 npm run status 로 확인해 주세요.';
   }
   process.stdout.write(JSON.stringify(out));
   process.exit(0);

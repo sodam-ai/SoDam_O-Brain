@@ -5,7 +5,8 @@ description: O-Brain이 정상 작동하는지 한 방에 테스트합니다
 사용자가 O-Brain이 제대로 작동하는지 빠르게 테스트하려고 합니다. 아래 명령을 실행하고, ✅/❌ 결과를 **쉬운 한국어**로 설명하세요(통과면 "두뇌 정상", 실패면 어떤 항목이 ❌인지).
 
 ```
-node --env-file-if-exists="${CLAUDE_PLUGIN_ROOT}/../app/.env.local" "${CLAUDE_PLUGIN_ROOT}/../app/src/selftest.mjs"
+node "${CLAUDE_PLUGIN_ROOT}/scripts/run-app.mjs" selftest
 ```
 
 이건 저장·시크릿 가림·검색을 임시 데이터로 검사하며, 실제 기억은 건드리지 않습니다.
+`app 폴더를 찾지 못했어요` 같은 ⚠️ 메시지가 나오면 그대로 쉬운 말로 전하고, O-Brain의 app 폴더에서 `npm run plugin:pin`을 한 번 실행하라고 안내하세요.
