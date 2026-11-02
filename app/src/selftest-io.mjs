@@ -209,6 +209,20 @@ export async function runImportTests({ db, check, ids }) {
   check('33-1. 시크릿은 미리보기 단계에서 이미 가려져 있고(원문 없음), 미리보기만으로 DB가 바뀌지 않음',
     !JSON.stringify(pv).includes(fakeKey) && pv.samples.some(s => /REDACTED/.test(s.content)) && db.prepare('SELECT COUNT(*) n FROM memory').get().n === before);
 
+  // 33-2. [M82, 2026-11-02] 옛 방식으로 저장돼 지금 규칙으로는 글이 달라지는 기억(줄바꿈 \r · 옛 가림 규칙)을 같은 PC로 다시 가져와도 중복으로 잡힌다.
+  // 이전에는 "새 기억"으로 세어 복제됐다(격리 서버에서 자기 내보내기를 되가져오기 해 발견: 2,346건 중 3건).
+  const { redact: redactNow } = await import('./redact.mjs');
+  const legacyCR = 'M82중복시험 첫 줄\r둘째 줄\r셋째 줄';
+  const legacyRedact = 'M82중복시험 DISCORD_BOT_TOKEN=일 가능성이 높다';
+  const insLegacy = db.prepare('INSERT INTO memory(content,type,importance,confidence,source,project,scope) VALUES (?,?,?,?,?,?,?)');
+  const legacyIds = [legacyCR, legacyRedact].map(c => Number(insLegacy.run(c, '지식', 3, 0.6, 'rule', null, 'global').lastInsertRowid));
+  const legacyMeaningful = redactNow(legacyRedact).clean.trim() !== legacyRedact.trim();   // 지금 규칙이 이 글을 바꿔야 이 시험이 의미 있다
+  const pvLegacy = imp.makePreview(db, parse(JSON.stringify([{ content: legacyCR }, { content: legacyRedact }, { content: 'M82중복시험 정말 새 기억 ' + Date.now() }]), 'legacy.json'));
+  imp.dropPreview(pvLegacy.previewId);
+  for (const id of legacyIds) deleteMemory(db, id);
+  check('33-2. 옛 방식으로 저장된 기억(줄바꿈 CR·옛 가림 규칙)을 그대로 다시 가져오면 중복으로 잡힘(복제 안 됨), 진짜 새 기억만 새것',
+    legacyMeaningful && pvLegacy.counts.dupDb === 2 && pvLegacy.counts.new === 1, `의미있는시험=${legacyMeaningful} ${JSON.stringify(pvLegacy.counts)}`);
+
   // 34. 실제 가져오기 — 신뢰해서(내 파일) 가져오면 필드·관계·날짜가 그대로 복원된다
   const fields = 'content, type, importance, confidence, source, project, category, scope, created_at, valid_from';
   const snap = db.prepare(`SELECT ${fields} FROM memory WHERE id IN (${mine.map(() => '?').join(',')}) ORDER BY content`).all(...mine);
