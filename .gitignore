@@ -57,3 +57,7 @@ Thumbs.db
 
 # 내부 계획·감사 문서 (저장소 불필요)
 PLAN_PRD_AUDIT.md
+
+# 로컬 전용 작업 기록 (2026-11-02) — 저장소에 두지 않음
+/CHECKPOINT.md
+/tasks/
