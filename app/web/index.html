@@ -443,6 +443,10 @@
     [role="tab"] { min-height:44px; }
     .gbtn, .chip, .loadmore { min-height:44px; }
     .subbar select, .subbar button { min-height:44px; }
+    /* 데이터 화면(#dataPage)의 촘촘한 버튼·펼침 줄·선택창도 ≥44px(M82: 375px 실측에서 13곳이 32~36px였음).
+       일부는 JS가 인라인 min-height:32~36px로 만들어서 !important가 필요 — 데스크톱 외형은 그대로 */
+    #dataPage .dm-btn, #dataPage details > summary { min-height:44px !important; }
+    #dataPage .dm-row select { min-height:44px; }
   }
   /* ── 일괄삭제 선택 모드 ── */
   .row-cb { display:none; width:20px; height:20px; flex:none; accent-color:var(--danger); margin-top:1px; pointer-events:none; cursor:default; }
