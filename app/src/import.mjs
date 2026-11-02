@@ -382,7 +382,8 @@ export function parseImportFile({ bytes, filename, mime = '', split = 'paragraph
 
 // ── 5. 미리보기(드라이런) — 시크릿 제거·중복 판정까지, DB는 아직 안 바꿈 ──────
 const previews = new Map();
-const keyOf = (project, text) => (project || '') + '\u0000' + text;
+// 중복 판정 키 — 줄바꿈(\r\n·\r)은 \n으로 통일해서 비교한다. 가져오기는 줄바꿈을 \n으로 통일해 읽는데, 옛 방식으로 저장된 기억에는 \r이 남아 있을 수 있어서(M82).
+const keyOf = (project, text) => (project || '') + '\u0000' + String(text).replace(/\r\n?/g, '\n');
 const baseName = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || '(미지정)';
 
 export function makePreview(db, parsed) {
@@ -397,8 +398,12 @@ export function makePreview(db, parsed) {
     if (!text) { extraErrors.push({ line: row.line, reason: '내용이 비어 있어요' }); continue; }
     if (hits) { redactedRows++; redactedHits += hits; }
     const key = keyOf(row.project, text);
+    // 옛 가림 규칙으로 저장돼 지금 규칙으로는 글이 달라지는 기억도, 파일의 원문이 DB에 그대로 있으면 같은 기억이다(M82).
+    // 원문은 이 비교에만 쓰고 미리보기에 보관하지 않는다 — 시크릿이 든 원문이 메모리에 남지 않게.
+    const rawRef = hits ? existing.get(keyOf(row.project, String(row.content).trim())) : undefined;
     const item = { ...row, content: text, hits, status: 'new', refId: null, refIndex: null };
     if (existing.has(key)) { item.status = 'dupDb'; item.refId = existing.get(key); dupDb++; }
+    else if (rawRef !== undefined) { item.status = 'dupDb'; item.refId = rawRef; dupDb++; }
     else if (firstNew.has(key)) { item.status = 'dupFile'; item.refIndex = firstNew.get(key); dupFile++; }
     else { firstNew.set(key, items.length); nNew++; }
     items.push(item);
